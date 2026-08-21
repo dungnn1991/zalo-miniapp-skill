@@ -1,0 +1,362 @@
+{
+  "schemaVersion": "1.0",
+  "lab": "miniapp-bootstrap-poc",
+  "capability": "create-zmp-app",
+  "portal": {
+    "baseUrl": "https://docs.zaloplatforms.com",
+    "llmsIndexPath": "/MA/llms.txt",
+    "docPathPrefix": "/docs/MA/",
+    "note": "Base URL derived from DX/06-independent-verification-brief.md and DX/10-independent-principal-review-2026-07-29.md; verified live 2026-08-20 (HTTP 200, ETag 6a857e93-9f51)."
+  },
+  "defaults": {
+    "appName": "Mini App Bootstrap POC",
+    "renderProvider": "browser",
+    "packageManager": "pnpm",
+    "defaultViewport": {
+      "width": 390,
+      "height": 844
+    }
+  },
+  "viewports": [
+    {
+      "name": "mobile-390x844",
+      "width": 390,
+      "height": 844,
+      "screenshot": true,
+      "interaction": true,
+      "isDefault": true
+    },
+    {
+      "name": "mobile-360x800",
+      "width": 360,
+      "height": 800,
+      "screenshot": true,
+      "interaction": false,
+      "isDefault": false
+    },
+    {
+      "name": "wide-1280x800",
+      "width": 1280,
+      "height": 800,
+      "screenshot": true,
+      "interaction": true,
+      "isDefault": false
+    }
+  ],
+  "markers": {
+    "appRoot": "[data-testid=\"app-root\"]",
+    "appHeader": "[data-testid=\"app-header\"]",
+    "categoryFilter": "[data-testid=\"category-filter\"]",
+    "productGrid": "[data-testid=\"product-grid\"]",
+    "productCard": "[data-testid=\"product-card\"]",
+    "addToCart": "[data-testid=\"add-to-cart\"]",
+    "cartBadge": "[data-testid=\"cart-badge\"]",
+    "bottomNav": "[data-testid=\"bottom-nav\"]"
+  },
+  "interactionCheck": {
+    "click": "addToCart",
+    "expectCounterIncrement": "cartBadge",
+    "runOnViewports": [
+      "mobile-390x844",
+      "wide-1280x800"
+    ]
+  },
+  "template": {
+    "tokens": [
+      "__APP_NAME__"
+    ],
+    "variants": [
+      "clothing-store",
+      "neutral"
+    ],
+    "variantSourceDir": "variants",
+    "variantTargetFile": "src/data/catalog.ts"
+  },
+  "officialTemplates": {
+    "note": "Opt-in, không bắt buộc — chỉ dùng khi user nói rõ muốn mẫu có sẵn; mặc định vẫn là lab template. Nguồn: github.com/Zalo-MiniApp (observed 2026-08-20); gallery https://miniapp.zaloplatforms.com/zaui-templates là SPA, org GitHub là ground truth. Scaffold bằng tarball codeload, KHÔNG dùng `zmp init` (interactive, treo non-tty).",
+    "tarballUrlPattern": "https://codeload.github.com/Zalo-MiniApp/{repo}/tar.gz/refs/heads/{branch}",
+    "optInPhrases": [
+      "mẫu có sẵn",
+      "template có sẵn",
+      "mẫu chính thức",
+      "template chính thức",
+      "official template",
+      "zaui template",
+      "dùng mẫu",
+      "mẫu platform",
+      "mẫu làm sẵn"
+    ],
+    "catalog": [
+      {
+        "id": "zaui-fashion",
+        "branch": "main",
+        "keywords": [
+          "quần áo",
+          "thời trang",
+          "fashion",
+          "clothing",
+          "váy",
+          "đầm",
+          "shop đồ",
+          "clothes"
+        ],
+        "verified": true
+      },
+      {
+        "id": "zaui-coffee",
+        "branch": "main",
+        "keywords": [
+          "cà phê",
+          "coffee",
+          "cafe",
+          "đồ uống",
+          "trà sữa",
+          "coffee shop"
+        ],
+        "verified": false
+      },
+      {
+        "id": "zaui-bistro",
+        "branch": "main",
+        "keywords": [
+          "bistro",
+          "đặt món",
+          "quán ăn",
+          "food ordering",
+          "đồ ăn"
+        ],
+        "verified": false
+      },
+      {
+        "id": "zaui-menu",
+        "branch": "main",
+        "keywords": [
+          "menu",
+          "thực đơn",
+          "gọi món",
+          "order food"
+        ],
+        "verified": false
+      },
+      {
+        "id": "zaui-restaurant",
+        "branch": "main",
+        "keywords": [
+          "nhà hàng",
+          "restaurant"
+        ],
+        "verified": false
+      },
+      {
+        "id": "zaui-market",
+        "branch": "main",
+        "keywords": [
+          "chợ",
+          "siêu thị",
+          "tạp hoá",
+          "tạp hóa",
+          "market",
+          "grocery"
+        ],
+        "verified": false
+      },
+      {
+        "id": "zaui-doctor",
+        "branch": "main",
+        "keywords": [
+          "bác sĩ",
+          "phòng khám",
+          "y tế",
+          "doctor",
+          "clinic",
+          "đặt lịch khám",
+          "booking khám"
+        ],
+        "verified": false
+      },
+      {
+        "id": "zaui-uni",
+        "branch": "main",
+        "keywords": [
+          "giáo dục",
+          "trường học",
+          "education",
+          "khóa học"
+        ],
+        "verified": false
+      },
+      {
+        "id": "zaui-egovernment",
+        "branch": "master",
+        "keywords": [
+          "hành chính công",
+          "dịch vụ công",
+          "government"
+        ],
+        "verified": false
+      },
+      {
+        "id": "zaui-lucky-wheel",
+        "branch": "main",
+        "keywords": [
+          "vòng quay",
+          "lucky wheel",
+          "minigame",
+          "trúng thưởng"
+        ],
+        "verified": false
+      },
+      {
+        "id": "zaui-shop",
+        "branch": "main",
+        "keywords": [
+          "shop",
+          "cửa hàng",
+          "bán hàng",
+          "e-commerce",
+          "thương mại"
+        ],
+        "verified": false
+      }
+    ],
+    "matchOrder": "duyệt catalog theo thứ tự khai báo, match keyword đầu tiên thắng (specific trước generic — zaui-shop cuối cùng)",
+    "noMatchBehavior": "opt-in nhưng không match keyword nào → needs_input hỏi user chọn template id từ catalog; KHÔNG tự đoán, không fallback lab template âm thầm",
+    "matchNormalization": "match sau khi normalize CẢ brief lẫn keyword: lowercase + NFD bỏ dấu + đ→d — 'quần áo'/'quan ao'/'Quần Áo' đều khớp (bổ sung 2026-08-21 theo yêu cầu đa ngôn ngữ)"
+  },
+  "sdkHostContract": {
+    "observedPackage": "zmp-sdk@2.53.0",
+    "observedAt": "2026-08-21",
+    "groundedOn": "public npm artifacts (zmp-sdk, zalo-js-bridge@1.16.7); repo internal chỉ đối chiếu, không copy code",
+    "envDetection": {
+      "isMp": "location.hostname chứa 'h5.zdn.vn' VÀ (query env==TESTING_LOCAL HOẶC pathname bắt đầu '/zapps') — apis/appEnv/getEnv.js",
+      "isMpWeb": "hostname chứa 'localhost' — SDK tự trả dummy (vd getLocation → {token:\"\"}), KHÔNG dùng cho sim",
+      "platform": "parse từ userAgent: cần mobile (android/iphone...) và chứa 'zalo'; zaloVersion = đoạn sau chữ 'zalo' trước '/' (vd 'Zalo android/24000000' → '24000000')"
+    },
+    "injectionPoint": "window.ZaloJavaScriptInterface — SDK typeof-check trước mỗi call (zaloNative.js); shim define TRƯỚC khi bundle app load",
+    "call": "ZaloJavaScriptInterface.jsCall(a1,a2,a3,a4,cb) — arg cuối là callback: Android = STRING 'window.onNativeMessage(\"<serialId>\", \"<action>\")' (native eval), iOS = function window.onNativeMessage(serialId, action). Shim nên parse serialId/action từ arg cuối (regex), action từ đó là jump-action name",
+    "response": "gọi window.onNativeMessage(serialId, action)(JSON.stringify({error_code, error_message, data})); error_code 0 = success; data có thể là JSON string lồng (SDK parse 2 tầng)",
+    "events": "native→SDK: window.zaloJSV2.zalo_h5_event_handler(eventId, eventName, dataString); SDK ack: ZaloJavaScriptInterface.jsH5EventCallback(eventId, eventName, ref)",
+    "authPrecheck": "SDK TỰ gọi GET_SETTING trước API cần user-auth (isRequireUserAuthentication); thiếu scope → SDK tự trả UNAUTHORIZED không gọi native. Shim PHẢI trả GET_SETTING nhất quán với permission store",
+    "servingRequirement": "simulator profile serve qua playwright route-interception tại https://h5.zdn.vn/zapps/<appId>/ (không static server thường); browser context UA mobile Android chứa 'Zalo android/<ver>'",
+    "tokenBasedApis": "getLocation/getPhoneNumber trả TOKEN decode server-side (FAQ 22) — mock trả SIM_TOKEN_* và UI demo phải nói rõ decode ở server",
+    "autoLoginOnLoad": "zmp-sdk TỰ GỌI login() ngay khi module load trong env isMp (tail apis/index.js: window.ZaloMiniAppSDK={...} rồi gọi login) — ngoài Zalo host reject unhandled {code:-2000, api:'login'}. Hệ quả: (1) shim NHẬN một call LOGIN tự động lúc page load và phải trả lời được; (2) template có guard unhandledrejection hẹp cho SDK-shaped rejections (src/utils/zmp-sdk-login-guard.ts). Observed 2026-08-21 (Subagent B).",
+    "httpApis": "KHÔNG phải mọi API đi qua jsCall — GET_USER_INFO/GET_ACCESS_TOKEN/GET_SETTING là HTTPS openapi: auth-settings (Bearer jwt), graph.zalo.me/v2.0/me, access_token endpoints gồm cả oauth.zaloapp.com/v3|v4. Sim phải fetch-patch các endpoint này nhất quán permission store. Observed 2026-08-21 (Subagent C, zmp-sdk@2.53.0).",
+    "zjsBridgeStub": "window.ZJSBridge (setJSToken/setZAccSession) BẮT BUỘC stub trong sim — thiếu là token flow treo im lặng (jump() success-callback gọi ZJSBridge.setJSToken). Observed 2026-08-21 (Subagent C).",
+    "actionMapping": "jump-action = 'action.' + SDK_ACTION.replace(/_/g,'.').toLowerCase(); serialId = '<SDK_ACTION>_<random>'. Đã xác nhận: GET_LOCATION→action.get.location, MP_GET_NUMBER→action.mp.get.number (getPhoneNumber), MP_USER_AUTHORIZE→action.mp.user.authorize, LOGIN→action.login (auto on load), JUMP_LOGIN→action.jump.login.",
+    "versionSupport": "isAPISupport(minAndroid,minIOS) — vd authorize cần (724,573). SDK check window.isAPISupport TRƯỚC (host hook), rồi window.zaloVersionCode, rồi parse UA: version >= 24112000 là hệ mới dùng nguyên; < ngưỡng và Android → code = version % 10000 (UA sim cũ 24000000 → code 0 → -1404). Sim: shim set zaloVersionCode=24112050 + isAPISupport=()=>true; UA android/24112050. (Học từ incident Codex 2026-08-21.)",
+    "miniProgramConfigKeys": "JUMP_LOGIN response data.miniProgramConfig được token manager giữ nguyên; SDK đọc thêm các key: requiredAuthenList (danh sách action cần user-auth precheck — rỗng là skip precheck), dynamicApis ([{action, clientHandle, isSupported}] — isSupported false → -1404), userAuthorized (false → verifyUserAuthorized đi nhánh xin lại), jwt (Bearer cho openapi). getSetting resolve {authSetting: m.data} — m.data PHẢI là authSetting PHẲNG.",
+    "authSettingShape": "auth-settings openapi response: {err:0, data:{'scope.userInfo':bool,...}} — data phẳng, không nest thêm 'authSetting'."
+  },
+  "simulatorDemo": {
+    "navMarker": "[data-testid=\"nav-account\"]",
+    "apis": [
+      "getUserInfo",
+      "getLocation",
+      "getPhoneNumber",
+      "getAccessToken"
+    ],
+    "buttonMarker": "[data-testid=\"api-btn-<name>\"]",
+    "resultMarker": "[data-testid=\"api-result-<name>\"]",
+    "errorMarker": "[data-testid=\"api-error-<name>\"]",
+    "sheetMarkers": {
+      "sheet": "[data-testid=\"sim-sheet\"]",
+      "accept": "[data-testid=\"sim-accept\"]",
+      "deny": "[data-testid=\"sim-deny\"]",
+      "badge": "[data-testid=\"sim-badge\"]"
+    },
+    "simDecisionModes": [
+      "accept",
+      "deny",
+      "manual"
+    ],
+    "note": "Contract shared B (template demo tab) ↔ C (shim) ↔ runner. navItems keys của catalog: home/cart/account."
+  },
+  "oracleProfiles": {
+    "full": {
+      "note": "default cho lab template — đủ 8 marker + interaction + cta"
+    },
+    "official-template": {
+      "mountSelector": "#app, #root, [data-testid=\"app-root\"]",
+      "skippedGates": [
+        "markers",
+        "interaction",
+        "cta"
+      ],
+      "note": "Template chính thức không có data-testid marker của lab. Giữ react_mount (selector trên), no_horizontal_overflow, no_fatal_console_error, screenshots. Marker/interaction/cta gates ghi status skipped, không fail."
+    },
+    "simulator": {
+      "extends": "full",
+      "note": "Phase 3: full profile + shim mock host (serve interception tại h5.zdn.vn/zapps) + demo API checks theo simulatorDemo. Chạy demo checks chỉ ở viewport mặc định. simDecision=accept: click từng api-btn → result marker non-empty; deny: → error marker non-empty; sheet badge SIMULATOR phải hiện diện trong DOM shim."
+    }
+  },
+  "dependencyPolicy": {
+    "runtime": {
+      "react": "^18.2.0",
+      "react-dom": "^18.2.0",
+      "zmp-ui": "latest",
+      "zmp-sdk": "latest"
+    },
+    "build": {
+      "vite": "^5.0.0",
+      "zmp-vite-plugin": "latest",
+      "@vitejs/plugin-react": "^4.2.0",
+      "typescript": "^5.4.0",
+      "@types/react": "^18.2.0",
+      "@types/react-dom": "^18.2.0"
+    }
+  },
+  "exitCodes": {
+    "0": "pass",
+    "1": "gate_fail (finding recorded)",
+    "2": "needs_input (nothing mutated)",
+    "3": "precondition_or_config_error"
+  },
+  "zmpCli": {
+    "observedVersion": "4.0.3",
+    "observedAt": "2026-08-20",
+    "binary": "zmp",
+    "envFile": "<cwd>/.env — deploy/login chạy với cwd = app/, nên là app/.env",
+    "envKeys": {
+      "appId": "APP_ID",
+      "token": "ZMP_TOKEN"
+    },
+    "tokenPolicy": "ZMP_TOKEN do zmp-cli sở hữu: lab không đọc giá trị, không ghi, không log; chỉ được key-existence scan",
+    "apiDomain": "https://zmp-api.developers.zalo.me/",
+    "deployedUrlScheme": "zalo.me/s/",
+    "deployedUrlObserved": "https://zalo.me/s/<appId>/?env=DEVELOPMENT&version=zdev-... (real deploy 2026-08-20; h5.zdn.vn/zapps/ chỉ là CDN asset base, không phải app link)",
+    "deployOutputIsQrOnly": "CLI 4.0.3 in URL chỉ dưới dạng QR sau 'View app at:' — cần decode (jsqr); dòng '- undefined' là bug hiển thị của CLI",
+    "syncConfigRequired": "zmp sync-config dist/index.html BẮT BUỘC sau build, trước deploy -e (populate listSyncJS/listCSS trong app-config.json; sinh dist/inline.js)",
+    "errorCodes": {
+      "app_config_not_found": -1400,
+      "permission_denied": -2001,
+      "request_timeout": -2003
+    },
+    "authFailureMessage": "Permission denied. Please login again.",
+    "authCheckFirst": true,
+    "login": {
+      "interactiveCommand": [
+        "zmp",
+        "login"
+      ],
+      "qrPollIntervalMs": 2000,
+      "qrMaxPolls": 60,
+      "agentForbidden": "zmp login --token <token> — token qua argv của agent bị cấm tuyệt đối"
+    },
+    "deploy": {
+      "developmentCommand": [
+        "zmp",
+        "deploy",
+        "-p",
+        "-e",
+        "-o",
+        "dist",
+        "-m",
+        "<desc>"
+      ],
+      "testingExtraFlag": "-t",
+      "nonInteractiveVerifiedAt": "2026-08-20",
+      "note": "existing-project mode: lab tự build (dist/), zmp-cli chỉ upload; -o dist vì template pin outDir dist",
+      "versionSemantics": "Testing: mỗi lần deploy lưu build lên CDN gắn version (bền, tham chiếu được). Development: chỉ MỘT slot — bản sau đè bản trước, không cache nhiều version; URL dev (kể cả kèm zdev-*) luôn trỏ bản mới nhất, KHÔNG phải tham chiếu ổn định. Cần build ổn định để UAT/regression → dùng Testing version. (User note 2026-08-20.)"
+    }
+  }
+}

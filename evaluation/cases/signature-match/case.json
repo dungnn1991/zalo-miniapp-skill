@@ -1,0 +1,10 @@
+{
+  "caseId": "signature-match",
+  "title": "Phase 2.6 — signature-match",
+  "expectation": {
+    "exitCode": 0,
+    "findingCategory": null,
+    "findingSlugHint": "Minified React error",
+    "description": "Tier-2 plan 29: fixture text chứa 'Minified React error #310' → matchSignatures trả match có diagnosis/fix/source từ references/error-signatures.json (Subagent A curate); recordFinding đính insight vào finding (finding.schema có field insight). File signatures chưa land → blocked."
+  }
+}

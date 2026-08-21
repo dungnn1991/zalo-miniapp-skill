@@ -1,0 +1,11 @@
+{
+  "caseId": "app-id-missing",
+  "title": "Negative control 6 — thiếu App ID phải needs_input, không scaffold, không tự sinh ID",
+  "expectation": {
+    "exitCode": 2,
+    "resultStatus": "needs_input",
+    "findingCategory": null,
+    "findingSlugHint": "app_id_missing",
+    "description": "Bootstrap không có --app-id và không có .env. Phải exit 2, result.json status needs_input, workspace KHÔNG có app/ scaffold, không install/build, không invented id ở bất cứ đâu."
+  }
+}

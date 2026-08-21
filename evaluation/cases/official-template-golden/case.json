@@ -1,0 +1,11 @@
+{
+  "caseId": "official-template-golden",
+  "title": "Phase 2.5 golden — scaffold official zaui-fashion, build:css + outDir detect, render profile official-template",
+  "expectation": {
+    "exitCode": 0,
+    "resultStatus": "pass",
+    "findingCategory": null,
+    "findingSlugHint": null,
+    "description": "bootstrap --brief 'tạo app bán quần áo dùng mẫu có sẵn' --app-id 1234567890 → scaffold zaui-fashion từ tarball (network codeload.github.com); input.json template={official, zaui-fashion}; app-config.json title=appName; .env APP_ID đúng. portal-fetch + install (template thật, ~1-2 phút) + build (build:css nếu có, outDir detect vào build-info.json) + render profile official-template (react_mount pass, overflow/console pass, marker/cta/interaction skipped, không gate fail) + verify pass. KHÔNG deploy (README Phase 2.5 đã chốt). Bootstrap chưa có official path → blocked."
+  }
+}

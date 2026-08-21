@@ -1,0 +1,10 @@
+{
+  "caseId": "sim-deny",
+  "title": "Phase 3 — sim-deny",
+  "expectation": {
+    "exitCode": 0,
+    "findingCategory": null,
+    "findingSlugHint": "denyError",
+    "description": "Plan 28: decision deny → demo error markers, bridge-log decision deny với error_code khớp denyError trong references/sim-mock-data.json (getLocation/getPhoneNumber -201, getUserInfo -1401). Ghi nhận nguyên trạng nếu API không cần quyền (getAccessToken) lệch expectation runner."
+  }
+}

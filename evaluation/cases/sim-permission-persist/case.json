@@ -1,0 +1,10 @@
+{
+  "caseId": "sim-permission-persist",
+  "title": "Phase 3 — sim-permission-persist",
+  "expectation": {
+    "exitCode": 0,
+    "findingCategory": null,
+    "findingSlugHint": "already-granted",
+    "description": "Plan 28: decision accept, click getLocation lần 1 → bridge-log decision accept (persist granted vào localStorage sim-perm-<appId>); click lần 2 cùng context → decision already-granted, không sheet nào từng hiện."
+  }
+}

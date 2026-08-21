@@ -1,0 +1,11 @@
+{
+  "caseId": "deploy-needs-login",
+  "title": "Phase 2 control 1 — chưa login mà yêu cầu deploy → needs_login, không spawn zmp",
+  "expectation": {
+    "exitCode": 2,
+    "resultStatus": "needs_input",
+    "findingCategory": null,
+    "findingSlugHint": "login_required",
+    "description": "Fixture rẻ (dist giả + result.json pass giả lập — test contract deploy.mjs, không phải build). .env chỉ có APP_ID → deploy.mjs exit 2, result.json needs_input/login_required schemaVersion 1.1, KHÔNG có event spawn deploy (không process zmp nào chạy). Kèm vòng ensure-login: exit 2 khi thiếu key, exit 0 + revert result về pass khi key ZMP_TOKEN xuất hiện."
+  }
+}

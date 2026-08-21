@@ -1,0 +1,10 @@
+{
+  "caseId": "css-overflow",
+  "title": "Negative control 7 — CSS ép horizontal overflow phải fail gate no_horizontal_overflow",
+  "expectation": {
+    "exitCode": 1,
+    "findingCategory": "app",
+    "findingSlugHint": "no horizontal overflow",
+    "description": "Scaffold+install+build xanh, sau đó inject <style>body{min-width:1600px}</style> vào dist/index.html (mutate generated output trong case workspace là fixture hợp lệ). Render+verify phải fail gate no_horizontal_overflow và finding có expected nhắc 'no horizontal overflow'."
+  }
+}

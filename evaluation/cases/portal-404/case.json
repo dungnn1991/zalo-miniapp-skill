@@ -1,0 +1,10 @@
+{
+  "caseId": "portal-404",
+  "title": "Negative control 3 — Portal URL không tồn tại phải fail rõ, không fallback âm thầm",
+  "expectation": {
+    "exitCode": 1,
+    "findingCategory": null,
+    "findingSlugHint": "portal_unavailable",
+    "description": "Chạy portal-fetch với MB_PORTAL_BASE_URL trỏ vào path không tồn tại (test-only override do Subagent A implement). Phải exit 1, có finding portal_unavailable, và KHÔNG có portal-sources.json nào claim fetch thành công."
+  }
+}

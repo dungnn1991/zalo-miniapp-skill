@@ -1,0 +1,120 @@
+{
+  "schemaVersion": "1.0",
+  "curatedAt": "2026-08-21",
+  "note": "Mock registry cho simulator shim (scripts/sim/ đọc). Curated từ Portal docs live (docSource từng API, fetch 2026-08-21) + bảng mã lỗi https://docs.zaloplatforms.com/docs/MA/api/errorCode.md. Token SIM_TOKEN_* là placeholder — KHÔNG decode được qua graph.zalo.me. permissionDescription là text mô phỏng bottomsheet theo flow trong docs, không phải string chính thức của Zalo.",
+  "persona": {
+    "id": "SIM_USER_ID_0000000001",
+    "name": "Người Dùng Giả Lập",
+    "avatar": "",
+    "note": "persona giả cho sim, không phải user thật"
+  },
+  "apis": {
+    "getUserInfo": {
+      "requiresPermission": true,
+      "permissionScope": "scope.userInfo",
+      "permissionDescription": "Cho phép ứng dụng truy cập tên và ảnh đại diện của bạn?",
+      "success": {
+        "userInfo": {
+          "id": "SIM_USER_ID_0000000001",
+          "name": "Người Dùng Giả Lập",
+          "avatar": "",
+          "followedOA": false,
+          "isSensitive": false
+        }
+      },
+      "denyError": {
+        "error_code": -1401,
+        "error_message": "User Authentication Required. Please grant User Authentication permission before requesting User Permission"
+      },
+      "docSource": "https://docs.zaloplatforms.com/docs/MA/api/user/user-information/getUserInfo.md",
+      "notes": "Doc getUserInfo minh hoạ chính mã -1401 cho case 'Người dùng từ chối cung cấp tên và ảnh đại diện'; khi từ chối ngay trên sheet authorize còn có thể gặp -201 (bảng errorCode). ID mặc định được cấp không cần hỏi; tên + avatar mới cần quyền (autoRequestPermission=true hoặc authorize scope.userInfo trước)."
+    },
+    "getLocation": {
+      "requiresPermission": true,
+      "permissionScope": "scope.userLocation",
+      "permissionDescription": "Cho phép Zalo truy cập vào vị trí của thiết bị này?",
+      "success": {
+        "token": "SIM_TOKEN_GETLOCATION_PLACEHOLDER"
+      },
+      "denyError": {
+        "error_code": -201,
+        "error_message": "User deny request permission!"
+      },
+      "docSource": "https://docs.zaloplatforms.com/docs/MA/api/location/getLocation.md",
+      "notes": "Docs: API chỉ trả TOKEN — vị trí thật phải decode SERVER-SIDE qua graph.zalo.me/v2.0/me/info (header access_token + code + secret_key); token thật dùng 1 lần, hết hạn sau 2 phút (xem FAQ 22 community: gọi server-server từ client là lỗ hổng bảo mật). SIM_TOKEN_* không decode được thật. Từ chối kèm 'không hỏi lại': -202/-2002 (bảng errorCode)."
+    },
+    "getPhoneNumber": {
+      "requiresPermission": true,
+      "permissionScope": "scope.userPhonenumber",
+      "permissionDescription": "Cho phép ứng dụng nhận số điện thoại của bạn?",
+      "success": {
+        "token": "SIM_TOKEN_GETPHONENUMBER_PLACEHOLDER"
+      },
+      "denyError": {
+        "error_code": -201,
+        "error_message": "User deny request permission!"
+      },
+      "docSource": "https://docs.zaloplatforms.com/docs/MA/api/user/user-information/getPhoneNumber.md",
+      "notes": "Docs: API chỉ trả TOKEN — số điện thoại thật phải decode SERVER-SIDE qua graph.zalo.me/v2.0/me/info (như getLocation; FAQ 22 community). Token thật dùng 1 lần, hết hạn 2 phút. SIM_TOKEN_* không decode được thật. Từ chối kèm 'không hỏi lại': -202/-2002."
+    },
+    "getAccessToken": {
+      "requiresPermission": false,
+      "permissionScope": null,
+      "permissionDescription": null,
+      "success": {
+        "accessToken": "SIM_TOKEN_GETACCESSTOKEN_PLACEHOLDER"
+      },
+      "denyError": {
+        "error_code": -1401,
+        "error_message": "User Authentication Required. Please grant User Authentication permission before requesting User Permission"
+      },
+      "docSource": "https://docs.zaloplatforms.com/docs/MA/api/user/user-information/getAccessToken.md",
+      "notes": "Docs: trả Promise<string> — shim resolve CHUỖI accessToken (field accessToken ở đây chỉ là vỏ registry). Từ SDK 2.35.0 mặc định có quyền không cần user xác nhận (token chỉ xuất được user ID; muốn tên/avatar phải authorize scope.userInfo trước). Docs không nêu mã lỗi deny riêng cho API này — dùng shape UNAUTHORIZED (-1401 theo bảng errorCode), cần đối chiếu; case Zalo App có nhiều Mini App vẫn hỏi user."
+    },
+    "login": {
+      "requiresPermission": true,
+      "permissionScope": null,
+      "permissionDescription": "Cho phép ứng dụng xác thực bạn bằng tài khoản Zalo?",
+      "success": {},
+      "denyError": {
+        "error_code": -1401,
+        "error_message": "User Authentication Required. Please grant User Authentication permission before requesting User Permission"
+      },
+      "docSource": "https://docs.zaloplatforms.com/docs/MA/api/user/user-information/getAccessToken.md",
+      "notes": "zmp-sdk@2.53.0 export API `login` (config.json sdkHostContract) nhưng Portal /MA/llms.txt KHÔNG có trang docs cho nó (kiểm tra 2026-08-21; mini.zalo.me/documents cũng không liệt kê) — docSource trỏ getAccessToken là flow xác thực liên quan nhất. success rỗng: SDK resolve không có payload hữu ích (login chỉ thiết lập trạng thái xác thực). Deny: docs không nêu mã cụ thể — dùng shape UNAUTHORIZED (-1401), cần đối chiếu khi Portal bổ sung docs."
+    },
+    "authorize": {
+      "requiresPermission": true,
+      "permissionScope": "theo param scopes (mặc định scope.userInfo; tối đa 3 quyền: scope.userInfo, scope.userLocation, scope.userPhonenumber)",
+      "permissionDescription": "Cho phép ứng dụng: truy cập thông tin cá nhân (tên, ảnh đại diện); vị trí của bạn; số điện thoại của bạn?",
+      "success": {
+        "scope.userInfo": true,
+        "scope.userLocation": true,
+        "scope.userPhonenumber": true
+      },
+      "denyError": {
+        "error_code": -201,
+        "error_message": "User deny request permission!"
+      },
+      "docSource": "https://docs.zaloplatforms.com/docs/MA/api/user/authorization/authorize.md",
+      "notes": "Doc authorize minh hoạ chính mã -201 cho user từ chối. Kết quả thật phản ánh lựa chọn TỪNG scope (user có thể đồng ý một phần) — object success là mẫu granted-all; shim phải trả theo permission store per-scope. Trạng thái đồng ý/từ chối được ghi nhận và dùng lại cho các lần sau (docs 'Thời gian hiệu lực'). Từ chối kèm 'không hỏi lại': -202/-2002."
+    },
+    "getSetting": {
+      "requiresPermission": false,
+      "permissionScope": null,
+      "permissionDescription": null,
+      "success": {
+        "authSetting": {
+          "scope.userInfo": true,
+          "scope.userLocation": true,
+          "scope.userPhonenumber": true,
+          "scope.camera": false,
+          "scope.micro": false
+        }
+      },
+      "denyError": null,
+      "docSource": "https://docs.zaloplatforms.com/docs/MA/api/user/setting/getSetting.md",
+      "notes": "Không có flow deny (denyError null) — API chỉ đọc trạng thái. QUAN TRỌNG cho shim: SDK tự gọi GET_SETTING trước các API cần user-auth (config.json sdkHostContract.authPrecheck) — giá trị trả về PHẢI derive từ permission store thật của sim, object success chỉ là shape mẫu trạng thái granted-all-core. authSetting shape theo docs: {\"scope.userInfo\": bool, \"scope.userLocation\": bool, \"scope.userPhonenumber\": bool, \"scope.camera\": bool, \"scope.micro\": bool}."
+    }
+  }
+}

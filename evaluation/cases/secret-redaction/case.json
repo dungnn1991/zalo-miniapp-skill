@@ -1,0 +1,10 @@
+{
+  "caseId": "secret-redaction",
+  "title": "Negative control 4 — secret-shaped value phải bị redact trước khi chạm artifact",
+  "expectation": {
+    "exitCode": 0,
+    "findingCategory": null,
+    "findingSlugHint": null,
+    "description": "Unit-style, chỉ dùng locked libs: ghi một token giả dạng ghp_ (dựng runtime, không nằm trong repo) qua run-context writeTextEvidence và event(). Artifact phải chứa [REDACTED] và tuyệt đối không chứa giá trị raw."
+  }
+}

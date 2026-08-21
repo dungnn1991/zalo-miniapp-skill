@@ -1,0 +1,10 @@
+{
+  "caseId": "cors-probe",
+  "title": "Phase 2.6 — cors-probe",
+  "expectation": {
+    "exitCode": 0,
+    "findingCategory": null,
+    "findingSlugHint": "cors_preflight_probe",
+    "description": "Negative control plan 29 (acceptance #2): mock http server local — server thiếu Access-Control-Allow-Origin → warn missing_acao với insight 'fix ở SERVER'; server trả ACAO * → ok; origin http ngoài (không local) → warn secure-context không probe; origin zalo-owned bị bỏ qua. Unit qua exports insight.mjs; 127.0.0.1 được phép probe trong case."
+  }
+}

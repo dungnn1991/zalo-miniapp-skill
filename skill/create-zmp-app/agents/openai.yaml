@@ -1,0 +1,78 @@
+# Adapter descriptor for OpenAI/Codex-style agent hosts.
+# This adapter translates invocation syntax ONLY. Workflow, guardrails, input schema and
+# acceptance gates live in ../SKILL.md and are identical across hosts (plan §5.1).
+name: create-zmp-app
+description: >-
+  Bootstrap a Zalo Mini App POC from a natural-language brief plus a user-supplied
+  Mini App ID — scaffold, bind APP_ID exactly, ground on live Portal docs, install,
+  build with Vite 5, render-verify in a browser; on explicit request, deploy the
+  verified build to Development/Testing via zmp-cli with a user-scanned QR login.
+  No provisioning, no production release, no credentials. Triggers include
+  "tạo Zalo Mini App", "tạo app bán quần áo", "bootstrap mini app", "scaffold zmp app",
+  "deploy mini app". Not for knowledge-only questions.
+invocation: "$create-zmp-app"
+entry: SKILL.md
+interpreter_instructions: |
+  1. Parse the user text after "$create-zmp-app" into the locked input contract
+     (schemas/input.schema.json in the skill package):
+     - brief  = the full user text, passed via --brief and stored exactly as given
+       (do NOT strip an embedded appId= fragment from it).
+     - appId  = the value of appId= / miniAppId= if present, passed via --app-id
+       (string, exact-preserved, leading zeros kept; at most one pair of surrounding
+       quotes stripped). When --app-id is absent, bootstrap itself extracts the same
+       embedded value from the brief — identical precedence either way.
+  2. Then follow SKILL.md verbatim: same App ID resolution precedence, same
+     single-entry golden workflow — `node scripts/run.mjs --brief "..."
+     [--app-id ...] [--deploy|--deploy-testing] [--preview] [--workspace ...]`
+     chains the whole pipeline and prints a final JSON line — same exit-code
+     contract. Do not fork or reorder the workflow for this host. Run the command
+     YOURSELF, silently: never tell the user to run commands, never paste raw
+     logs. Surface to the user only at four points: missing/conflicting App ID ·
+     official-template choice when ambiguous · QR scan for login · confirmation
+     before deploy. Report outcomes in natural language plus evidence paths
+     (runs/<runId>/...). Per-stage scripts are debug-only (SKILL.md "Advanced").
+  3. Pass --invoked-via codex-skill (run.mjs forwards bootstrap flags).
+  4. On exit code 2, STOP and ask the user the question found in
+     runs/<run-id>/result.json (needsInput.question). Never invent an App ID,
+     never edit app/.env by hand. The only sanctioned conflict overwrite is
+     re-running bootstrap with --app-id and a byte-identical --confirm-app-id,
+     and only after the user explicitly chose the prompt ID (see SKILL.md).
+  5. Never provision a Zalo App/Mini App and never accept tokens/credentials. APP_ID
+     is not a secret; tokens and cookies are. Never read or echo the value of
+     ZMP_TOKEN — key-existence checks only. Never run "zmp login --token ..." or
+     pass a token via argv/prompt in any form.
+  6. Deploy (Phase 2, opt-in) — identical contract to SKILL.md, no host forks:
+     only when the user explicitly asks to deploy AND verify passed, AND you
+     confirmed with the user; never auto-deploy. Pass --deploy (Development) or
+     --deploy-testing (Testing, only if the user explicitly names it) to run.mjs —
+     it chains ensure-login → deploy → verify. If it stops with login_required:
+     spawn "zmp login" interactively with cwd app/, relay the QR verbatim for the
+     user to scan with Zalo (~2 minute window, the CLI polls by itself), wait for
+     "Login Success!", then resume (confirmation is key-existence only). Pass
+     --desc "<text>" when the user's request includes a version description —
+     if it doesn't, do NOT ask, the default is generated. A deploy failure
+     containing "Permission
+     denied. Please login again." means the token expired — go back to the login
+     step, do not retry blindly. Details: references/deploy-workflow.md; pinned
+     CLI facts: config.json zmpCli.
+  7. Official templates (opt-in) — identical contract to SKILL.md, no host forks:
+     never mandatory, default stays the lab template. Only when the user explicitly
+     asks for a ready-made template ("dùng mẫu có sẵn", "template chính thức") pass
+     the brief through unchanged — bootstrap does the keyword mapping against the
+     locked catalog (config.json officialTemplates) — or pass an explicit
+     --template official:<id>. If bootstrap exits 3 with a final stdout JSON
+     status "needs_template_choice", STOP and ask the user to pick an id from the
+     printed catalog, then re-run with --template official:<id>. Never guess, never
+     silently fall back to the lab template. Render uses the official-template
+     oracle profile (marker/interaction/CTA gates skipped); do not auto-deploy
+     official-template builds in this round.
+  8. Simulator (opt-in): --preview-sim / --verify-sim per SKILL.md "Simulator" —
+     consent sheets are fake (SIMULATOR badge), mock never replaces real-Zalo UAT,
+     SIM_TOKEN_* are placeholders; the four user-surfacing points are unchanged.
+  9. When something fails: read the `insights` field of runs/<runId>/result.json
+     (and findings) first — the pipeline auto-matches logs against
+     references/error-signatures.json. No insight? Match the error text yourself
+     against that file (compile pattern+flags; entries carry diagnosis, fix,
+     community source). Then references/troubleshooting.md (dev/build/deploy) or
+     references/operations.md (Live debug, roles/versions, review policy).
+     Nothing matches — report honestly with log evidence; never guess.

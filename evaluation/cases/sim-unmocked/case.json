@@ -1,0 +1,10 @@
+{
+  "caseId": "sim-unmocked",
+  "title": "Phase 3 — sim-unmocked",
+  "expectation": {
+    "exitCode": 0,
+    "findingCategory": null,
+    "findingSlugHint": "no_unmocked_silent_success",
+    "description": "Plan 28: case playwright riêng evaluate window.ZaloMiniAppSDK.scanQRCode({}) trong context sim → reject có error rõ (không silent success), bridge-log có entry unmocked error_code≠0, verify gate no_unmocked_silent_success pass."
+  }
+}

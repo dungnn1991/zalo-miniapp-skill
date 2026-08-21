@@ -1,0 +1,10 @@
+{
+  "caseId": "deploy-qr-parse",
+  "title": "Regression finding_42bccd1d5f27 — decode QR + versionLabel từ deploy.log thật (parse-only)",
+  "expectation": {
+    "exitCode": 0,
+    "findingCategory": null,
+    "findingSlugHint": null,
+    "description": "Fixture là deploy.log THẬT của run f08e (CLI 4.0.3, QR-only output). Parse-only, không spawn zmp: decodeQrFromOutput phải ra đúng https://zalo.me/s/2607885157171557191/?env=DEVELOPMENT&version=zdev-dc3f8ce8; parseVersionLabel phải ra zdev-dc3f8ce8 (dòng ✔ Version SAU Deploy Done, không phải banner 4.0.3); text parser zalo.me/s/ giữ cho CLI tương lai in URL text."
+  }
+}

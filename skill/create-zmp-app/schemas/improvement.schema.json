@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "miniapp-bootstrap-poc/improvement.schema.json",
+  "title": "Improvement record (feedback/improvements.jsonl, one JSON object per line)",
+  "type": "object",
+  "required": ["schemaVersion", "improvementId", "findingId", "decision", "changedFiles", "createdAt"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "improvementId": { "type": "string", "pattern": "^improvement_[a-z0-9_-]+$" },
+    "findingId": { "type": "string", "pattern": "^finding_[a-z0-9_-]+$" },
+    "decision": { "type": "string", "description": "What was changed and why — smallest source fix that addresses the finding." },
+    "changedFiles": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" },
+      "description": "Paths relative to lab root. Must be source (skill/template/harness), never generated app/ or runs/."
+    },
+    "regressionCaseId": { "type": ["string", "null"], "description": "Case under evaluation/cases/ that guards against re-occurrence." },
+    "verifiedByRunId": { "type": ["string", "null"], "description": "Run that re-executed the same input and passed. Required before the linked finding may be marked verified." },
+    "createdAt": { "type": "string", "format": "date-time" }
+  }
+}

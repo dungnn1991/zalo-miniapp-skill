@@ -1,0 +1,10 @@
+{
+  "caseId": "preflight-server-side-api",
+  "title": "Phase 2.6 — preflight-server-side-api",
+  "expectation": {
+    "exitCode": 1,
+    "findingCategory": "app",
+    "findingSlugHint": "server_side_api_scan",
+    "description": "Negative control plan 29: inject src/evil-api.ts gọi graph.zalo.me từ client → build.mjs gate server_side_api_scan FAIL trước cả vite build, finding blocking category app kèm insight FAQ 22 (lỗ hổng bảo mật — chuyển sang server), exit 1."
+  }
+}

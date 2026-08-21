@@ -1,0 +1,10 @@
+{
+  "caseId": "sim-manual-sheet",
+  "title": "Phase 3 — sim-manual-sheet",
+  "expectation": {
+    "exitCode": 0,
+    "findingCategory": null,
+    "findingSlugHint": "sim_sheet_badge",
+    "description": "Plan 28: decision manual → runner tự click sim-accept trên bottomsheet; gate sim_sheet_badge pass (badge SIMULATOR hiện trên sheet), sheet đóng sạch sau flow."
+  }
+}

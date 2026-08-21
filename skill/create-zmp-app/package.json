@@ -1,0 +1,14 @@
+{
+  "name": "create-zmp-app",
+  "private": true,
+  "type": "module",
+  "version": "0.3.0",
+  "description": "SKILL create-zmp-app — bootstrap, verify, deploy and inspect Zalo Mini Apps. Self-contained package: copy this folder, run `pnpm install` once inside it.",
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "jsqr": "^1.4.0",
+    "playwright-core": "^1.45.0"
+  }
+}

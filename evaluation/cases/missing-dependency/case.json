@@ -1,0 +1,10 @@
+{
+  "caseId": "missing-dependency",
+  "title": "Negative control 1 — dependency bị gỡ khỏi manifest làm build fail với finding category dependency",
+  "expectation": {
+    "exitCode": 1,
+    "findingCategory": "dependency",
+    "findingSlugHint": null,
+    "description": "Scaffold app (test id 1234567890), xóa zmp-ui (fallback: react) khỏi app/package.json, chạy install+build. Install hoặc build phải exit 1 và findings.jsonl phải có finding stage install|build, category dependency."
+  }
+}

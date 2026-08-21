@@ -1,0 +1,11 @@
+{
+  "caseId": "run-entry",
+  "title": "Phase 2.6 — run-entry",
+  "expectation": {
+    "exitCode": 0,
+    "resultStatus": "pass",
+    "findingCategory": null,
+    "findingSlugHint": null,
+    "description": "run.mjs single entry (plan 29 §3.2): (1) --brief không app-id → dừng ở bootstrap exit 2, JSON cuối forward nguyên status needs_input + stoppedAt bootstrap; (2) happy path --brief + --app-id lab template → chain bootstrap→portal→install→build→render→verify exit 0, JSON cuối {runId, status pass, insights count, resultPath}, KHÔNG deploy."
+  }
+}

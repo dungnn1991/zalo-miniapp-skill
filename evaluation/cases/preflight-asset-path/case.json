@@ -1,0 +1,10 @@
+{
+  "caseId": "preflight-asset-path",
+  "title": "Phase 2.6 — preflight-asset-path",
+  "expectation": {
+    "exitCode": 0,
+    "findingCategory": null,
+    "findingSlugHint": "asset_path_scan",
+    "description": "Negative control plan 29: inject src file chứa <img src=\"/logo.png\"> → build gate asset_path_scan WARN (không fail), full pipeline vẫn pass; result.json có gate warn + insights[] chứa asset_path_scan (FAQ 23: localhost ok nhưng chết trên CDN — dùng import syntax)."
+  }
+}

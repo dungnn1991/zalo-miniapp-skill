@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "miniapp-bootstrap-poc/deploy-evidence.schema.json",
+  "title": "Deploy evidence (runs/<run-id>/evidence/deploy.json) — Phase 2",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "runId",
+    "mode",
+    "deployedUrl",
+    "deployedAt",
+    "cliVersion"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "runId": {
+      "type": "string"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "development",
+        "testing"
+      ]
+    },
+    "deployedUrl": {
+      "type": "string",
+      "pattern": "zalo\\.me/s/",
+      "description": "URL bản deploy (scheme thật quan sát 2026-08-20: https://zalo.me/s/<appId>/?env=...&version=...). Không phải secret."
+    },
+    "qrDecodedUrl": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "URL decode từ QR trong output. CLI 4.0.3 chỉ in URL dạng QR nên đây thường là nguồn của deployedUrl (hai field bằng nhau). Gate deployed_url_recorded yêu cầu khớp khi non-null."
+    },
+    "versionLabel": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Số version với mode testing; null với development."
+    },
+    "description": {
+      "type": "string",
+      "description": "Message -m đã dùng (chứa runId)."
+    },
+    "outputDir": {
+      "type": "string"
+    },
+    "deployedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "cliVersion": {
+      "type": "string"
+    },
+    "quota": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "description": "Parse từ dòng 'Deploy Quota' trong output zmp deploy (FAQ 07: 300 dev / 60 testing mỗi 30 ngày).",
+      "properties": {
+        "development": {
+          "type": "object",
+          "properties": {
+            "used": {
+              "type": "integer"
+            },
+            "limit": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "used",
+            "limit"
+          ],
+          "additionalProperties": false
+        },
+        "testing": {
+          "type": "object",
+          "properties": {
+            "used": {
+              "type": "integer"
+            },
+            "limit": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "used",
+            "limit"
+          ],
+          "additionalProperties": false
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "caseId": "preflight-size-limit",
+  "title": "Phase 2.6 — preflight-size-limit",
+  "expectation": {
+    "exitCode": 1,
+    "findingCategory": "app",
+    "findingSlugHint": "size",
+    "description": "Negative control plan 29: bơm file 4MB vào app/public (vite copy vào dist) → build.mjs gate size_limit FAIL (file >3MB), finding blocking category app kèm insight FAQ 24, exit 1."
+  }
+}

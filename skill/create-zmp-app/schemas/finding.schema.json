@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "miniapp-bootstrap-poc/finding.schema.json",
+  "title": "Finding record (feedback/findings.jsonl, one JSON object per line)",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "findingId",
+    "fingerprint",
+    "runId",
+    "stage",
+    "category",
+    "severity",
+    "expected",
+    "actual",
+    "evidence",
+    "status",
+    "firstSeenAt",
+    "lastSeenAt",
+    "occurrences"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "findingId": {
+      "type": "string",
+      "pattern": "^finding_[a-z0-9_-]+$"
+    },
+    "fingerprint": {
+      "type": "string",
+      "minLength": 8,
+      "description": "Stable dedupe key: sha256 hex of stage|category|normalized expected|normalized actual-class. Re-occurrences merge into the same record."
+    },
+    "runId": {
+      "type": "string",
+      "description": "Run that first produced this finding."
+    },
+    "stage": {
+      "type": "string",
+      "enum": [
+        "input",
+        "portal",
+        "scaffold",
+        "install",
+        "build",
+        "render",
+        "verify",
+        "login",
+        "deploy",
+        "cleanup"
+      ]
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "input",
+        "skill",
+        "portal-content",
+        "template",
+        "app",
+        "dependency",
+        "environment",
+        "harness"
+      ]
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "blocking",
+        "major",
+        "minor",
+        "note"
+      ]
+    },
+    "expected": {
+      "type": "string",
+      "description": "Observable invariant that should have held."
+    },
+    "actual": {
+      "type": "string",
+      "description": "Sanitized observation. No secrets, no raw dumps."
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Relative artifact paths under runs/<run-id>/."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "triaged",
+        "fixed",
+        "verified"
+      ]
+    },
+    "triagedOwner": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "skill",
+        "portal",
+        "template",
+        "dependency",
+        "harness",
+        null
+      ]
+    },
+    "verifiedByRunId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "firstSeenAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "lastSeenAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "occurrences": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "insight": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "description": "Phase 2.6: chẩn đoán tự động khi log khớp error-signature map.",
+      "properties": {
+        "diagnosis": {
+          "type": "string"
+        },
+        "fix": {
+          "type": "string"
+        },
+        "source": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "diagnosis",
+        "fix"
+      ]
+    }
+  }
+}

@@ -1,0 +1,117 @@
+{
+  "schemaVersion": "1.0",
+  "crawledAt": "2026-08-21",
+  "note": "Curated từ FAQ công khai của Hồng Phát (Supporter) — miniapp.zaloplatforms.com/community, crawl 2026-08-21 (DX/community-faq-best-practice/). Matcher do harness sở hữu; file này chỉ là dữ liệu. Pattern là JS regex string, compile bằng new RegExp(pattern, flags). Log không khớp signature nào → không đoán.",
+  "signatures": [
+    {
+      "id": "minified-react-error",
+      "pattern": "Minified React error #\\d+",
+      "flags": "i",
+      "stage": "render",
+      "diagnosis": "Code React có bug runtime (sai quy tắc hooks, setState trong lúc render, render component không hợp lệ...). Bản build production đã lược nội dung lỗi chi tiết thành mã số.",
+      "fix": "Mở link ngay trong thông báo lỗi (reactjs.org/docs/error-decoder) để đọc nội dung đầy đủ của mã lỗi, rồi sửa đúng chỗ vi phạm (quy tắc hooks / setState trong render).",
+      "source": "https://miniapp.zaloplatforms.com/community/8963145051577348815/minified-react-error-ma-loi",
+      "sourceTitle": "Minified React error #<mã lỗi>"
+    },
+    {
+      "id": "es2015-transform-unsupported",
+      "pattern": "Transforming .+ to the configured target environment \\(\"es2015\"\\) is not supported yet",
+      "flags": "i",
+      "stage": "build",
+      "diagnosis": "Một thư viện trong dependency dùng tính năng JS mới (async generator, for-await...) không hạ được xuống ES2015 — target đóng gói mặc định của Zalo Mini App.",
+      "fix": "Hoặc (1) nâng target trong vite.config (build.target esnext — đổi lại độ tương thích thiết bị cũ giảm), hoặc (2) thay thư viện: fetch thay axios, ZaUI thay mui/material...",
+      "source": "https://miniapp.zaloplatforms.com/community/8242558116182457551/loi-es2015",
+      "sourceTitle": "Lỗi ES2015"
+    },
+    {
+      "id": "www-output-not-found",
+      "pattern": "output folder,? www,? was not found|không tìm thấy thư mục đích với tên www",
+      "flags": "i",
+      "stage": "deploy",
+      "diagnosis": "Build xong nhưng zmp-cli không thấy thư mục output kỳ vọng (default www): dùng Vite 5 nhưng vite config còn thiết lập Vite 2 / thiếu zmp-vite-plugin, hoặc deploy không trỏ đúng outDir thật.",
+      "fix": "Cấu hình zmp-vite-plugin trong vite.config (thiếu thì `npm i -D zmp-vite-plugin`). Trong pipeline này: build ra dist/ nên lệnh deploy phải giữ `-o dist` (đã pin trong config.json zmpCli).",
+      "source": "https://miniapp.zaloplatforms.com/community/5468297315658843471/du-an-duoc-build-thanh-cong-nhung-deploy-that-bai-nguyen-nhan-khong-tim-thay-thu-muc-dich-voi-ten-www-neu-ban-dang-su-dung-vite-5-vui-long-kiem-tra-file-vite-config-va-dam-bao-zmp-vite-plugin-da-duoc-cau-hinh-dung-cach",
+      "sourceTitle": "Dự án được build thành công nhưng deploy thất bại! Nguyên nhân: không tìm thấy thư mục đích với tên www."
+    },
+    {
+      "id": "zmp-permission-denied",
+      "pattern": "Permission denied\\. Please login again",
+      "flags": "i",
+      "stage": "deploy",
+      "diagnosis": "Token không hợp lệ/hết hạn. Bẫy CI/CD từ FAQ: (1) ZALO_APP_SECRET + ZALO_REFRESH_TOKEN phải khớp đúng ZALO_APP_ID (lấy token mà chưa chọn đúng app trong tool developers.zalo.me); (2) KHÔNG nhầm MINI_APP_ID với ZALO_APP_ID — hai ID khác nhau; (3) biến môi trường ZMP_TOKEN trong runner ghi đè .env — rất khó nhận biết.",
+      "fix": "Interactive: quay lại bước login QR của skill (zmp login, user quét). CI/CD: kiểm tra 3 điểm trong diagnosis; đảm bảo runner không set env ZMP_TOKEN đè .env. Không retry mù.",
+      "source": "https://miniapp.zaloplatforms.com/community/8170499422582570959/loi-ci-cd",
+      "sourceTitle": "Lỗi CI/CD"
+    },
+    {
+      "id": "deploy-quota-30day",
+      "pattern": "reached your 30-day deployment limit",
+      "flags": "i",
+      "stage": "deploy",
+      "diagnosis": "Hết quota deploy trượt 30 ngày của Mini App: 300 lần/tháng cho Development, 60 lần/tháng cho Testing.",
+      "fix": "Đợi quota reset theo chu kỳ 30 ngày; giảm tần suất deploy (verify local bằng browser harness trước, chỉ deploy khi cần), deploy Testing có chọn lọc.",
+      "source": "https://miniapp.zaloplatforms.com/community/8602851583980566991/you-have-reached-your-30-day-deployment-limit-please-try-again-later",
+      "sourceTitle": "You have reached your 30-day deployment limit. Please try again later."
+    },
+    {
+      "id": "plugin-react-refresh-missing",
+      "pattern": "Cannot find module '@vitejs/plugin-react-refresh'",
+      "flags": "i",
+      "stage": "build",
+      "diagnosis": "Dependency đã thay @vitejs/plugin-react-refresh (cũ) bằng @vitejs/plugin-react (mới) nhưng vite.config vẫn import plugin cũ.",
+      "fix": "Sửa vite.config: đổi `import reactRefresh from \"@vitejs/plugin-react-refresh\"` + `reactRefresh()` thành `import react from \"@vitejs/plugin-react\"` + `react()`.",
+      "source": "https://miniapp.zaloplatforms.com/community/8530792890447788239/cannot-find-module-vitejs-plugin-react-refresh",
+      "sourceTitle": "Cannot find module '@vitejs/plugin-react-refresh'"
+    },
+    {
+      "id": "network-error-cors",
+      "pattern": "Network Error|Failed to fetch|blocked by CORS policy|No 'Access-Control-Allow-Origin' header|Response to preflight request doesn't pass access control check",
+      "flags": "i",
+      "stage": "any",
+      "diagnosis": "Gọi API từ Mini App fail dù Postman/cURL/localhost chạy được. Nguyên nhân phổ biến nhất: CORS; ngoài ra: thiếu https, SSL hết hạn, IP trần, custom header không được allow.",
+      "fix": "Fix ở SERVER, không phải ở Mini App: response phải trả header Access-Control-Allow-Origin với đúng MỘT origin https://h5.zdn.vn (không nối nhiều origin bằng dấu phẩy), và trả CẢ cho preflight request method OPTIONS. URL phải https:// + domain (không IP trần) + SSL còn hạn.",
+      "source": "https://miniapp.zaloplatforms.com/community/282604656005284416/network-error",
+      "sourceTitle": "Network Error"
+    },
+    {
+      "id": "invalid-appsecret-proof",
+      "pattern": "Invalid appsecret_proof",
+      "flags": "i",
+      "stage": "any",
+      "diagnosis": "Tính năng kiểm tra appsecret_proof đang bật trong quản lý cài đặt Zalo App nhưng request không gửi (hoặc gửi sai) header appsecret_proof.",
+      "fix": "Dùng API qua ZMP SDK (vd getUserInfo) → không cần tính năng này: vào quản lý cài đặt ứng dụng Zalo tắt kiểm tra, reload app. Tự gọi Graph API (graph.zalo.me) → gửi appsecret_proof đúng theo changelog v240409 của Zalo for Developers.",
+      "source": "https://miniapp.zaloplatforms.com/community/2623105920532557515/invalid-appsecret-proof-provided-in-the-api-argument",
+      "sourceTitle": "Invalid appsecret_proof provided in the API argument"
+    },
+    {
+      "id": "file-size-too-large",
+      "pattern": "The file size is too large",
+      "flags": "i",
+      "stage": "deploy",
+      "diagnosis": "Vượt giới hạn kích thước mỗi phiên bản Mini App: 10MB tổng cả app, 3MB mỗi file.",
+      "fix": "Static resource (ảnh, video) → chuyển lên server riêng/CDN. Script quá nặng → code splitting (xem blog giảm kích thước Mini App của mini.zalo.me).",
+      "source": "https://miniapp.zaloplatforms.com/community/8098440729049792207/the-file-size-is-too-large",
+      "sourceTitle": "The file size is too large."
+    },
+    {
+      "id": "dev-version-wrong-account",
+      "pattern": "Trang này không tìm thấy hoặc không hợp lệ",
+      "flags": "i",
+      "stage": "any",
+      "diagnosis": "Mở bản Development/Testing bằng tài khoản Zalo KHÔNG thuộc tập Developer/Admin của Mini App — bản thử nghiệm chỉ mở được với đúng vai trò.",
+      "fix": "Đăng nhập Zalo bằng tài khoản Developer/Admin của app (hoặc thêm account đó vào tập Developer trên Zalo Developers), hoặc dùng phiên bản Live.",
+      "source": "https://miniapp.zaloplatforms.com/community/8819027664444683471/trang-nay-khong-tim-thay-hoac-khong-hop-le-xin-loi-vi-su-bat-tien-nay",
+      "sourceTitle": "Trang này không tìm thấy hoặc không hợp lệ. Xin lỗi vì sự bất tiện này."
+    },
+    {
+      "id": "app-in-development",
+      "pattern": "Ứng dụng đang trong giai đoạn phát triển",
+      "flags": "i",
+      "stage": "any",
+      "diagnosis": "Mở phiên bản Live của một Mini App chưa có bản Live (app còn trong giai đoạn phát triển).",
+      "fix": "Dùng URL bản Development/Testing (với tài khoản Developer/Admin) trong lúc phát triển; user thường chỉ dùng được sau khi app có bản Live.",
+      "source": "https://miniapp.zaloplatforms.com/community/8891086357977462223/ung-dung-dang-trong-giai-doan-phat-trien-vui-long-thu-lai-sau",
+      "sourceTitle": "Ứng dụng đang trong giai đoạn phát triển, vui lòng thử lại sau!"
+    }
+  ]
+}

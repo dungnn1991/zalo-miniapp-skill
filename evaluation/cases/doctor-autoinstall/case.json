@@ -1,0 +1,10 @@
+{
+  "caseId": "doctor-autoinstall",
+  "title": "Phase 3 — doctor-autoinstall",
+  "expectation": {
+    "exitCode": 2,
+    "findingCategory": null,
+    "findingSlugHint": "first-run setup",
+    "description": "Addendum Phase 3: copy package ra scratch, xoá node_modules → run.mjs (needs_input path) tự phát hiện thiếu deps, tự pnpm/npm install (log 'first-run setup' ra stderr), rồi chạy tiếp bootstrap → exit 2 needs_input. node_modules/playwright-core tồn tại sau chạy. Cần mạng npm."
+  }
+}

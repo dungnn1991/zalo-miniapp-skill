@@ -1,0 +1,10 @@
+{
+  "caseId": "app-id-conflict",
+  "title": "Negative control 5 — App ID prompt khác .env phải dừng trước mutation với finding app_id_conflict",
+  "expectation": {
+    "exitCode": 2,
+    "findingCategory": "input",
+    "findingSlugHint": "app_id_conflict",
+    "description": "Scaffold với id A (1111111111), rerun bootstrap với --app-id B (2222222222). Phải exit 2, stdout status conflict, app/.env vẫn giữ nguyên đúng id A, finding category input mang ngữ nghĩa app_id_conflict."
+  }
+}

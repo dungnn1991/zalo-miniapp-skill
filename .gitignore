@@ -1,0 +1,8 @@
+*.log
+.DS_Store
+app/.env
+app/dist/
+app/node_modules/
+evaluation/cases/**/workspace/
+node_modules/
+runs/

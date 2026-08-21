@@ -1,0 +1,13 @@
+{
+  "app": {
+    "title": "__APP_NAME__",
+    "headerTitle": "__APP_NAME__",
+    "headerColor": "#006af5",
+    "textColor": "white",
+    "leftButton": "back",
+    "statusBar": "normal"
+  },
+  "listCSS": [],
+  "listSyncJS": [],
+  "listAsyncJS": []
+}

@@ -1,0 +1,10 @@
+{
+  "caseId": "deploy-without-verify",
+  "title": "Phase 2 control 5 — deploy khi verify chưa pass → chặn ở precondition, không upload",
+  "expectation": {
+    "exitCode": 1,
+    "findingCategory": "harness",
+    "findingSlugHint": null,
+    "description": "Fixture run không có result.json pass → deploy.mjs exit 1 + finding stage deploy category harness, KHÔNG spawn zmp (không có event deploy start, không có deploy.log)."
+  }
+}

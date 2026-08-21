@@ -1,0 +1,11 @@
+{
+  "caseId": "sim-accept",
+  "title": "Phase 3 — sim-accept",
+  "expectation": {
+    "exitCode": 0,
+    "resultStatus": "pass",
+    "findingCategory": null,
+    "findingSlugHint": "sim_demo",
+    "description": "Plan 28: full pipeline provider simulator, decision accept → 4 gate sim_demo_* pass, bridge-log đủ entry demo + infra (login/jump/auth-settings), không unmocked, verify pass với gate no_unmocked_silent_success, schemaVersion 1.1."
+  }
+}

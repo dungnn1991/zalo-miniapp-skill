@@ -1,0 +1,11 @@
+{
+  "caseId": "golden",
+  "title": "Golden — brief 'tạo app bán quần áo' + test id chạy full pipeline xanh",
+  "expectation": {
+    "exitCode": 0,
+    "resultStatus": "pass",
+    "findingCategory": null,
+    "findingSlugHint": null,
+    "description": "bootstrap --brief 'tạo app bán quần áo' --app-id 1234567890 → portal-fetch → install → build → render → verify: mọi bước exit 0, result.json status pass, không finding mới nào ở trạng thái open cho run này."
+  }
+}

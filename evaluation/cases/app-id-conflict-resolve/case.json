@@ -1,0 +1,10 @@
+{
+  "caseId": "app-id-conflict-resolve",
+  "title": "Regression finding_ae4ccee49c2e — --confirm-app-id overwrite conflict có authorization, guard nhánh cũ",
+  "expectation": {
+    "exitCode": 0,
+    "findingCategory": null,
+    "findingSlugHint": null,
+    "description": "1) bootstrap --app-id 1111 scaffold+bind. 2) bootstrap --app-id 2222 → exit 2, conflict, .env vẫn đúng 1111 (detection không đổi). 3) bootstrap --app-id 2222 --confirm-app-id 2222 (byte-equal prompt id) → exit 0, .env thành đúng APP_ID=2222, input.json appIdSource=prompt, app-id-binding.json exactMatch=true. 4) bootstrap --app-id 3333 --confirm-app-id 9999 (mismatch) → exit 3, .env không bị đụng (vẫn 2222). Case chỉ pass khi cả bốn bước giữ. Nếu bước 3 fail vì flag chưa tồn tại: chạy lại sau khi Subagent A land fix."
+  }
+}

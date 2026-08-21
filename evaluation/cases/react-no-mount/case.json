@@ -1,0 +1,10 @@
+{
+  "caseId": "react-no-mount",
+  "title": "Negative control 2 — React mount vào element không tồn tại làm react_mount gate fail",
+  "expectation": {
+    "exitCode": 1,
+    "findingCategory": "template|app",
+    "findingSlugHint": "react_mount",
+    "description": "Scaffold, đổi target getElementById trong src/main.tsx sang id không tồn tại, install+build+render. Render phải exit 1 với gate react_mount fail trong gates.json; verify exit 1 và có finding category template|app."
+  }
+}

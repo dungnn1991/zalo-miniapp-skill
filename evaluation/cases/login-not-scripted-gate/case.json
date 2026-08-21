@@ -1,0 +1,10 @@
+{
+  "caseId": "login-not-scripted-gate",
+  "title": "Phase 2 control 4 — event chứa lệnh zmp login --token → gate login_not_scripted fail",
+  "expectation": {
+    "exitCode": 1,
+    "findingCategory": "skill",
+    "findingSlugHint": "login_not_scripted",
+    "description": "Fixture events.jsonl chứa command `zmp login --token xyz` giả → verify.mjs (Phase 2 mode) gate login_not_scripted fail + finding stage login category skill; result.json schemaVersion 1.1."
+  }
+}

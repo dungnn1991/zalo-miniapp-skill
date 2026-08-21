@@ -1,0 +1,209 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "miniapp-bootstrap-poc/result.schema.json",
+  "title": "create-zmp-app run result (runs/<run-id>/result.json)",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "runId",
+    "status",
+    "stage",
+    "provider",
+    "gates",
+    "findingIds",
+    "startedAt",
+    "finishedAt"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "enum": [
+        "1.0",
+        "1.1"
+      ],
+      "description": "1.1 khi run có stage login/deploy (Phase 2); 1.0 cho run chỉ tới verify."
+    },
+    "runId": {
+      "type": "string",
+      "pattern": "^run-[0-9TZ-]+-[a-z0-9]{4}$"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "fail",
+        "needs_input"
+      ]
+    },
+    "stage": {
+      "type": "string",
+      "enum": [
+        "input",
+        "portal",
+        "scaffold",
+        "install",
+        "build",
+        "render",
+        "verify",
+        "login",
+        "deploy",
+        "cleanup",
+        "done"
+      ],
+      "description": "Last stage reached (on pass: done; on fail: the failing stage)."
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "browser",
+        "simulator"
+      ]
+    },
+    "needsInput": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "type": "string",
+          "enum": [
+            "app_id_missing",
+            "app_id_conflict",
+            "login_required"
+          ]
+        },
+        "question": {
+          "type": "string"
+        },
+        "promptAppId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "projectAppId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "reason",
+        "question"
+      ]
+    },
+    "appIdSource": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "prompt",
+        "existing_project",
+        null
+      ]
+    },
+    "expectedAppId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "resolvedAppId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "appIdBound": {
+      "type": "boolean"
+    },
+    "gates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "status"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pass",
+              "fail",
+              "warn",
+              "skipped"
+            ]
+          },
+          "detail": {
+            "type": "string"
+          },
+          "viewport": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "findingIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "startedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "finishedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "insights": {
+      "type": "array",
+      "description": "Phase 2.6: actionable insights đính kèm run (từ preflight gates hoặc error-signature map). warn gates không fail run.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "diagnosis",
+          "fix"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "gate",
+              "signature"
+            ]
+          },
+          "diagnosis": {
+            "type": "string"
+          },
+          "fix": {
+            "type": "string"
+          },
+          "source": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "URL nguồn (FAQ/community/docs)"
+          }
+        }
+      }
+    }
+  }
+}

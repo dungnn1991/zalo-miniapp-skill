@@ -1,0 +1,13 @@
+{
+  "name": "miniapp-bootstrap-poc-harness",
+  "private": true,
+  "type": "module",
+  "description": "Harness dependencies for the miniapp-bootstrap-poc lab. The generated Mini App under app/ has its own package.json.",
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "jsqr": "^1.4.0",
+    "playwright-core": "^1.45.0"
+  }
+}
