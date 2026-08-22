@@ -4,8 +4,8 @@
 # guardrail và exit-code contract nằm ở ../SKILL.md, giống hệt mọi host.
 interface:
   display_name: "Create Zalo Mini App"
-  short_description: "Dựng và verify demo Zalo Mini App từ prompt + App ID"
-  default_prompt: "Use $create-zmp-app to scaffold a Zalo Mini App from a one-line brief plus your Mini App ID."
+  short_description: "Tạo và kiểm chứng Zalo Mini App từ prompt + App ID"
+  default_prompt: "Use $create-zmp-app to create and verify a Zalo Mini App from a brief plus your Mini App ID."
 
 policy:
   allow_implicit_invocation: true
