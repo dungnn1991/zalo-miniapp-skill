@@ -1,12 +1,12 @@
 ---
 name: create-zmp-app
-description: Bootstrap a small Zalo Mini App demo from a natural-language brief plus a user-supplied Mini App ID — scaffold the deterministic clothing/neutral lab shell or a release-supported official template, bind APP_ID exactly, ground on live Portal Markdown, install, build, then render-verify in a browser with evidence; on explicit request, deploy the verified build to Development/Testing via zmp-cli with a user-scanned QR login. Brief hiểu cả tiếng Anh và tiếng Việt có dấu lẫn không dấu ("tao app ban quan ao", "create a clothing store app"). Trigger on requests like "tạo Zalo Mini App", "tạo app bán quần áo", "tạo mini app", "bootstrap mini app", "scaffold zmp app", "create a zalo mini app", "deploy mini app lên development/testing". Do NOT trigger for knowledge-only questions about Zalo Mini App, for provisioning/app-creation or production-release requests, or when intent is ambiguous — never scaffold or deploy without a clear request.
+description: Create, extend, verify, and optionally deploy Zalo Mini Apps from a natural-language brief plus a user-supplied Mini App ID. Use for scaffolding a new app, continuing an existing project, integrating supported Zalo features, running browser or simulator checks, diagnosing known build/runtime issues, or deploying a verified build to Development/Testing. Supports Vietnamese with or without diacritics and English. Do not use for knowledge-only questions, app provisioning, or production release.
 ---
 
 # create-zmp-app
 
-Bootstrap a small Zalo Mini App demo from a brief + Mini App ID, then prove it renders.
-The bundled lab template selects clothing-store or neutral demo data; it does not generate an
+Create a working Zalo Mini App project from a brief + Mini App ID, then verify it renders.
+The bundled starter selects clothing-store or neutral sample data; it does not generate an
 arbitrary domain UI. The mechanics stay deterministic. Everything below routes to
 locked contracts — facts live in `config.json`, `schemas/`, and `references/`, all inside this
 self-contained skill package.
@@ -47,7 +47,7 @@ The pipeline is the product — do not re-create it by hand:
 
 Normalized input is written to `runs/<run-id>/input.json` and must conform to
 `schemas/input.schema.json` (in this package; `additionalProperties: false`). Key fields:
-`brief` (null → neutral demo shell, no extra questions), `miniAppId` (required string),
+`brief` (null → neutral starter, no extra questions), `miniAppId` (required string),
 `appIdSource`, `appName`, `variant`, `renderProvider`, `defaultViewport`, `packageManager`,
 `invokedVia`, and optional `template` provenance (`source`, `id`, immutable `revision` for an
 official template). Defaults come from `config.json` so a short prompt still runs. The brief is
@@ -175,7 +175,7 @@ node $S/verify.mjs --run-id <runId>
 
 ## Official templates (opt-in)
 
-**Never mandatory** — the default is always the lab template (a deterministic demo shell,
+**Never mandatory** — the default is always the bundled starter (a deterministic neutral shell,
 not an arbitrary-domain UI generator); the user can ask the agent to integrate features on
 that shell. Activate official routing only when the user
 explicitly asks for a ready-made template ("dùng mẫu có sẵn", "template chính thức", "tạo
@@ -258,7 +258,7 @@ The exit-code table above applies unchanged (`2` = needs_input / `login_required
 ask the user before doing anything else).
 
 **Version description.** If the user's deploy request includes a description (e.g. `deploy
-testing với mô tả "bản demo sprint 3"`), pass it as `--desc "<text>"`. If it doesn't, do
+testing với mô tả "bản kiểm thử sprint 3"`), pass it as `--desc "<text>"`. If it doesn't, do
 **not** ask for one — `deploy.mjs` defaults to `test <YYYY-MM-DD HH:mm UTC> (<runId>)`.
 
 **Login (QR relay).** If `ensure-login` exits `2`:
