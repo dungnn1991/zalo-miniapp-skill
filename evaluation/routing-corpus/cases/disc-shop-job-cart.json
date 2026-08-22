@@ -1,0 +1,25 @@
+{
+  "id": "disc-shop-job-cart",
+  "group": "job-signal",
+  "brief": "khách bỏ hàng vào giỏ rồi đặt đơn",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-shop"
+    ],
+    "mustNotSelect": [
+      "zaui-bistro"
+    ],
+    "requiredDomains": [
+      "commerce.general"
+    ],
+    "requiredJobs": [
+      "cart.manage",
+      "order.place"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Discovery probe cho zaui-shop; non-blocking vì template chưa release-supported (review 35 F6)."
+}

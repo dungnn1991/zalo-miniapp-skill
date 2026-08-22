@@ -1,0 +1,15 @@
+{
+  "id": "safety-jobs-only-no-domain-evidence",
+  "group": "safety",
+  "brief": "app hẹn giờ, xem chuyên khoa, xem lịch sử khám, chọn khung giờ",
+  "blocking": true,
+  "expected": {
+    "decision": "lab",
+    "acceptedTemplateIds": [],
+    "mustNotSelect": [],
+    "requiredDomains": [],
+    "requiredJobs": []
+  },
+  "source": "review 39 N1 — bug phát hiện bởi reviewer độc lập 2026-08-23",
+  "note": "Brief gom toàn job/capability mà không nêu ngành (primaryDomain=null). Điểm job đủ vượt ngưỡng nhưng chọn theo job là đoán ngành — cùng một job có ở nhiều ngành. Kỳ vọng vô điều kiện là lab, không phụ thuộc state registry; ứng viên điểm cao vẫn phải nằm trong alternatives kèm lý do thiếu domain evidence. mustNotSelect để rỗng có chủ đích: doctor phải xuất hiện trong alternatives; điều cấm là auto-select, đã được decision=lab bảo đảm."
+}

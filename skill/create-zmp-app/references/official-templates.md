@@ -1,7 +1,7 @@
 # Official templates — scaffold từ mẫu chính thức của platform (Phase 2.5, opt-in)
 
 Reference cho đường scaffold official-template của `bootstrap.mjs`. **`config.json` mục
-`officialTemplates` là authoritative** cho catalog discovery (11 template), tập
+`catalog/templates.json` là authoritative** cho catalog (số lượng và trạng thái đọc từ registry, không hardcode ở đây), tập
 `releaseSupported`, keywords, immutable revision, tarball URL pattern và match order — file
 này chỉ giải thích cơ chế; khi lệch nhau thì `config.json` thắng. Nguồn catalog:
 `github.com/Zalo-MiniApp` (observed 2026-08-22; gallery

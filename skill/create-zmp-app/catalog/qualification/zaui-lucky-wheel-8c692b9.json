@@ -1,0 +1,265 @@
+{
+  "schemaVersion": 1,
+  "tool": "qualify-template",
+  "templateId": "zaui-lucky-wheel",
+  "startedAt": "2026-08-22T18:14:39.735Z",
+  "workspace": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-lucky-wheel-M0fUBS",
+  "runId": "qualify-zaui-lucky-wheel-2026-08-22T18-14-39Z",
+  "registryPath": "/Users/dungnn/Project/DX/labs/miniapp-bootstrap-poc/skill/create-zmp-app/catalog/templates.json",
+  "license": {
+    "packageJsonLicense": "UNLICENSED",
+    "licenseFilePresent": false,
+    "registryLicenseFile": null,
+    "registryPackageJsonLicense": null,
+    "licenseDecision": "approved-internal"
+  },
+  "revision": "8c692b938727b4c6c38e866e4d6683cf1bdd4ed0",
+  "shortRevision": "8c692b9",
+  "upstreamHead": "8c692b938727b4c6c38e866e4d6683cf1bdd4ed0",
+  "evidenceValidForHead": true,
+  "recordedStateEffective": "candidate",
+  "adapter": {
+    "status": "none",
+    "file": null,
+    "adapterId": null,
+    "sha256": null,
+    "applied": [],
+    "refused": []
+  },
+  "postScaffoldDigest": {
+    "digest": "2bcbc4438d7b83ef23fe9e7f13b420ddaf21962e4cdf73c784af89b4f28f539b",
+    "fileCount": 48
+  },
+  "dependencyScan": {
+    "imported": [
+      "@tanstack/react-form",
+      "clsx",
+      "react",
+      "react-dom",
+      "tailwind-merge",
+      "valibot",
+      "zmp-sdk",
+      "zmp-ui",
+      "zustand"
+    ],
+    "declared": [
+      "@tanstack/react-form",
+      "@types/react",
+      "@types/react-dom",
+      "@vitejs/plugin-react",
+      "autoprefixer",
+      "cross-env",
+      "postcss",
+      "postcss-cli",
+      "postcss-preset-env",
+      "react",
+      "react-dom",
+      "sass",
+      "tailwind-merge",
+      "tailwindcss",
+      "valibot",
+      "vite",
+      "zmp-sdk",
+      "zmp-ui",
+      "zmp-vite-plugin",
+      "zustand"
+    ],
+    "missingRuntime": [
+      {
+        "name": "clsx",
+        "typeOnly": false,
+        "sites": [
+          "src/utils/cn.ts:1"
+        ]
+      }
+    ],
+    "missingTypeOnly": []
+  },
+  "toolchain": {
+    "node": "v22.22.3",
+    "pnpm": "9.15.4",
+    "os": "darwin 25.5.0 arm64",
+    "chrome": "Google Chrome 151.0.7922.170",
+    "packageManagerPolicy": "pnpm (isolated node_modules); npm hoisting is never used as a fallback",
+    "pnpmStore": "shared global pnpm store (pass --clean-store for a per-run store)",
+    "resolvedVersions": {
+      "react": "18.3.1",
+      "react-dom": "18.3.1",
+      "zmp-ui": "1.11.14",
+      "zmp-sdk": "2.53.0",
+      "vite": "5.4.21",
+      "zmp-vite-plugin": "1.1.6",
+      "@vitejs/plugin-react": "4.7.0",
+      "typescript": null
+    }
+  },
+  "buildInfo": null,
+  "residualIdentifiers": {
+    "blocking": [],
+    "informational": []
+  },
+  "externalRequirements": [
+    {
+      "kind": "remote-api",
+      "name": "https://graph.zalo.me",
+      "neededForFirstPreview": true,
+      "sites": [
+        "src/services/user.services.ts:15"
+      ]
+    }
+  ],
+  "derivedState": "quarantined",
+  "quarantineReason": "build: vite_build: build.mjs exit 1; no build output detected. tail:  ;; runtime: browser_oracle: skipped — no build output to serve ;; external_dependency: first_preview_self_contained: first preview needs the user to supply: https://graph.zalo.me (remote-api, src/services/user.services.ts:15)",
+  "promotion": {
+    "requested": true,
+    "eligible": false,
+    "blockedBy": [
+      "blocking gate \"build\" is fail: vite_build: build.mjs exit 1; no build output detected. tail: ",
+      "blocking gate \"runtime\" is fail: browser_oracle: skipped — no build output to serve",
+      "blocking gate \"external_dependency\" is fail: first_preview_self_contained: first preview needs the user to supply: https://graph.zalo.me (remote-api, src/services/user.services.ts:15)"
+    ],
+    "targetState": "release-supported",
+    "applied": false
+  },
+  "gates": [
+    {
+      "id": "provenance",
+      "blocking": true,
+      "status": "pass",
+      "detail": "Zalo-MiniApp/zaui-lucky-wheel@8c692b938727b4c6c38e866e4d6683cf1bdd4ed0 snapshot verified",
+      "checks": [
+        {
+          "id": "owner_first_party",
+          "status": "pass",
+          "detail": "source.owner=Zalo-MiniApp (expected Zalo-MiniApp)"
+        },
+        {
+          "id": "repo_resolvable",
+          "status": "pass",
+          "detail": "git ls-remote HEAD of main = 8c692b938727b4c6c38e866e4d6683cf1bdd4ed0"
+        },
+        {
+          "id": "revision_pinned",
+          "status": "pass",
+          "detail": "qualifying revision=8c692b938727b4c6c38e866e4d6683cf1bdd4ed0 (source: upstream HEAD)"
+        },
+        {
+          "id": "snapshot_immutable",
+          "status": "pass",
+          "detail": "extracted top-level dir \"zaui-lucky-wheel-8c692b938727b4c6c38e866e4d6683cf1bdd4ed0\""
+        },
+        {
+          "id": "snapshot_has_manifest",
+          "status": "pass",
+          "detail": "package.json present in the snapshot"
+        },
+        {
+          "id": "no_upstream_env_copied",
+          "status": "pass",
+          "detail": "snapshot ships no .env file"
+        },
+        {
+          "id": "license_recorded",
+          "status": "pass",
+          "detail": "package.json license=UNLICENSED, LICENSE file=false, registry licenseDecision=approved-internal"
+        }
+      ]
+    },
+    {
+      "id": "dependency",
+      "blocking": true,
+      "status": "pass",
+      "detail": "pnpm 9.15.4 installed 9 imported package(s), all declared",
+      "checks": [
+        {
+          "id": "direct_dependency_completeness",
+          "status": "warn",
+          "detail": "imported but not declared: clsx (src/utils/cn.ts:1) — pnpm isolated node_modules chỉ resolve được nếu package được khai trực tiếp; build/runtime gate là nơi quyết định pass/fail"
+        },
+        {
+          "id": "pnpm_install",
+          "status": "pass",
+          "detail": "install.mjs exit 0"
+        }
+      ]
+    },
+    {
+      "id": "build",
+      "blocking": true,
+      "status": "fail",
+      "detail": "vite_build: build.mjs exit 1; no build output detected. tail: ",
+      "checks": [
+        {
+          "id": "vite_build",
+          "status": "fail",
+          "detail": "build.mjs exit 1; no build output detected. tail: "
+        }
+      ]
+    },
+    {
+      "id": "rebrand_app_id",
+      "blocking": true,
+      "status": "pass",
+      "detail": "rebranded to \"qualify-zaui-lucky-wheel\", APP_ID 1000000000000000001 bound and resolved by the build toolchain",
+      "checks": [
+        {
+          "id": "name_rebranded",
+          "status": "pass",
+          "detail": "package.json name=\"qualify-zaui-lucky-wheel\" (rebranded files: package.json, zmp-cli.json, app-config.json)"
+        },
+        {
+          "id": "app_id_persisted",
+          "status": "pass",
+          "detail": "app/.env APP_ID=1000000000000000001 (expected 1000000000000000001)"
+        },
+        {
+          "id": "no_foreign_app_id",
+          "status": "pass",
+          "detail": "no appId-keyed identifier other than the bound App ID"
+        }
+      ]
+    },
+    {
+      "id": "runtime",
+      "blocking": true,
+      "status": "fail",
+      "detail": "browser_oracle: skipped — no build output to serve",
+      "checks": [
+        {
+          "id": "browser_oracle",
+          "status": "fail",
+          "detail": "skipped — no build output to serve"
+        }
+      ]
+    },
+    {
+      "id": "external_dependency",
+      "blocking": true,
+      "status": "fail",
+      "detail": "first_preview_self_contained: first preview needs the user to supply: https://graph.zalo.me (remote-api, src/services/user.services.ts:15)",
+      "checks": [
+        {
+          "id": "first_preview_self_contained",
+          "status": "fail",
+          "detail": "first preview needs the user to supply: https://graph.zalo.me (remote-api, src/services/user.services.ts:15)"
+        }
+      ]
+    },
+    {
+      "id": "safe_rerun",
+      "blocking": true,
+      "status": "pass",
+      "detail": "mutating pipeline is deterministic and the adapter refuses to double-apply",
+      "checks": [
+        {
+          "id": "pipeline_deterministic",
+          "status": "pass",
+          "detail": "same id+revision+appId produced tree digest 2bcbc4438d7b83ef vs 2bcbc4438d7b83ef (48 files)"
+        }
+      ]
+    }
+  ],
+  "finishedAt": "2026-08-22T18:14:46.668Z",
+  "durationMs": 6932,
+  "exitCode": 4
+}

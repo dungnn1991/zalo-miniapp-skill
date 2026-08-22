@@ -1,0 +1,25 @@
+{
+  "id": "disc-market-mixed",
+  "group": "mixed-intent",
+  "brief": "app tạp hoá có thanh toán và tích điểm khách quen",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-market"
+    ],
+    "mustNotSelect": [
+      "zaui-lucky-wheel",
+      "zaui-fashion"
+    ],
+    "requiredDomains": [
+      "commerce.grocery"
+    ],
+    "requiredJobs": [
+      "product.browse"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Discovery probe cho zaui-market; non-blocking vì template chưa release-supported (review 35 F6)."
+}

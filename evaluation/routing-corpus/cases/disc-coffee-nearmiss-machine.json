@@ -1,0 +1,24 @@
+{
+  "id": "disc-coffee-nearmiss-machine",
+  "group": "entity-vs-domain",
+  "brief": "bán máy pha cà phê và phụ kiện pha chế",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-shop"
+    ],
+    "mustNotSelect": [
+      "zaui-coffee"
+    ],
+    "requiredDomains": [
+      "commerce.general"
+    ],
+    "requiredJobs": [
+      "product.browse"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Bán THIẾT BỊ pha cà phê là commerce, không phải quán cà phê. Registry chưa khai negativeSignal cho coffee — case này là probe, nếu fail thì fix registry chứ không fix case."
+}

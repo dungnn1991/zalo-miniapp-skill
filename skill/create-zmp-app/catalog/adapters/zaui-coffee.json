@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "adapterId": "zaui-coffee-react-router-direct-dep",
+  "templateId": "zaui-coffee",
+  "appliesTo": {
+    "revision": "2d3d5e85c283b6079aa16b51591ccf11a11e693b"
+  },
+  "expiresAt": "2026-11-23",
+  "reviewNote": "Xoá adapter khi upstream khai react-router trực tiếp; đã ghi finding cho template owner.",
+  "rationale": "source import react-router ở vị trí giá trị nhưng package.json chỉ khai react-router-dom (v7 để react-router là transitive) ⇒ pnpm isolated không resolve, rollup fail.",
+  "patches": [
+    {
+      "id": "add-react-router",
+      "kind": "add-dependency",
+      "file": "package.json",
+      "dependency": {
+        "name": "react-router",
+        "version": "^7.6.1"
+      },
+      "preconditions": [
+        {
+          "type": "dependency-absent",
+          "name": "react-router"
+        },
+        {
+          "type": "source-imports",
+          "name": "react-router"
+        }
+      ]
+    }
+  ]
+}

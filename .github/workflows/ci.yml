@@ -1,4 +1,5 @@
-# Required release gate: npm test chạy validator + toàn bộ case suite ở strict mode.
+# Required release gate: npm test = validator + routing corpus (blocking set) + toàn bộ case
+# suite ở strict mode.
 # FAIL hoặc BLOCKED đều làm job đỏ. Ruleset main/staging phải require check "release-gate".
 name: release-gate
 on:

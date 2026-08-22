@@ -1,0 +1,25 @@
+{
+  "id": "constraint-mmenu-explicit-no-api-url",
+  "group": "constraint",
+  "brief": "app menu cho chuỗi cửa hàng",
+  "blocking": true,
+  "templateFlag": "official:zaui-mmenu",
+  "expected": {
+    "decision": "stop",
+    "acceptedTemplateIds": [
+      "zaui-mmenu"
+    ],
+    "mustNotSelect": [
+      "zaui-menu",
+      "zaui-fashion"
+    ],
+    "requiredDomains": [
+      "fnb.menu"
+    ],
+    "requiredJobs": [
+      "menu.view"
+    ]
+  },
+  "source": "plan 34 §6.2 (constraint) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Explicit + chưa support + thiếu VITE_API_URL → dừng trước mutation, nêu cả hai lý do. Không đổi thầm sang zaui-menu."
+}

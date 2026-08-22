@@ -1,0 +1,26 @@
+{
+  "id": "explicit-doctor-unsupported-stop",
+  "group": "explicit-override",
+  "brief": "tạo app phòng khám hỗ trợ đặt lịch",
+  "blocking": true,
+  "templateFlag": "official:zaui-doctor",
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "stop",
+    "acceptedTemplateIds": [
+      "zaui-doctor"
+    ],
+    "mustNotSelect": [
+      "zaui-fashion",
+      "zaui-shop"
+    ],
+    "requiredDomains": [
+      "healthcare.clinic"
+    ],
+    "requiredJobs": [
+      "appointment.booking"
+    ]
+  },
+  "source": "CONTRACT-plan34.md DoD #5",
+  "note": "Chưa qualification → dừng TRƯỚC network/mutation và nói lý do; KHÔNG được âm thầm rơi về lab hay sang template khác."
+}

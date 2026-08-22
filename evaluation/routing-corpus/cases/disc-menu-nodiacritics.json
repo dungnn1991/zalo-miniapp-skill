@@ -1,0 +1,25 @@
+{
+  "id": "disc-menu-nodiacritics",
+  "group": "diacritics",
+  "brief": "app thuc don dien tu quet ma qr tai ban",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-menu"
+    ],
+    "mustNotSelect": [
+      "zaui-bistro",
+      "zaui-restaurant"
+    ],
+    "requiredDomains": [
+      "fnb.menu"
+    ],
+    "requiredJobs": [
+      "menu.view"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Discovery probe cho zaui-menu; non-blocking vì template chưa release-supported (review 35 F6)."
+}

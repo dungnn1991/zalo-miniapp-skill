@@ -1,0 +1,26 @@
+{
+  "id": "clinic-doctor-search",
+  "group": "clear-domain",
+  "brief": "tìm bác sĩ chuyên khoa và đặt hẹn khám",
+  "blocking": true,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-doctor"
+    ],
+    "mustNotSelect": [
+      "zaui-fashion",
+      "zaui-shop"
+    ],
+    "requiredDomains": [
+      "healthcare.clinic"
+    ],
+    "requiredJobs": [
+      "doctor.search",
+      "appointment.booking"
+    ]
+  },
+  "source": "plan 34 §6.2 (clear-domain) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Job doctor.search dẫn đường thay vì tên cơ sở."
+}

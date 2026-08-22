@@ -1,0 +1,25 @@
+{
+  "id": "commerce-grocery-vs-fashion-trap",
+  "group": "commerce-overlap",
+  "brief": "app siêu thị bán rau củ và thực phẩm tươi",
+  "blocking": true,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-market"
+    ],
+    "mustNotSelect": [
+      "zaui-fashion",
+      "zaui-shop"
+    ],
+    "requiredDomains": [
+      "commerce.grocery"
+    ],
+    "requiredJobs": [
+      "product.browse"
+    ]
+  },
+  "source": "plan 34 §2.2 (safety negative set) + §6.2 (commerce overlap)",
+  "note": "Bẫy quan trọng nhất: fashion là template DUY NHẤT auto-scaffold được, ranker lười sẽ chọn fashion cho mọi prompt commerce. Phải ra lab + market trong alternatives."
+}

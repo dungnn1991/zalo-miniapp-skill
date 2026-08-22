@@ -1,0 +1,25 @@
+{
+  "id": "fashion-vi-nodiacritics-auto",
+  "group": "diacritics",
+  "brief": "tao mini app ban quan ao thoi trang cho shop cua toi",
+  "blocking": true,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-fashion"
+    ],
+    "mustNotSelect": [
+      "zaui-shop",
+      "zaui-market"
+    ],
+    "requiredDomains": [
+      "commerce.fashion"
+    ],
+    "requiredJobs": [
+      "product.browse"
+    ]
+  },
+  "source": "plan 34 §6.2 (diacritics) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Cùng canonical intent với bản có dấu — normalize hai chiều phải cho cùng kết quả."
+}

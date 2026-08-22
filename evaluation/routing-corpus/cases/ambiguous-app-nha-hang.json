@@ -1,0 +1,21 @@
+{
+  "id": "ambiguous-app-nha-hang",
+  "group": "ambiguous",
+  "brief": "app nhà hàng",
+  "blocking": true,
+  "expected": {
+    "acceptedTemplateIds": [],
+    "mustNotSelect": [
+      "zaui-fashion",
+      "zaui-shop",
+      "zaui-doctor"
+    ],
+    "requiredDomains": [],
+    "requiredJobs": [],
+    "minOptions": 2,
+    "decisionWhenSupported": "choice",
+    "decisionWhenUnsupported": "lab"
+  },
+  "source": "CONTRACT-plan34.md DoD #3",
+  "note": "\"nhà hàng\" khớp alias zaui-restaurant nhưng cũng khớp audience của zaui-bistro (\"nhà hàng nhỏ\") và zaui-menu (\"nhà hàng dùng menu QR\") → margin thấp, phải hỏi MỘT câu phân loại (đặt bàn / gọi món tại bàn / giao đồ ăn) chứ không đoán. DoD khoá exit 2 nên case này không conditional theo support state. Sửa 2026-08-23: theo plan §4.3, khi chưa ứng viên nào release-supported thì đi lab kèm giải thích thay vì hỏi một câu không hành động được; sẽ tự thành choice khi có template được promote."
+}

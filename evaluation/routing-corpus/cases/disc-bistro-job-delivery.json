@@ -1,0 +1,25 @@
+{
+  "id": "disc-bistro-job-delivery",
+  "group": "job-signal",
+  "brief": "app theo dõi đơn giao đồ ăn theo thời gian thực",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-bistro"
+    ],
+    "mustNotSelect": [
+      "zaui-menu",
+      "zaui-restaurant"
+    ],
+    "requiredDomains": [
+      "fnb.restaurant"
+    ],
+    "requiredJobs": [
+      "delivery.track"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Discovery probe cho zaui-bistro; non-blocking vì template chưa release-supported (review 35 F6)."
+}

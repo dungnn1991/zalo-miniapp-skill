@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "create-zmp-app/intent-envelope.schema.json",
+  "title": "Intent envelope — brief đã được chuyển thành enum đóng",
+  "description": "Agent (hoặc fallback deterministic) sinh ra; validator kiểm enum + evidence span có thật trong brief đã normalize. Agent KHÔNG được tự đặt revision hay qualification state.",
+  "type": "object",
+  "required": ["schemaVersion", "createIntent", "primaryDomains", "jobs", "capabilities", "source"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "taxonomyVersion": { "type": "string" },
+    "createIntent": { "type": "boolean" },
+    "primaryDomains": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "evidence"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "evidence": { "type": "array", "items": { "type": "string" }, "minItems": 1, "description": "Span có thật trong brief sau normalize; script verify lại." }
+        }
+      }
+    },
+    "jobs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "evidence"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" }, "evidence": { "type": "array", "items": { "type": "string" }, "minItems": 1 } }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "evidence"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" }, "evidence": { "type": "array", "items": { "type": "string" }, "minItems": 1 } }
+      }
+    },
+    "style": { "type": ["string", "null"], "description": "Gợi ý màu/phong cách; chuyển cho theme provider, KHÔNG tham gia chấm base template." },
+    "explicitTemplate": { "type": ["string", "null"], "description": "User chỉ đích danh id template." },
+    "source": { "type": "string", "enum": ["agent", "deterministic-fallback"], "description": "Ai sinh envelope này." }
+  }
+}

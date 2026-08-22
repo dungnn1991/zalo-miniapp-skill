@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "version": "1.0.0",
+  "note": "Enum đóng cho intent envelope và template profile. Agent KHÔNG được tự sáng tác id mới; thêm id phải kèm case trong gold corpus (plan 34 §4.2).",
+  "domains": {
+    "commerce.fashion": "Thời trang, quần áo, phụ kiện mặc",
+    "commerce.grocery": "Siêu thị, tạp hoá, thực phẩm tươi",
+    "commerce.general": "Bán lẻ nói chung, chưa rõ ngành hàng",
+    "fnb.coffee": "Cà phê, trà, đồ uống mang đi",
+    "fnb.restaurant": "Nhà hàng, quán ăn có phục vụ tại chỗ",
+    "fnb.menu": "Thực đơn điện tử, gọi món tại bàn (QR menu)",
+    "healthcare.clinic": "Phòng khám, bệnh viện, cơ sở y tế",
+    "education.university": "Trường học, đào tạo, tuyển sinh",
+    "government.publicservice": "Dịch vụ công, thủ tục hành chính",
+    "campaign.loyalty": "Minigame, tích điểm, quay thưởng, voucher"
+  },
+  "jobs": {
+    "product.browse": "Xem danh mục và sản phẩm",
+    "product.search": "Tìm kiếm sản phẩm",
+    "cart.manage": "Thêm/sửa giỏ hàng",
+    "order.place": "Đặt hàng",
+    "order.track": "Theo dõi đơn hàng",
+    "food.order": "Gọi món",
+    "menu.view": "Xem thực đơn",
+    "table.reserve": "Đặt bàn",
+    "delivery.track": "Theo dõi giao hàng",
+    "appointment.booking": "Đặt lịch hẹn",
+    "doctor.search": "Tìm bác sĩ / chuyên khoa",
+    "medical-history.view": "Xem hồ sơ, lịch sử khám",
+    "course.browse": "Xem ngành học, khoá học",
+    "admission.apply": "Đăng ký tuyển sinh, nộp hồ sơ",
+    "schedule.view": "Xem lịch học, lịch sự kiện",
+    "procedure.lookup": "Tra cứu thủ tục hành chính",
+    "queue.number": "Lấy số thứ tự, đặt lịch làm thủ tục",
+    "reward.spin": "Quay thưởng, minigame",
+    "loyalty.points": "Tích điểm thành viên",
+    "voucher.redeem": "Đổi voucher, ưu đãi"
+  },
+  "capabilities": {
+    "checkout": "Thanh toán qua Checkout SDK (capability, KHÔNG phải tiêu chí chọn base template)",
+    "booking": "Lịch hẹn, chọn khung giờ",
+    "search": "Tìm kiếm trong app",
+    "forms": "Biểu mẫu nhập liệu",
+    "profile": "Hồ sơ người dùng",
+    "oa-chat": "Chat với Official Account",
+    "loyalty": "Thẻ thành viên, tích điểm",
+    "delivery": "Giao hàng, địa chỉ",
+    "map": "Bản đồ, vị trí",
+    "media-upload": "Tải ảnh/tệp lên"
+  },
+  "styleHints": {
+    "note": "Chỉ ghi nhận để chuyển sang theme provider (plan 31); KHÔNG tham gia chấm điểm base template."
+  }
+}

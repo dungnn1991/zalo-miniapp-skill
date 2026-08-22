@@ -1,0 +1,18 @@
+{
+  "id": "disc-market-nearmiss-inventory",
+  "group": "unsupported",
+  "brief": "app quản lý tồn kho siêu thị cho nhân viên kho",
+  "blocking": false,
+  "expected": {
+    "decision": "lab",
+    "acceptedTemplateIds": [],
+    "mustNotSelect": [
+      "zaui-market",
+      "zaui-shop"
+    ],
+    "requiredDomains": [],
+    "requiredJobs": []
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Internal tool cho nhân viên, không phải app cho khách → lab."
+}

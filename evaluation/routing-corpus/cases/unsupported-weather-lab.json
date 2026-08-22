@@ -1,0 +1,21 @@
+{
+  "id": "unsupported-weather-lab",
+  "group": "unsupported",
+  "brief": "tạo app thời tiết",
+  "blocking": true,
+  "expected": {
+    "decision": "lab",
+    "acceptedTemplateIds": [],
+    "mustNotSelect": [
+      "zaui-fashion",
+      "zaui-shop",
+      "zaui-doctor",
+      "zaui-coffee",
+      "zaui-market"
+    ],
+    "requiredDomains": [],
+    "requiredJobs": []
+  },
+  "source": "CONTRACT-plan34.md DoD #2",
+  "note": "Không domain nào trong taxonomy khớp → lab, không ép vào template nào."
+}

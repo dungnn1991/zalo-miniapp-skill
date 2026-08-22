@@ -1,0 +1,24 @@
+{
+  "id": "disc-uni-nodiacritics",
+  "group": "diacritics",
+  "brief": "app truong dai hoc xem nganh hoc va tuyen sinh",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-uni"
+    ],
+    "mustNotSelect": [
+      "zaui-egovernment"
+    ],
+    "requiredDomains": [
+      "education.university"
+    ],
+    "requiredJobs": [
+      "admission.apply"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Discovery probe cho zaui-uni; non-blocking vì template chưa release-supported (review 35 F6)."
+}

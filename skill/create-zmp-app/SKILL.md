@@ -78,7 +78,7 @@ Run the whole pipeline through the **single entry** (from the skill directory):
 ```bash
 node scripts/run.mjs --brief "tạo app bán quần áo" [--app-id <id>] \
   [--existing | --force-scaffold] [--invoked-via <surface>] \
-  [--deploy | --deploy-testing] [--preview] [--preview-timeout <ms>] \
+  [--template auto|lab|official:<id>] [--deploy | --deploy-testing] [--preview] [--preview-timeout <ms>] \
   [--verify-sim] [--preview-sim] [--sim-decision accept|deny|manual] [--workspace <dir>]
 ```
 
@@ -137,12 +137,11 @@ manifest and never block a rerun.
 | `2` | needs_input (nothing mutated) | **stop and ask the user** (see below) |
 | `3` | precondition/config error | stop; fix environment/invocation, do not touch locked files |
 
-> **Exception on exit `3`:** final-line status `needs_template_choice` (ambiguous or
-> unsupported official template) also uses exit `3` but is an **ASK-USER** stop, not an
-> environment error: stop, list the printed release-supported catalog for the user to choose,
-> then re-run with
-> `--template official:<id>`. (Design note: exit `3` was chosen so the `needsInput.reason`
-> enum stays reserved for App ID/login.)
+> **Template choice uses exit `2`.** Final-line status `needs_template_choice` is an ASK-USER
+> stop like any other `needs_input`: `result.json` carries `needsInput.reason="template_choice"`
+> plus `needsInput.templateOptions` (2–3 options, each with a `why` that states the real
+> difference). Show those options, let the user pick, then re-run with
+> `--template official:<id>`. Never guess, never fall back to the lab template silently.
 
 ### Advanced: per-stage scripts (debug/regression only)
 
@@ -183,14 +182,24 @@ nhanh từ template chính thức") or passes `--template official:<id>`. Catalo
 and keyword mapping are locked in `config.json` `officialTemplates`. Only entries with
 `releaseSupported=true` are exposed; `verified` is evidence, not the support decision.
 
-- Opt-in phrase in the brief → bootstrap maps it to a catalog id by keywords, in catalog
-  order (first match wins). Explicit `--template official:<id>` wins routing, but cannot bypass
-  `releaseSupported`.
-- Opt-in with no supported keyword match, or a known but unsupported id → bootstrap exits `3`
-  **before fetch/app mutation** with a final stdout JSON
-  `{"status":"needs_template_choice","catalog":[...]}` — **stop and ask the user to pick an
-  id from that release-supported catalog**, or remove the template request to use the lab
-  template. Never guess, never fall back silently.
+- **`--template auto` is the default.** Every create brief is ranked against the registry in
+  `catalog/templates.json`; the user no longer has to say "dùng mẫu có sẵn". `--template lab`
+  forces the lab template, `--template official:<id>` names one explicitly.
+- Ranking is deterministic and explainable: a hard filter runs *before* scoring (state, pinned
+  revision, license, required inputs), then domain → jobs → capabilities → aliases, minus
+  negative signals. `input.json` carries the resulting `templateSelection` with `reasons`,
+  `evidence` and `alternatives`. **Domain evidence is required to auto-scaffold** — a brief that
+  only matches jobs or capabilities goes to the lab shell, because the same job appears in
+  several industries.
+- Ambiguous brief where at least one close option is scaffoldable → exit `2` with
+  `needsInput.reason="template_choice"` and 2–3 options. Nothing is fetched or written before
+  the choice is settled.
+- Best candidate exists but is not qualified yet → lab shell, and the report must say which
+  candidate was skipped and why. If the user explicitly asked for an official template, ask
+  instead of quietly using the lab one.
+- Explicit `--template official:<id>` that is unknown or not qualified → stop before any fetch
+  or mutation, name the reason, list what is usable. Never guess, never fall back silently.
+- See `references/template-routing.md` for the full contract.
 - Release-supported official templates are fetched at the immutable `revision` in config;
   `input.json` and the scaffold manifest preserve that revision.
 - APP_ID resolution/binding, `input.json`, and the rest of the pipeline are identical; render
@@ -290,6 +299,12 @@ testing với mô tả "bản kiểm thử sprint 3"`), pass it as `--desc "<tex
 
 ## needs_input handling
 
+**Template đổi giữa hai lần chạy.** Từ khi `--template auto` là mặc định, một app cũ được dựng
+bằng lab template mà chạy lại cùng brief có thể được ranker chấm sang template official. Bootstrap
+dừng ở exit `2` với `template_changed` thay vì ghi đè — code của user không mất. Hỏi user muốn giữ
+app hiện tại (`--existing`), hay dựng lại theo template mới (`--force-scaffold`), hay ghim template
+cũ (`--template lab`).
+
 If the pipeline exits `2`: read `runs/<runId>/result.json` → `needsInput.question`, ask the
 user exactly that (missing App ID, or which ID to keep on conflict), and wait. Then resume by
 re-running the same `run.mjs` command with the extra flag:
@@ -342,6 +357,8 @@ slash-command|codex-skill|natural-language|harness`.
   custody, QR relay steps, error classification, deploy evidence, manual UAT checkpoint.
 - `references/official-templates.md` — Phase 2.5 official-template scaffold: catalog routing,
   tarball mechanics, what does not apply (markers/variants/token), build/render differences.
+- `references/template-routing.md` — how a brief becomes a template choice: registry, hard
+  filter, scoring, the decision table, and the rules for adding or promoting a template.
 - `references/error-signatures.json` — regex signature map: known error → diagnosis, concrete
   fix, community source URL. First stop for any unrecognized log line.
 - `references/troubleshooting.md` — curated dev/build/deploy errors (CORS, ES2015, www/outDir,

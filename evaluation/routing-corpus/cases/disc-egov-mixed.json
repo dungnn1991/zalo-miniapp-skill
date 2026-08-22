@@ -1,0 +1,24 @@
+{
+  "id": "disc-egov-mixed",
+  "group": "mixed-intent",
+  "brief": "app hành chính công có biểu mẫu trực tuyến và bản đồ trụ sở",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-egovernment"
+    ],
+    "mustNotSelect": [
+      "zaui-uni"
+    ],
+    "requiredDomains": [
+      "government.publicservice"
+    ],
+    "requiredJobs": [
+      "procedure.lookup"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "forms và map là capability."
+}

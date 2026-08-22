@@ -21,7 +21,7 @@
         "1.0",
         "1.1"
       ],
-      "description": "1.1 khi run có stage login/deploy (Phase 2); 1.0 cho run chỉ tới verify."
+      "description": "1.1 khi run có stage login/deploy (Phase 2) hoặc mang templateSelection (plan 34); 1.0 cho run legacy."
     },
     "runId": {
       "type": "string",
@@ -72,8 +72,10 @@
             "app_id_missing",
             "app_id_conflict",
             "existing_app",
-            "login_required"
-          ]
+            "login_required",
+            "template_choice"
+          ],
+          "description": "template_choice: cần user chọn template (plan 34 D34-7) — dùng exit 2, KHÔNG còn exit 3 như v0.3.x."
         },
         "question": {
           "type": "string"
@@ -89,6 +91,32 @@
             "string",
             "null"
           ]
+        },
+        "templateOptions": {
+          "type": "array",
+          "description": "Chỉ với reason=template_choice: 2-3 lựa chọn kèm khác biệt hữu ích, không phải danh sách id trần.",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "why"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "why": {
+                "type": "string"
+              },
+              "jobs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
         }
       },
       "required": [
@@ -205,6 +233,9 @@
           }
         }
       }
+    },
+    "templateSelection": {
+      "$ref": "./template-selection.schema.json"
     }
   }
 }

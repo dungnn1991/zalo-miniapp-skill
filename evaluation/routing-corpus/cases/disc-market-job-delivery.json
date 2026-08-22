@@ -1,0 +1,24 @@
+{
+  "id": "disc-market-job-delivery",
+  "group": "job-signal",
+  "brief": "theo dõi đơn giao thực phẩm tươi tới nhà",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-market"
+    ],
+    "mustNotSelect": [
+      "zaui-bistro"
+    ],
+    "requiredDomains": [
+      "commerce.grocery"
+    ],
+    "requiredJobs": [
+      "delivery.track"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Discovery probe cho zaui-market; non-blocking vì template chưa release-supported (review 35 F6)."
+}

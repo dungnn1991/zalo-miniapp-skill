@@ -1,0 +1,737 @@
+{
+  "schemaVersion": 1,
+  "registryVersion": "2026-08-23.2",
+  "generatedAt": "2026-08-23",
+  "taxonomyVersion": "1.0.0",
+  "note": "Source of truth local cho runtime. Runtime KHÔNG fetch catalog mutable; sync script chỉ báo diff.",
+  "templates": [
+    {
+      "schemaVersion": 1,
+      "id": "zaui-fashion",
+      "source": {
+        "owner": "Zalo-MiniApp",
+        "repository": "zaui-fashion",
+        "defaultBranch": "main",
+        "revision": "d59cfad4d79b2ba57e6dfdf6be82d967cf9e7f5c",
+        "headObserved": "d59cfad4d79b2ba57e6dfdf6be82d967cf9e7f5c",
+        "portalListed": true,
+        "observedAt": "2026-08-22",
+        "licenseFile": "NOASSERTION",
+        "packageJsonLicense": "UNLICENSED",
+        "licenseDecision": "approved-internal"
+      },
+      "intent": {
+        "domains": [
+          "commerce.fashion"
+        ],
+        "jobs": [
+          "product.browse",
+          "product.search",
+          "cart.manage",
+          "order.place"
+        ],
+        "audiences": [
+          "shop thời trang",
+          "cửa hàng quần áo"
+        ],
+        "aliases": [
+          "quần áo",
+          "thời trang",
+          "fashion",
+          "clothing",
+          "clothes",
+          "váy",
+          "đầm",
+          "shop đồ",
+          "apparel",
+          "quần jean",
+          "áo thun",
+          "đồng phục",
+          "uniform",
+          "scrubs",
+          "medical scrubs",
+          "nurse uniform",
+          "áo khoác",
+          "giày",
+          "túi xách",
+          "cửa hàng quần áo"
+        ],
+        "negativeSignals": []
+      },
+      "capabilities": [
+        "search",
+        "profile",
+        "loyalty"
+      ],
+      "constraints": {
+        "backendRequiredForPreview": false,
+        "requiredInputs": [],
+        "themeAdapter": null,
+        "capabilityAdapters": []
+      },
+      "qualification": {
+        "state": "release-supported",
+        "testedRevision": "d59cfad4d79b2ba57e6dfdf6be82d967cf9e7f5c",
+        "adapterId": null,
+        "evidence": {
+          "qualificationResult": "catalog/qualification/zaui-fashion-d59cfad.json",
+          "runId": "qualify-zaui-fashion-2026-08-22T18-05-30Z"
+        },
+        "note": null
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "zaui-coffee",
+      "source": {
+        "owner": "Zalo-MiniApp",
+        "repository": "zaui-coffee",
+        "defaultBranch": "main",
+        "revision": null,
+        "headObserved": "2d3d5e85c283b6079aa16b51591ccf11a11e693b",
+        "portalListed": true,
+        "observedAt": "2026-08-22",
+        "licenseFile": null,
+        "packageJsonLicense": null,
+        "licenseDecision": "approved-internal"
+      },
+      "intent": {
+        "domains": [
+          "fnb.coffee"
+        ],
+        "jobs": [
+          "menu.view",
+          "food.order",
+          "cart.manage",
+          "order.place"
+        ],
+        "audiences": [
+          "quán cà phê",
+          "tiệm trà sữa"
+        ],
+        "aliases": [
+          "cà phê",
+          "coffee",
+          "cafe",
+          "trà sữa",
+          "đồ uống",
+          "milk tea",
+          "quán nước"
+        ],
+        "negativeSignals": []
+      },
+      "capabilities": [
+        "search",
+        "profile",
+        "loyalty",
+        "delivery"
+      ],
+      "constraints": {
+        "backendRequiredForPreview": false,
+        "requiredInputs": [],
+        "themeAdapter": null,
+        "capabilityAdapters": []
+      },
+      "qualification": {
+        "state": "candidate",
+        "testedRevision": null,
+        "adapterId": null,
+        "evidence": null,
+        "note": "chưa chạy qualification factory"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "zaui-bistro",
+      "source": {
+        "owner": "Zalo-MiniApp",
+        "repository": "zaui-bistro",
+        "defaultBranch": "main",
+        "revision": null,
+        "headObserved": "5079a416c895254d6a6bf4c56e44b6a2718dc177",
+        "portalListed": true,
+        "observedAt": "2026-08-22",
+        "licenseFile": null,
+        "packageJsonLicense": "UNLICENSED",
+        "licenseDecision": "approved-internal"
+      },
+      "intent": {
+        "domains": [
+          "fnb.restaurant"
+        ],
+        "jobs": [
+          "menu.view",
+          "food.order",
+          "cart.manage",
+          "order.place",
+          "delivery.track"
+        ],
+        "audiences": [
+          "quán ăn",
+          "bistro",
+          "nhà hàng nhỏ"
+        ],
+        "aliases": [
+          "đặt món",
+          "quán ăn",
+          "bistro",
+          "đồ ăn",
+          "food ordering",
+          "order food",
+          "giao đồ ăn",
+          "gọi đồ ăn"
+        ],
+        "negativeSignals": []
+      },
+      "capabilities": [
+        "search",
+        "profile",
+        "delivery"
+      ],
+      "constraints": {
+        "backendRequiredForPreview": false,
+        "requiredInputs": [],
+        "themeAdapter": null,
+        "capabilityAdapters": []
+      },
+      "qualification": {
+        "state": "candidate",
+        "testedRevision": null,
+        "adapterId": null,
+        "evidence": null,
+        "note": "chưa chạy qualification factory"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "zaui-menu",
+      "source": {
+        "owner": "Zalo-MiniApp",
+        "repository": "zaui-menu",
+        "defaultBranch": "main",
+        "revision": null,
+        "headObserved": "b9c2ac9b7340778a777105c9defb069a97712495",
+        "portalListed": true,
+        "observedAt": "2026-08-22",
+        "licenseFile": null,
+        "packageJsonLicense": null,
+        "licenseDecision": "approved-internal"
+      },
+      "intent": {
+        "domains": [
+          "fnb.menu"
+        ],
+        "jobs": [
+          "menu.view",
+          "food.order"
+        ],
+        "audiences": [
+          "nhà hàng dùng menu QR"
+        ],
+        "aliases": [
+          "thực đơn",
+          "menu điện tử",
+          "menu qr",
+          "gọi món tại bàn",
+          "digital menu"
+        ],
+        "negativeSignals": []
+      },
+      "capabilities": [
+        "search"
+      ],
+      "constraints": {
+        "backendRequiredForPreview": false,
+        "requiredInputs": [],
+        "themeAdapter": null,
+        "capabilityAdapters": []
+      },
+      "qualification": {
+        "state": "candidate",
+        "testedRevision": null,
+        "adapterId": null,
+        "evidence": null,
+        "note": "chưa chạy qualification factory"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "zaui-market",
+      "source": {
+        "owner": "Zalo-MiniApp",
+        "repository": "zaui-market",
+        "defaultBranch": "main",
+        "revision": null,
+        "headObserved": "2659835c48e0eac4ef328d6aa4583a2d6bf6f4f6",
+        "portalListed": true,
+        "observedAt": "2026-08-22",
+        "licenseFile": "NOASSERTION",
+        "packageJsonLicense": "UNLICENSED",
+        "licenseDecision": "approved-internal"
+      },
+      "intent": {
+        "domains": [
+          "commerce.grocery"
+        ],
+        "jobs": [
+          "product.browse",
+          "product.search",
+          "cart.manage",
+          "order.place",
+          "delivery.track"
+        ],
+        "audiences": [
+          "siêu thị",
+          "cửa hàng tạp hoá",
+          "chợ online"
+        ],
+        "aliases": [
+          "siêu thị",
+          "tạp hoá",
+          "tạp hóa",
+          "grocery",
+          "market",
+          "rau củ",
+          "thực phẩm",
+          "đi chợ"
+        ],
+        "negativeSignals": []
+      },
+      "capabilities": [
+        "search",
+        "profile",
+        "delivery"
+      ],
+      "constraints": {
+        "backendRequiredForPreview": false,
+        "requiredInputs": [],
+        "themeAdapter": null,
+        "capabilityAdapters": []
+      },
+      "qualification": {
+        "state": "candidate",
+        "testedRevision": null,
+        "adapterId": null,
+        "evidence": null,
+        "note": "chưa chạy qualification factory"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "zaui-doctor",
+      "source": {
+        "owner": "Zalo-MiniApp",
+        "repository": "zaui-doctor",
+        "defaultBranch": "main",
+        "revision": "d6e5997754671a47ed9d618cee7975cbc7a057e9",
+        "headObserved": "d6e5997754671a47ed9d618cee7975cbc7a057e9",
+        "portalListed": true,
+        "observedAt": "2026-08-22",
+        "licenseFile": null,
+        "packageJsonLicense": "UNLICENSED",
+        "licenseDecision": "approved-internal"
+      },
+      "intent": {
+        "domains": [
+          "healthcare.clinic"
+        ],
+        "jobs": [
+          "appointment.booking",
+          "doctor.search",
+          "medical-history.view",
+          "schedule.view"
+        ],
+        "audiences": [
+          "phòng khám",
+          "bệnh viện",
+          "trung tâm y tế"
+        ],
+        "aliases": [
+          "phòng khám",
+          "phòng mạch",
+          "bác sĩ",
+          "khám bệnh",
+          "đặt lịch khám",
+          "đặt hẹn bác sĩ",
+          "clinic",
+          "medical appointment",
+          "book consultation",
+          "y tế",
+          "hẹn giờ bác sĩ"
+        ],
+        "negativeSignals": [
+          "đồng phục bác sĩ",
+          "đồng phục y tế",
+          "medical apparel",
+          "medical scrubs",
+          "bán thiết bị y tế",
+          "thiết bị y tế",
+          "bán thuốc"
+        ]
+      },
+      "capabilities": [
+        "booking",
+        "search",
+        "forms",
+        "profile",
+        "oa-chat"
+      ],
+      "constraints": {
+        "backendRequiredForPreview": false,
+        "requiredInputs": [],
+        "themeAdapter": null,
+        "capabilityAdapters": []
+      },
+      "qualification": {
+        "state": "release-supported",
+        "testedRevision": "d6e5997754671a47ed9d618cee7975cbc7a057e9",
+        "adapterId": "zaui-doctor-upstream-fixes",
+        "evidence": {
+          "qualificationResult": "catalog/qualification/zaui-doctor-d6e5997.json",
+          "runId": "qualify-zaui-doctor-2026-08-22T18-12-36Z"
+        },
+        "note": "chưa chạy qualification factory"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "zaui-uni",
+      "source": {
+        "owner": "Zalo-MiniApp",
+        "repository": "zaui-uni",
+        "defaultBranch": "main",
+        "revision": null,
+        "headObserved": "573893d5164518888c2a4c7d1dfa58f946b3bdc8",
+        "portalListed": true,
+        "observedAt": "2026-08-22",
+        "licenseFile": "MIT",
+        "packageJsonLicense": "ISC",
+        "licenseDecision": "approved-internal"
+      },
+      "intent": {
+        "domains": [
+          "education.university"
+        ],
+        "jobs": [
+          "course.browse",
+          "admission.apply",
+          "schedule.view"
+        ],
+        "audiences": [
+          "trường đại học",
+          "trung tâm đào tạo"
+        ],
+        "aliases": [
+          "trường học",
+          "đại học",
+          "giáo dục",
+          "tuyển sinh",
+          "khóa học",
+          "học bổng",
+          "education",
+          "university",
+          "sinh viên"
+        ],
+        "negativeSignals": []
+      },
+      "capabilities": [
+        "search",
+        "forms",
+        "profile"
+      ],
+      "constraints": {
+        "backendRequiredForPreview": false,
+        "requiredInputs": [],
+        "themeAdapter": null,
+        "capabilityAdapters": []
+      },
+      "qualification": {
+        "state": "candidate",
+        "testedRevision": null,
+        "adapterId": null,
+        "evidence": null,
+        "note": "chưa chạy qualification factory"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "zaui-egovernment",
+      "source": {
+        "owner": "Zalo-MiniApp",
+        "repository": "zaui-egovernment",
+        "defaultBranch": "master",
+        "revision": null,
+        "headObserved": "c3620404245058e88c83056c7f824b3a303d481d",
+        "portalListed": true,
+        "observedAt": "2026-08-22",
+        "licenseFile": null,
+        "packageJsonLicense": null,
+        "licenseDecision": "approved-internal"
+      },
+      "intent": {
+        "domains": [
+          "government.publicservice"
+        ],
+        "jobs": [
+          "procedure.lookup",
+          "queue.number",
+          "appointment.booking"
+        ],
+        "audiences": [
+          "cơ quan hành chính",
+          "ủy ban",
+          "sở ngành"
+        ],
+        "aliases": [
+          "dịch vụ công",
+          "hành chính công",
+          "thủ tục",
+          "bốc số",
+          "government",
+          "phường xã"
+        ],
+        "negativeSignals": []
+      },
+      "capabilities": [
+        "forms",
+        "booking",
+        "search"
+      ],
+      "constraints": {
+        "backendRequiredForPreview": false,
+        "requiredInputs": [],
+        "themeAdapter": null,
+        "capabilityAdapters": []
+      },
+      "qualification": {
+        "state": "candidate",
+        "testedRevision": null,
+        "adapterId": null,
+        "evidence": null,
+        "note": "chưa chạy qualification factory"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "zaui-lucky-wheel",
+      "source": {
+        "owner": "Zalo-MiniApp",
+        "repository": "zaui-lucky-wheel",
+        "defaultBranch": "main",
+        "revision": null,
+        "headObserved": "8c692b93",
+        "portalListed": true,
+        "observedAt": "2026-08-22",
+        "licenseFile": null,
+        "packageJsonLicense": null,
+        "licenseDecision": "approved-internal"
+      },
+      "intent": {
+        "domains": [
+          "campaign.loyalty"
+        ],
+        "jobs": [
+          "reward.spin",
+          "loyalty.points",
+          "voucher.redeem"
+        ],
+        "audiences": [
+          "chiến dịch marketing",
+          "chương trình khách hàng thân thiết"
+        ],
+        "aliases": [
+          "vòng quay",
+          "quay thưởng",
+          "lucky wheel",
+          "minigame",
+          "trúng thưởng",
+          "tích điểm",
+          "voucher"
+        ],
+        "negativeSignals": []
+      },
+      "capabilities": [
+        "loyalty",
+        "profile"
+      ],
+      "constraints": {
+        "backendRequiredForPreview": false,
+        "requiredInputs": [],
+        "themeAdapter": null,
+        "capabilityAdapters": []
+      },
+      "qualification": {
+        "state": "candidate",
+        "testedRevision": null,
+        "adapterId": null,
+        "evidence": null,
+        "note": "chưa chạy qualification factory"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "zaui-restaurant",
+      "source": {
+        "owner": "Zalo-MiniApp",
+        "repository": "zaui-restaurant",
+        "defaultBranch": "main",
+        "revision": null,
+        "headObserved": "97720534",
+        "portalListed": false,
+        "observedAt": "2026-08-22",
+        "licenseFile": null,
+        "packageJsonLicense": null,
+        "licenseDecision": "review-required"
+      },
+      "intent": {
+        "domains": [
+          "fnb.restaurant"
+        ],
+        "jobs": [
+          "menu.view",
+          "table.reserve"
+        ],
+        "audiences": [
+          "nhà hàng"
+        ],
+        "aliases": [
+          "nhà hàng",
+          "restaurant",
+          "đặt bàn",
+          "table booking"
+        ],
+        "negativeSignals": []
+      },
+      "capabilities": [
+        "booking",
+        "search"
+      ],
+      "constraints": {
+        "backendRequiredForPreview": false,
+        "requiredInputs": [],
+        "themeAdapter": null,
+        "capabilityAdapters": []
+      },
+      "qualification": {
+        "state": "discovered",
+        "testedRevision": null,
+        "adapterId": null,
+        "evidence": null,
+        "note": "chưa chạy qualification factory"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "zaui-shop",
+      "source": {
+        "owner": "Zalo-MiniApp",
+        "repository": "zaui-shop",
+        "defaultBranch": "main",
+        "revision": null,
+        "headObserved": "d7e4b733",
+        "portalListed": false,
+        "observedAt": "2026-08-22",
+        "licenseFile": null,
+        "packageJsonLicense": null,
+        "licenseDecision": "review-required"
+      },
+      "intent": {
+        "domains": [
+          "commerce.general"
+        ],
+        "jobs": [
+          "product.browse",
+          "cart.manage",
+          "order.place"
+        ],
+        "audiences": [
+          "cửa hàng bán lẻ"
+        ],
+        "aliases": [
+          "shop",
+          "cửa hàng",
+          "bán hàng",
+          "e-commerce",
+          "thương mại điện tử",
+          "cửa hàng của tôi",
+          "bán lẻ",
+          "online store",
+          "store selling",
+          "bán đồ",
+          "đặt hàng online",
+          "bán thiết bị",
+          "thiết bị"
+        ],
+        "negativeSignals": []
+      },
+      "capabilities": [
+        "search",
+        "profile"
+      ],
+      "constraints": {
+        "backendRequiredForPreview": false,
+        "requiredInputs": [],
+        "themeAdapter": null,
+        "capabilityAdapters": []
+      },
+      "qualification": {
+        "state": "discovered",
+        "testedRevision": null,
+        "adapterId": null,
+        "evidence": null,
+        "note": "chưa chạy qualification factory"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "zaui-mmenu",
+      "source": {
+        "owner": "Zalo-MiniApp",
+        "repository": "zaui-mmenu",
+        "defaultBranch": "main",
+        "revision": null,
+        "headObserved": "e4cc9f1e",
+        "portalListed": false,
+        "observedAt": "2026-08-22",
+        "licenseFile": null,
+        "packageJsonLicense": null,
+        "licenseDecision": "review-required"
+      },
+      "intent": {
+        "domains": [
+          "fnb.menu"
+        ],
+        "jobs": [
+          "menu.view",
+          "food.order"
+        ],
+        "audiences": [
+          "chuỗi F&B có backend mMenu"
+        ],
+        "aliases": [
+          "mmenu"
+        ],
+        "negativeSignals": []
+      },
+      "capabilities": [
+        "search"
+      ],
+      "constraints": {
+        "backendRequiredForPreview": true,
+        "requiredInputs": [
+          "VITE_API_URL"
+        ],
+        "themeAdapter": null,
+        "capabilityAdapters": []
+      },
+      "qualification": {
+        "state": "discovered",
+        "testedRevision": null,
+        "adapterId": null,
+        "evidence": null,
+        "note": "chưa chạy qualification factory"
+      }
+    }
+  ],
+  "licenseNote": "D34-8 duyệt 2026-08-23 (owner): 9 template Portal = approved-internal — template first-party Zalo, skill là tooling nội bộ và không vendor code (tải tarball lúc scaffold như zmp-cli). 3 repo ngoài Portal giữ review-required. Phát hành skill ra ngoài phải xét lại."
+}

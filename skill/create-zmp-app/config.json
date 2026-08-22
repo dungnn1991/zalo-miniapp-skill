@@ -232,9 +232,11 @@
         "releaseSupported": false
       }
     ],
-    "matchOrder": "duyệt catalog theo thứ tự khai báo, match keyword đầu tiên thắng (specific trước generic — zaui-shop cuối cùng)",
-    "noMatchBehavior": "opt-in nhưng match entry chưa releaseSupported hoặc không match → needs_template_choice chỉ liệt kê catalog được support; KHÔNG fetch entry unsupported, không tự đoán, không fallback lab template âm thầm",
-    "matchNormalization": "match sau khi normalize CẢ brief lẫn keyword: lowercase + NFD bỏ dấu + đ→d — 'quần áo'/'quan ao'/'Quần Áo' đều khớp (bổ sung 2026-08-21 theo yêu cầu đa ngôn ngữ)"
+    "matchOrder": "KHÔNG CÒN DÙNG. Thứ tự khai báo + first-keyword đã được thay bằng ranker có điểm số (hard-filter trước, domain → jobs → capabilities → alias). Xem references/template-routing.md.",
+    "noMatchBehavior": "KHÔNG CÒN DÙNG. Hành vi hiện tại: không match domain → lab; ambiguous và có ít nhất một lựa chọn scaffold được → exit 2 needsInput.reason=template_choice.",
+    "matchNormalization": "match sau khi normalize CẢ brief lẫn keyword: lowercase + NFD bỏ dấu + đ→d — 'quần áo'/'quan ao'/'Quần Áo' đều khớp (bổ sung 2026-08-21 theo yêu cầu đa ngôn ngữ)",
+    "deprecatedSince": "plan 34 (2026-08-23) — routing chuyển sang catalog/templates.json + scripts/recommend-template.mjs. Khối này giữ lại cho tương thích: chỉ còn tarballUrlPattern và optInPhrases được dùng.",
+    "optInPhrasesRole": "Không còn là cổng chặn (D34-1). Chỉ còn là tín hiệu ý định: user nói rõ muốn dùng mẫu mà chưa có template nào qualify thì hỏi, không im lặng dựng lab."
   },
   "sdkHostContract": {
     "observedPackage": "zmp-sdk@2.53.0",

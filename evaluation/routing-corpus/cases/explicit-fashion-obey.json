@@ -1,0 +1,23 @@
+{
+  "id": "explicit-fashion-obey",
+  "group": "explicit-override",
+  "brief": "tạo app phòng khám đặt lịch",
+  "blocking": true,
+  "templateFlag": "official:zaui-fashion",
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "stop",
+    "acceptedTemplateIds": [
+      "zaui-fashion"
+    ],
+    "mustNotSelect": [
+      "zaui-doctor"
+    ],
+    "requiredDomains": [
+      "commerce.fashion"
+    ],
+    "requiredJobs": []
+  },
+  "source": "plan 34 §6.2 (explicit-override) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Explicit thắng suy luận domain: user gõ official:<id> supported thì obey, không tự ý đổi sang doctor dù brief nói phòng khám."
+}

@@ -1,0 +1,18 @@
+{
+  "id": "explicit-lab-forced",
+  "group": "explicit-override",
+  "brief": "tạo app bán quần áo thời trang",
+  "blocking": true,
+  "templateFlag": "lab",
+  "expected": {
+    "decision": "lab",
+    "acceptedTemplateIds": [],
+    "mustNotSelect": [
+      "zaui-fashion"
+    ],
+    "requiredDomains": [],
+    "requiredJobs": []
+  },
+  "source": "plan 34 §6.2 (explicit-override) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "--template lab ép lab kể cả khi fashion đang supported và brief khớp hoàn hảo."
+}

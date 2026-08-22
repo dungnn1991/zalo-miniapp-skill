@@ -102,7 +102,7 @@ function readBridgeLog(ws, runId) {
 
 // bootstrap → portal-fetch → install → build, shared by the sim cases.
 function simBuildPipeline(ws, check) {
-  const boot = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--app-id', TEST_APP_ID]);
+  const boot = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--template', 'lab', '--app-id', TEST_APP_ID]);
   check('bootstrap exits 0', boot.code === 0, `exit ${boot.code}: ${boot.stderr.slice(-200)}`);
   const runId = boot.lastJson?.runId;
   if (!runId) return null;
@@ -227,7 +227,7 @@ function readRunTextFiles(ws, runId) {
 // ---------------------------------------------------------------------------
 const SCENARIOS = {
   'missing-dependency'({ ws, check, note }) {
-    const boot = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--app-id', TEST_APP_ID]);
+    const boot = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--template', 'lab', '--app-id', TEST_APP_ID]);
     check('bootstrap exits 0', boot.code === 0, `exit ${boot.code}: ${boot.stderr.slice(-300)}`);
     const runId = boot.lastJson?.runId;
     check('bootstrap prints runId', !!runId, boot.stdout.slice(-200));
@@ -259,7 +259,7 @@ const SCENARIOS = {
   },
 
   'react-no-mount'({ ws, check, note }) {
-    const boot = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--app-id', TEST_APP_ID]);
+    const boot = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--template', 'lab', '--app-id', TEST_APP_ID]);
     check('bootstrap exits 0', boot.code === 0, `exit ${boot.code}: ${boot.stderr.slice(-300)}`);
     const runId = boot.lastJson?.runId;
     if (!runId) { check('bootstrap prints runId', false, boot.stdout.slice(-200)); return; }
@@ -286,7 +286,7 @@ const SCENARIOS = {
   },
 
   'portal-404'({ ws, check, note }) {
-    const boot = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--app-id', TEST_APP_ID]);
+    const boot = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--template', 'lab', '--app-id', TEST_APP_ID]);
     check('bootstrap exits 0', boot.code === 0, `exit ${boot.code}`);
     const runId = boot.lastJson?.runId;
     if (!runId) { check('bootstrap prints runId', false, boot.stdout.slice(-200)); return; }
@@ -329,13 +329,13 @@ const SCENARIOS = {
   },
 
   'app-id-conflict'({ ws, check }) {
-    const boot1 = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--app-id', '1111111111']);
+    const boot1 = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--template', 'lab', '--app-id', '1111111111']);
     check('first bootstrap (id A) exits 0', boot1.code === 0, `exit ${boot1.code}: ${boot1.stderr.slice(-300)}`);
     const envFile = path.join(ws, 'app', '.env');
     const envBefore = fs.existsSync(envFile) ? fs.readFileSync(envFile, 'utf8') : null;
     check('app/.env written with id A', !!envBefore && envBefore.includes('1111111111'), String(envBefore).slice(0, 100));
 
-    const boot2 = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--app-id', '2222222222']);
+    const boot2 = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--template', 'lab', '--app-id', '2222222222']);
     check('second bootstrap (id B) exits 2', boot2.code === 2, `exit ${boot2.code}: ${boot2.stderr.slice(-300)}`);
     check('stdout status is conflict', boot2.lastJson?.status === 'conflict', JSON.stringify(boot2.lastJson));
     const envAfter = fs.existsSync(envFile) ? fs.readFileSync(envFile, 'utf8') : null;
@@ -363,19 +363,19 @@ const SCENARIOS = {
     const envAppId = (txt) => txt?.match(/^APP_ID=(.*)$/m)?.[1]?.trim() ?? null;
 
     // 1. scaffold + bind 1111
-    const boot1 = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--app-id', '1111']);
+    const boot1 = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--template', 'lab', '--app-id', '1111']);
     check('step1: bootstrap --app-id 1111 exits 0', boot1.code === 0, `exit ${boot1.code}: ${boot1.stderr.slice(-300)}`);
     check('step1: .env binds APP_ID=1111', envAppId(readEnv()) === '1111', String(readEnv()).slice(0, 100));
 
     // 2. guard — conflict detection unchanged without the flag
-    const boot2 = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--app-id', '2222']);
+    const boot2 = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--template', 'lab', '--app-id', '2222']);
     check('step2: conflicting bootstrap exits 2', boot2.code === 2, `exit ${boot2.code}: ${boot2.stderr.slice(-300)}`);
     check('step2: stdout status is conflict', boot2.lastJson?.status === 'conflict', JSON.stringify(boot2.lastJson));
     check('step2: .env still exactly 1111', envAppId(readEnv()) === '1111' && !String(readEnv()).includes('2222'),
       String(readEnv()).slice(0, 100));
 
     // 3. fix path — byte-equal confirm authorizes the overwrite
-    const boot3 = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--app-id', '2222', '--confirm-app-id', '2222']);
+    const boot3 = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--template', 'lab', '--app-id', '2222', '--confirm-app-id', '2222']);
     if (boot3.code !== 0) {
       note('step3 failed — if --confirm-app-id is not implemented yet (Subagent A mid-fix), re-run this case after the fix lands');
     }
@@ -395,7 +395,7 @@ const SCENARIOS = {
 
     // 4. negative guard — confirm that mismatches the prompt id must refuse, no mutation
     const envBefore4 = readEnv();
-    const boot4 = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--app-id', '3333', '--confirm-app-id', '9999']);
+    const boot4 = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--template', 'lab', '--app-id', '3333', '--confirm-app-id', '9999']);
     check('step4: mismatching --confirm-app-id exits 3', boot4.code === 3, `exit ${boot4.code}: ${(boot4.stderr || boot4.stdout).slice(-300)}`);
     check('step4: .env untouched (still 2222)',
       readEnv() === envBefore4 && envAppId(readEnv()) === '2222'
@@ -424,7 +424,7 @@ const SCENARIOS = {
   },
 
   'css-overflow'({ ws, check, note }) {
-    const boot = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--app-id', TEST_APP_ID]);
+    const boot = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--template', 'lab', '--app-id', TEST_APP_ID]);
     check('bootstrap exits 0', boot.code === 0, `exit ${boot.code}`);
     const runId = boot.lastJson?.runId;
     if (!runId) { check('bootstrap prints runId', false, boot.stdout.slice(-200)); return; }
@@ -604,7 +604,7 @@ process.exit(9);
 
   // Phase 2.6 negative control: a >3MB file in vite's public/ lands in dist → size_limit FAIL.
   async 'preflight-size-limit'({ ws, check, note }) {
-    const boot = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--app-id', TEST_APP_ID]);
+    const boot = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--template', 'lab', '--app-id', TEST_APP_ID]);
     check('bootstrap exits 0', boot.code === 0, `exit ${boot.code}`);
     const runId = boot.lastJson?.runId;
     if (!runId) return;
@@ -625,7 +625,7 @@ process.exit(9);
 
   // Phase 2.6 negative control: client code calling graph.zalo.me → hard FAIL before build.
   async 'preflight-server-side-api'({ ws, check, note }) {
-    const boot = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--app-id', TEST_APP_ID]);
+    const boot = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--template', 'lab', '--app-id', TEST_APP_ID]);
     check('bootstrap exits 0', boot.code === 0, `exit ${boot.code}`);
     const runId = boot.lastJson?.runId;
     if (!runId) return;
@@ -645,7 +645,7 @@ process.exit(9);
 
   // Phase 2.6 negative control: absolute asset path → WARN only, full run still passes.
   async 'preflight-asset-path'({ ws, check, note }) {
-    const boot = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--app-id', TEST_APP_ID]);
+    const boot = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--template', 'lab', '--app-id', TEST_APP_ID]);
     check('bootstrap exits 0', boot.code === 0, `exit ${boot.code}`);
     const runId = boot.lastJson?.runId;
     if (!runId) return;
@@ -746,7 +746,7 @@ process.exit(9);
     // (2) happy path (lab template, NO deploy) in a fresh workspace.
     fs.rmSync(ws, { recursive: true, force: true });
     fs.mkdirSync(ws, { recursive: true });
-    const happy = runScript(ws, 'run', ['--brief', 'tạo app bán quần áo', '--app-id', TEST_APP_ID]);
+    const happy = runScript(ws, 'run', ['--brief', 'tạo app bán quần áo', '--template', 'lab', '--app-id', TEST_APP_ID]);
     check('run.mjs exits 0 on happy path', happy.code === 0, `exit ${happy.code}: ${(happy.stderr || happy.stdout).slice(-400)}`);
     check('final JSON: status pass with runId + resultPath + insights count',
       happy.lastJson?.status === 'pass' && !!happy.lastJson?.runId
@@ -840,7 +840,7 @@ process.exit(9);
   async 'sim-unmocked'({ ws, check, note }) {
     const missing = simDepsMissing();
     if (missing.length) return `blocked: ${missing.join('; ')}`;
-    const boot = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--app-id', TEST_APP_ID]);
+    const boot = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--template', 'lab', '--app-id', TEST_APP_ID]);
     check('bootstrap exits 0', boot.code === 0, `exit ${boot.code}`);
     const runId = boot.lastJson?.runId;
     if (!runId) return;
@@ -900,7 +900,7 @@ process.exit(9);
   async 'sim-permission-persist'({ ws, check, note }) {
     const missing = simDepsMissing();
     if (missing.length) return `blocked: ${missing.join('; ')}`;
-    const boot = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--app-id', TEST_APP_ID]);
+    const boot = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--template', 'lab', '--app-id', TEST_APP_ID]);
     check('bootstrap exits 0', boot.code === 0, `exit ${boot.code}`);
     const runId = boot.lastJson?.runId;
     if (!runId) return;
@@ -946,7 +946,13 @@ process.exit(9);
 
   // v0.3.1 P0 regression — safe rerun must never clobber user-edited app code.
   'preserve-user-code'({ ws, check, note }) {
-    const args = ['--brief', 'tạo app bán quần áo', '--app-id', TEST_APP_ID];
+    // Pin lab: case này kiểm tra việc giữ code user trong LAB template. Từ plan 34,
+    // brief "bán quần áo" tự route sang zaui-fashion nên không pin sẽ test nhầm đối tượng.
+    // Toàn bộ case này kiểm tra hành vi giữ code user trên LAB template. Từ plan 34, brief
+    // "bán quần áo" tự route sang zaui-fashion, nên mọi lần gọi phải pin lab; riêng --existing
+    // không được đi kèm --template (bootstrap từ chối tổ hợp đó).
+    const args = ['--brief', 'tạo app bán quần áo', '--app-id', TEST_APP_ID, '--template', 'lab'];
+    const argsNoTemplate = args.filter((a, i) => a !== '--template' && args[i - 1] !== '--template');
     const boot = runScript(ws, 'bootstrap', args);
     check('bootstrap exits 0', boot.code === 0, `exit ${boot.code}: ${boot.stderr.slice(-200)}`);
     const appTsx = path.join(ws, 'app', 'src', 'app.tsx');
@@ -968,7 +974,7 @@ process.exit(9);
     check('sentinel survives the refused rerun', fs.readFileSync(appTsx, 'utf8').includes(sentinel), '');
 
     // (3) --existing keeps the code and proceeds
-    const ex = runScript(ws, 'bootstrap', [...args, '--existing']);
+    const ex = runScript(ws, 'bootstrap', [...argsNoTemplate, '--existing']);
     check('--existing exits 0', ex.code === 0, `exit ${ex.code}: ${ex.stderr.slice(-200)}`);
     check('sentinel survives --existing', fs.readFileSync(appTsx, 'utf8').includes(sentinel), '');
     const input = readJsonIfExists(path.join(ws, 'runs', ex.lastJson?.runId ?? 'x', 'input.json'));
@@ -1039,7 +1045,7 @@ process.exit(9);
     const env = { ...process.env };
     delete env.MB_WORKSPACE;
     const res = spawnSync(process.execPath, [path.join(pkg, 'scripts', 'bootstrap.mjs'),
-      '--brief', 'tạo app bán quần áo', '--app-id', TEST_APP_ID], {
+      '--brief', 'tạo app bán quần áo', '--app-id', TEST_APP_ID, '--template', 'lab'], {
       cwd: userDir, env, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024,
     });
     check('bootstrap (no --workspace) exits 0', res.status === 0, `exit ${res.status}: ${String(res.stderr).slice(-300)}`);
@@ -1240,12 +1246,13 @@ process.exit(9);
 
     const args = ['--brief', 'tạo app cà phê dùng mẫu có sẵn', '--app-id', TEST_APP_ID];
     const byBrief = runScript(ws, 'bootstrap', args);
-    check('unsupported keyword route exits 3 before scaffold', byBrief.code === 3,
+    // plan 34 D34-7: cần user chọn template là ASK-USER → exit 2, không còn exit 3.
+    check('unsupported keyword route exits 2 before scaffold', byBrief.code === 2,
       `exit ${byBrief.code}: ${byBrief.stderr.slice(-300)}`);
-    check('unsupported route returns actionable supported catalog',
+    check('unsupported route returns actionable options',
       byBrief.lastJson?.status === 'needs_template_choice'
-        && byBrief.lastJson?.unavailableTemplate === 'zaui-coffee'
-        && JSON.stringify(byBrief.lastJson?.catalog) === JSON.stringify(['zaui-fashion']),
+        && Array.isArray(byBrief.lastJson?.options)
+        && byBrief.lastJson.options.some((o) => o.id === 'zaui-coffee' && typeof o.why === 'string'),
       JSON.stringify(byBrief.lastJson));
     check('unsupported route creates no app and no fetch temp dir',
       !fs.existsSync(path.join(ws, 'app'))
@@ -1255,14 +1262,15 @@ process.exit(9);
       '--brief', 'tạo app cà phê', '--app-id', TEST_APP_ID, '--template', 'official:zaui-coffee',
     ]);
     check('explicit unsupported id is also blocked before fetch',
-      explicit.code === 3 && explicit.lastJson?.unavailableTemplate === 'zaui-coffee'
+      explicit.code === 2 && explicit.lastJson?.blocked?.id === 'zaui-coffee'
+        && (explicit.lastJson?.blocked?.supported ?? []).includes('zaui-fashion')
         && !fs.existsSync(path.join(ws, 'app')),
       `exit ${explicit.code}: ${JSON.stringify(explicit.lastJson)}`);
     note('public official catalog: zaui-fashion only; unsupported ids never fetch or mutate app/');
   },
 
   'golden'({ ws, check }) {
-    const boot = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--app-id', TEST_APP_ID]);
+    const boot = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--template', 'lab', '--app-id', TEST_APP_ID]);
     check('bootstrap exits 0 (status ok)', boot.code === 0 && boot.lastJson?.status === 'ok',
       `exit ${boot.code}: ${JSON.stringify(boot.lastJson)} ${boot.stderr.slice(-200)}`);
     const runId = boot.lastJson?.runId;

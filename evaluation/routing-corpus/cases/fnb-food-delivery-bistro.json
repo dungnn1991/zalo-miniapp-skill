@@ -1,0 +1,27 @@
+{
+  "id": "fnb-food-delivery-bistro",
+  "group": "fnb-overlap",
+  "brief": "app gọi đồ ăn giao tận nơi cho quán ăn của tôi",
+  "blocking": true,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-bistro"
+    ],
+    "mustNotSelect": [
+      "zaui-menu",
+      "zaui-restaurant",
+      "zaui-coffee"
+    ],
+    "requiredDomains": [
+      "fnb.restaurant"
+    ],
+    "requiredJobs": [
+      "food.order",
+      "delivery.track"
+    ]
+  },
+  "source": "plan 34 §6.2 (fnb-overlap) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "delivery.track chỉ có ở zaui-bistro trong nhóm F&B."
+}

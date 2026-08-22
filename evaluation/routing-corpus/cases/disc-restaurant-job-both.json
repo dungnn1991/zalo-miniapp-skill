@@ -1,0 +1,25 @@
+{
+  "id": "disc-restaurant-job-both",
+  "group": "job-signal",
+  "brief": "khách xem thực đơn rồi đặt bàn cho 4 người",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-restaurant"
+    ],
+    "mustNotSelect": [
+      "zaui-bistro"
+    ],
+    "requiredDomains": [
+      "fnb.restaurant"
+    ],
+    "requiredJobs": [
+      "menu.view",
+      "table.reserve"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Cố tình chồng lấn với zaui-menu; table.reserve phải là tín hiệu quyết định."
+}

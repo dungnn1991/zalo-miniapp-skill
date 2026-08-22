@@ -38,9 +38,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { TEMPLATE_DIR, loadLabConfig, resolveWorkspace, getArg } from './lib/paths.mjs';
+import { TEMPLATE_DIR, SKILL_DIR, loadLabConfig, resolveWorkspace, getArg } from './lib/paths.mjs';
 import { newRunId, openRun, fingerprint } from './lib/run-context.mjs';
 import { redactText } from './lib/redact.mjs';
+import { rankTemplates, supportedIds as rankerSupportedIds, loadRegistry as loadTemplateRegistry } from './recommend-template.mjs';
 
 const INVOKED_VIA = ['slash-command', 'codex-skill', 'natural-language', 'harness'];
 
@@ -489,6 +490,57 @@ function scaffoldFromTemplate(appDir, appName, variant, config, ctx, { force, ma
   writeScaffoldManifest(appDir, templateInfo, writeSet);
 }
 
+
+// --- plan 34: ranker deterministic thay cho opt-in phrase + first-keyword ------------------
+// `--template auto` là MẶC ĐỊNH. Ranker đọc catalog/templates.json (registry đã pin revision)
+// và trả templateSelection đúng schema; hàm này chỉ map sang shape nội bộ mà đường scaffold
+// hiện có đang dùng ({mode:'official'|'lab'|..., entry:{id,revision,branch}}), để không phải
+// viết lại phần scaffold đã qua E2E.
+async function resolveTemplateV2(argv, brief, config) {
+  const requested = getArg(argv, 'template', null) ?? 'auto';
+  // rankTemplates trả đủ {selection, templateOptions, blocked}; recommend() chỉ trả selection
+  // phẳng nên dùng nó ở đây sẽ nuốt mất danh sách lựa chọn cho user.
+  const raw = rankTemplates(brief ?? '', { template: requested });
+  const sel = raw.selection;
+
+  if (sel.mode === 'lab') return { mode: 'lab', selection: sel };
+
+  if (sel.mode === 'choice') {
+    return { mode: 'choice', selection: sel, options: raw.templateOptions ?? [] };
+  }
+
+  // auto | explicit
+  if (!sel.selectedId || !sel.revision) {
+    // explicit tới template chưa support / id không tồn tại → dừng, KHÔNG fallback lab.
+    // Ranker chỉ set `blocked` cho id không tồn tại; trường hợp id có thật nhưng chưa đạt
+    // gate thì lý do nằm ở alternatives[].rejectedBecause — dựng lại để câu hỏi nói đúng
+    // chuyện gì đã xảy ra thay vì rơi vào câu mơ hồ chung.
+    // Dùng đúng predicate của ranker (kể cả grandfather) — tự viết lại ở đây từng làm câu
+    // thông báo nói sai rằng "chưa có template nào dùng được" trong khi fashion vẫn scaffold ok.
+    const supportedIds = rankerSupportedIds(loadTemplateRegistry());
+    const alt = (sel.alternatives ?? []).find((a) => a.id === sel.selectedId);
+    const blocked = raw.blocked ?? (sel.selectedId
+      ? {
+          id: sel.selectedId,
+          reason: `Template ${sel.selectedId} ${alt?.rejectedBecause ?? 'chưa dùng được'}`,
+          kind: 'unsupported',
+          supported: supportedIds,
+        }
+      : null);
+    return { mode: 'blocked', selection: sel, blocked };
+  }
+  const profile = loadTemplateRegistry().templates.find((t) => t.id === sel.selectedId);
+  return {
+    mode: 'official',
+    selection: sel,
+    entry: { id: sel.selectedId, revision: sel.revision, branch: profile?.source?.defaultBranch ?? 'main' },
+  };
+}
+
+function loadRegistry() {
+  return JSON.parse(fs.readFileSync(path.join(SKILL_DIR, 'catalog', 'templates.json'), 'utf8'));
+}
+
 // --- Main ----------------------------------------------------------------------------
 async function main() {
   const argv = process.argv.slice(2);
@@ -525,37 +577,52 @@ async function main() {
   // Phase 2.5: resolve template selection first (pure parse of argv/brief vs the locked
   // catalog). Explicit invalid id die()s above (exit 3, ids listed). Opt-in without a
   // keyword match -> ask the user to choose; no scaffold, no guessing.
-  const templateSel = useExisting ? { mode: 'existing' } : resolveTemplateSelection(argv, brief, config);
-  if (templateSel.mode === 'ambiguous' || templateSel.mode === 'unsupported') {
-    const supported = templateSel.supported
-      ?? config.officialTemplates.catalog.filter((c) => c.releaseSupported === true);
-    const ids = supported.map((c) => c.id);
+  const templateSel = useExisting ? { mode: 'existing' } : await resolveTemplateV2(argv, brief, config);
+  // plan 34 D34-7: cần user chọn template là ASK-USER, không phải lỗi môi trường.
+  // Trả exit 2 + needsInput.reason='template_choice' (schema result 1.1), KHÔNG còn exit 3.
+  if (templateSel.mode === 'choice' || templateSel.mode === 'blocked') {
+    const sel = templateSel.selection;
+    const opts = templateSel.options ?? [];
+    const blocked = templateSel.blocked ?? null;
     const ambRunId = newRunId();
     const ambCtx = openRun(workspace.runsDir, ambRunId);
     ambCtx.event('bootstrap', {
       stage: 'input',
       status: 'needs_input',
-      detail: templateSel.mode === 'unsupported'
-        ? `official template ${templateSel.entry.id} is not release-supported; no fetch or app mutation`
-        : 'official-template opt-in without a supported keyword match; user must choose a release-supported template',
+      detail: blocked
+        ? `explicit template không dùng được: ${blocked.reason}; không fetch, không mutation`
+        : 'brief khớp nhiều hướng sản phẩm khác nhau; hỏi user chốt trước khi scaffold',
     });
-    const unavailable = templateSel.mode === 'unsupported' ? templateSel.entry.id : null;
+    const question = blocked
+      ? `${blocked.reason}. Template đang dùng được: ${(blocked.supported ?? []).join(', ') || '(chưa có)'}. ` +
+        'Chọn một id trong danh sách, hoặc bỏ --template để skill tự chọn.'
+      : 'Brief có thể đi theo nhiều hướng sản phẩm khác nhau. Bạn muốn hướng nào?\n' +
+        opts.map((o) => `- ${o.id}: ${o.why}`).join('\n');
+    ambCtx.writeJson('result.json', {
+      schemaVersion: '1.1',
+      runId: ambRunId,
+      status: 'needs_input',
+      stage: 'input',
+      provider,
+      needsInput: {
+        reason: 'template_choice',
+        question,
+        templateOptions: opts.map((o) => ({ id: o.id, why: o.why, jobs: o.jobs ?? [] })),
+      },
+      appIdSource: null,
+      expectedAppId: null,
+      resolvedAppId: null,
+      appIdBound: false,
+      gates: [],
+      findingIds: [],
+      templateSelection: sel,
+      startedAt,
+      finishedAt: new Date().toISOString(),
+    });
     process.stdout.write(
-      JSON.stringify({
-        runId: ambRunId,
-        status: 'needs_template_choice',
-        question: unavailable
-          ? `Template ${unavailable} hiện chưa đạt release gate nên skill không tải hoặc scaffold. ` +
-            `Các template đang được support: ${ids.join(', ') || '(chưa có)'}. ` +
-            'Chọn một id được support, hoặc bỏ yêu cầu "mẫu có sẵn" để dùng lab template.'
-          : 'Brief yêu cầu dùng mẫu có sẵn nhưng không khớp template đã đạt release gate. ' +
-            `Các template đang được support: ${ids.join(', ') || '(chưa có)'}. ` +
-            'Chọn một id được support, hoặc bỏ yêu cầu "mẫu có sẵn" để dùng lab template.',
-        catalog: ids,
-        unavailableTemplate: unavailable,
-      }) + '\n'
+      JSON.stringify({ runId: ambRunId, status: 'needs_template_choice', question, options: opts, blocked }) + '\n'
     );
-    process.exit(3);
+    process.exit(2);
   }
 
   // §5.2 step 1: prompt value (explicit flag, else embedded in the brief text).
@@ -888,13 +955,15 @@ async function main() {
 
   // Normalized input for the rest of the pipeline (input.schema.json, additionalProperties:false).
   ctx.writeJson('input.json', {
-    schemaVersion: '1.0',
+    // 1.1 khi run mang templateSelection (plan 34); run legacy giữ 1.0.
+    schemaVersion: templateSel.selection ? '1.1' : '1.0',
     brief: brief ?? null,
     miniAppId: expectedAppId,
     appIdSource,
     appName,
     variant,
     template: templateInfo,
+    ...(templateSel.selection ? { templateSelection: templateSel.selection } : {}),
     renderProvider: provider,
     defaultViewport: config.defaults.defaultViewport,
     packageManager: config.defaults.packageManager,

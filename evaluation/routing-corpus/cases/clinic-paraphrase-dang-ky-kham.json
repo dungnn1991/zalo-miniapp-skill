@@ -1,0 +1,25 @@
+{
+  "id": "clinic-paraphrase-dang-ky-kham",
+  "group": "paraphrase",
+  "brief": "app đăng ký khám bệnh online cho bệnh viện đa khoa",
+  "blocking": true,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-doctor"
+    ],
+    "mustNotSelect": [
+      "zaui-egovernment",
+      "zaui-fashion"
+    ],
+    "requiredDomains": [
+      "healthcare.clinic"
+    ],
+    "requiredJobs": [
+      "appointment.booking"
+    ]
+  },
+  "source": "plan 34 §6.2 (paraphrase) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "\"đăng ký\"/\"bệnh viện\" dễ kéo sang egovernment (bốc số/thủ tục) — phải ở lại healthcare."
+}

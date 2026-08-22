@@ -1,0 +1,25 @@
+{
+  "id": "commerce-grocery-nodiacritics",
+  "group": "diacritics",
+  "brief": "app sieu thi tap hoa giao hang tan nha",
+  "blocking": true,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-market"
+    ],
+    "mustNotSelect": [
+      "zaui-fashion",
+      "zaui-bistro"
+    ],
+    "requiredDomains": [
+      "commerce.grocery"
+    ],
+    "requiredJobs": [
+      "product.browse"
+    ]
+  },
+  "source": "plan 34 §6.2 (diacritics) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "\"giao hang\" không được kéo sang bistro (fnb)."
+}
