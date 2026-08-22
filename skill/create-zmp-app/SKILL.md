@@ -265,11 +265,20 @@ testing với mô tả "bản demo sprint 3"`), pass it as `--desc "<text>"`. If
 
 1. Spawn `zmp login` interactively with cwd `app/` (the host agent runs it — the script never
    does; `APP_ID` is already bound in `app/.env`).
-2. **Relay the QR output verbatim** to the user to scan with the Zalo app. The window is
-   ~2 minutes (the CLI polls login status by itself; the agent never touches or reads the auth
-   response). On timeout, ask the user whether to show a fresh QR — no silent retry loop.
-3. Wait for the CLI's "Login Success!", then re-run `ensure-login` to confirm. Confirmation is
-   **key-existence only** — NEVER confirm by reading the `ZMP_TOKEN` value.
+2. When the QR first appears, use the host's visual-capture capability to screenshot the
+   terminal and crop the complete QR with its quiet margin. Send that image to the user
+   **once**. A screenshot faithfully preserves the CLI's QR and is the preferred relay on
+   chat/Remote surfaces.
+3. **Never stream the live raw PTY, spinner, or repeated ANSI redraws through chat/Remote.**
+   They can expand one locally instant QR into thousands of repeated lines and make delivery
+   extremely slow. If visual capture is unavailable, strip ANSI and send one static QR block
+   once; do not continuously relay terminal output.
+4. Keep the login process alive, stop polling from the agent side, and wait for the user to
+   say the QR was scanned. Then inspect the terminal once for "Login Success!". The window is
+   ~2 minutes; the CLI owns its polling and auth response. On timeout, ask whether to show a
+   fresh QR — no silent retry loop.
+5. Re-run `ensure-login` to confirm. Confirmation is **key-existence only** — NEVER confirm by
+   reading the `ZMP_TOKEN` value. Do not persist the login QR in repo/run evidence.
 
 **Deploy guardrails (hard stops)**
 

@@ -48,7 +48,7 @@ khi deploy. SKILL/harness/host agent:
 ## 3. QR relay flow — từng bước cho host agent
 
 ```text
-ensure-login (exit 2) → spawn `zmp login` → relay QR cho NGƯỜI quét → "Login Success!"
+ensure-login (exit 2) → spawn `zmp login` → gửi một ảnh QR đã crop → "Login Success!"
 → ensure-login lại (xác nhận key) → deploy
 ```
 
@@ -57,15 +57,22 @@ ensure-login (exit 2) → spawn `zmp login` → relay QR cho NGƯỜI quét → 
    **khi user đồng ý login**.
 2. Host agent spawn **`zmp login`** ở chế độ tương tác, cwd = `<workspace>/app/` (script không
    bao giờ tự spawn; `APP_ID` đã được bootstrap bind sẵn trong `app/.env` — QR flow cần nó).
-3. **Relay nguyên văn khối QR** CLI in ra terminal cho user, kèm hướng dẫn: mở Zalo trên điện
-   thoại → quét QR. Cửa sổ ~2 phút (CLI tự poll mỗi 2s, tối đa 60 lần). Agent **không** đụng
-   vào response/poll — chỉ đợi.
-4. Thấy `Login Success!` → CLI đã tự ghi `ZMP_TOKEN` vào `app/.env`. Không mở/đọc file để
+3. Khi QR vừa hiện ổn định, dùng khả năng visual capture của host để chụp cửa sổ terminal,
+   crop đủ toàn bộ QR cùng viền trống rồi gửi **một ảnh** cho user. Đây là đường relay ưu tiên
+   trên chat/Remote vì giữ nguyên hình học QR và tránh serialize terminal động thành text.
+4. **Không stream raw PTY, spinner hoặc các lần ANSI redraw** lên chat/Remote. Chúng có thể
+   biến một QR hiện tức thì trên máy thành hàng nghìn dòng lặp và truyền rất chậm. Nếu host
+   không chụp được ảnh, strip ANSI rồi gửi đúng một khối QR tĩnh một lần; không relay liên tục.
+5. Giữ process login chạy nhưng agent ngừng poll terminal, đợi user báo đã quét rồi mới đọc
+   trạng thái một lần. Cửa sổ ~2 phút (CLI tự poll mỗi 2s, tối đa 60 lần); agent không đọc hay
+   can thiệp auth response.
+6. Thấy `Login Success!` → CLI đã tự ghi `ZMP_TOKEN` vào `app/.env`. Không mở/đọc file để
    "kiểm tra" giá trị.
-5. Timeout/QR hết hạn → hỏi user có muốn hiện QR mới không rồi mới chạy lại `zmp login`;
+7. Timeout/QR hết hạn → hỏi user có muốn hiện QR mới không rồi mới chạy lại `zmp login`;
    không tự loop.
-6. Chạy lại `ensure-login` để xác nhận — xác nhận **duy nhất** bằng key-existence (exit 0).
-   Không bao giờ xác nhận bằng cách đọc giá trị token.
+8. Chạy lại `ensure-login` để xác nhận — xác nhận **duy nhất** bằng key-existence (exit 0).
+   Không bao giờ xác nhận bằng cách đọc giá trị token. Không lưu QR đăng nhập vào repo hoặc
+   run evidence lâu dài.
 
 ## 4. Deploy + phân loại lỗi
 
