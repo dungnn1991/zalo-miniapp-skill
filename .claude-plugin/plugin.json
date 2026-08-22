@@ -1,6 +1,6 @@
 {
   "name": "create-zmp-app",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Zalo Mini App demo bootstrap — scaffold, build, render-verify, simulator, deploy.",
   "author": { "name": "dungnn1991" },
   "skills": ["./skill/create-zmp-app"]

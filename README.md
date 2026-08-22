@@ -66,12 +66,12 @@ Lệnh cài mặc định lấy tag stable `vX.Y.Z` cao nhất, không bao giờ
 giữa hai lần release. Cần đúng một bản cụ thể thì chỉ định rõ:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/dungnn1991/zalo-miniapp-skill/main/install.sh | bash -s -- --version v0.3.1
+curl -fsSL https://raw.githubusercontent.com/dungnn1991/zalo-miniapp-skill/main/install.sh | bash -s -- --version v0.3.2
 ```
 
 Mỗi lần chạy, skill in ra dòng version. Bản cài bằng script có dạng
-`doctor: ok — create-zmp-app v0.3.1 (v0.3.1)` và file `INSTALLED_VERSION`; bản Claude Plugin
-hiện `(claude-plugin v0.3.1)` và có thể đối chiếu thêm bằng `/plugin details`; bản copy tay mới
+`doctor: ok — create-zmp-app v0.3.2 (v0.3.2)` và file `INSTALLED_VERSION`; bản Claude Plugin
+hiện `(claude-plugin v0.3.2)` và có thể đối chiếu thêm bằng `/plugin details`; bản copy tay mới
 hiện `(dev copy)`. Báo lỗi nhớ kèm dòng này để tránh hai bên soi bug trên hai bản khác nhau.
 
 Nhánh `staging` là nơi thử nghiệm liên tục, thay đổi bất cứ lúc nào. Team dev cài bằng

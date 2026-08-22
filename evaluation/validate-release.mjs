@@ -26,6 +26,7 @@ function json(file) {
 }
 
 const skillText = read('skill/create-zmp-app/SKILL.md');
+const deployWorkflowText = read('skill/create-zmp-app/references/deploy-workflow.md');
 const fmMatch = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(skillText);
 let frontmatter = null;
 try { frontmatter = fmMatch ? YAML.parse(fmMatch[1]) : null; } catch (err) {
@@ -35,6 +36,15 @@ check('SKILL.md has YAML frontmatter', !!fmMatch, 'missing opening/closing --- b
 check('skill name matches folder', frontmatter?.name === 'create-zmp-app', JSON.stringify(frontmatter?.name));
 check('skill description is substantive', typeof frontmatter?.description === 'string' && frontmatter.description.length >= 80,
   `length=${frontmatter?.description?.length ?? 0}`);
+const qrRelayDocs = `${skillText}\n${deployWorkflowText}`;
+check('QR login relay prefers one cropped image and forbids raw PTY streaming',
+  skillText.includes('crop the complete QR')
+    && deployWorkflowText.includes('crop đủ toàn bộ QR')
+    && qrRelayDocs.includes('raw PTY')
+    && qrRelayDocs.includes('ANSI')
+    && !qrRelayDocs.includes('Relay the QR output verbatim')
+    && !qrRelayDocs.includes('Relay nguyên văn khối QR'),
+  'QR relay contract regressed to live/raw terminal streaming');
 
 let openai = null;
 try { openai = YAML.parse(read('skill/create-zmp-app/agents/openai.yaml')); } catch (err) {

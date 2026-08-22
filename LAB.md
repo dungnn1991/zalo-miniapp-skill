@@ -82,7 +82,8 @@ Facts zmp-cli pin ở `skill/create-zmp-app/config.json` mục `zmpCli` (version
   đang `needs_input`/`login_required` thì revert về status tính từ gates (tránh deadlock
   post-login vì deploy đòi status `pass`). Không có key → upsert `result.json`
   `needs_input`/`login_required` (schemaVersion `1.1`), exit 2. Script KHÔNG tự
-  spawn `zmp login` — host agent relay QR cho người quét (contract trong SKILL.md).
+  spawn `zmp login` — host agent chụp/crop QR và gửi một ảnh cho người quét; không stream raw
+  PTY/ANSI redraw qua chat/Remote (contract trong SKILL.md).
   Token hết hạn/thiếu là lifecycle kỳ vọng → **không finding** (đây là quyết định chốt;
   plan 27 §5 control 2 viết "có finding" là wording cũ).
 - `deploy.mjs --run-id <id> [--testing] [--desc "<text>"] [--workspace <dir>]` — preconditions: `result.json`
@@ -219,6 +220,16 @@ không được dùng trong CI. Validate skill packaging:
 
 ## Trạng thái
 
+- 2026-08-22 — **Candidate v0.3.2:** sửa contract relay QR sau phiên deploy thật qua Codex
+  Remote: chụp/crop và gửi một ảnh, không stream raw PTY/spinner/ANSI; agent ngừng poll đến
+  khi user báo đã quét. Release validator có gate chống regress về wording cũ; runtime/token
+  custody không đổi.
+- 2026-08-22 — **Bài học từ deploy qua Codex Remote:** `zmp login` hiện QR gần như tức thì
+  trên terminal local, nhưng raw PTY chứa spinner/ANSI redraw bị relay thành hàng nghìn dòng
+  lặp và đến điện thoại rất chậm. Contract host-agent đã đổi sang chụp/crop QR thành một ảnh,
+  gửi một lần, ngừng poll tới khi user báo đã quét; fallback duy nhất là một khối QR tĩnh đã
+  strip ANSI. QR không được lưu vào repo/run evidence và token custody không đổi.
+
 - 2026-08-20 — P0 scaffold + schemas + browser runner LOCKED (smoke 41/41).
 - 2026-08-20 — **Implementation round 1 hoàn thành** (P0→P3 của plan; P4 simulator chưa làm):
   - Golden run `run-2026-08-20T10-55-54Z-f08e`: 47/47 gates pass, App ID thật
@@ -298,7 +309,7 @@ không được dùng trong CI. Validate skill packaging:
     doctor-autoinstall). Finding runner gap `requiresPermission` verified qua re-run.
   - Trung thực: mock ≠ native — pass sim không thay UAT Zalo thật (FAQ 21); API `login`
     không có Portal doc (mock ít doc-backed nhất, đã flag).
-- 2026-08-22 — **Candidate v0.3.1 release-hardening (chưa commit/tag)**:
+- 2026-08-22 — **v0.3.1 release-hardening** (`8ab2510`, tag `v0.3.1`):
   - 3 P0 từ audit install/rerun/workspace được phủ regression; canonical plugin chỉ còn
     một skill path; root `.env` bỏ tracking và ignore mọi cấp.
   - Official template public support khoá ở `zaui-fashion` pin SHA; 10 entry còn lại

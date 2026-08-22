@@ -4,7 +4,15 @@ Mọi thay đổi đáng kể của skill. Version = `package.json` + git tag `v
 Thay đổi phát sinh từ finding formal phải gắn id; expected/actual/lifecycle nằm trong
 `feedback/findings.jsonl`, decision và regression nằm trong `feedback/improvements.jsonl`.
 
-## [0.3.1] — 2026-08-22 (chưa tag)
+## [0.3.2] — 2026-08-22
+
+### Fixed
+- QR login trên chat/Remote giờ ưu tiên chụp/crop đúng QR và gửi một ảnh duy nhất; cấm stream
+  raw PTY, spinner hoặc ANSI redraw. Agent ngừng poll sau khi gửi ảnh, chỉ kiểm tra lại một lần
+  khi user báo đã quét. Bài học được ghi từ phiên deploy Remote ngày 2026-08-22; token custody
+  và giới hạn timeout/retry giữ nguyên.
+
+## [0.3.1] — 2026-08-22
 
 ### Fixed — 3 P0 từ audit release-readiness v0.3.0
 - **Workspace mặc định = cwd, luôn luôn.** Bỏ heuristic `IN_LAB` (marker `evaluation/cases`):
