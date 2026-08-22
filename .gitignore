@@ -1,5 +1,6 @@
 *.log
 .DS_Store
+.env
 app/.env
 app/dist/
 app/node_modules/

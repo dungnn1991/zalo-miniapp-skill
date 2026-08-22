@@ -1,0 +1,10 @@
+{
+  "caseId": "installer-hosts",
+  "title": "v0.3.1 P0 — install.sh cài đúng host: default codex, --host claude/both, node_modules theo lockfile",
+  "expectation": {
+    "exitCode": 0,
+    "findingCategory": null,
+    "findingSlugHint": null,
+    "description": "install.sh --src-dir (offline) với HOME cô lập: mặc định cài ~/.codex/skills và KHÔNG đụng ~/.claude; --host claude/both cài đúng đích; INSTALLED_VERSION stamp version+ref; node_modules cũ chỉ được giữ khi pnpm-lock.yaml không đổi."
+  }
+}

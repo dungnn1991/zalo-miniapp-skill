@@ -73,8 +73,8 @@
     "variantTargetFile": "src/data/catalog.ts"
   },
   "officialTemplates": {
-    "note": "Opt-in, không bắt buộc — chỉ dùng khi user nói rõ muốn mẫu có sẵn; mặc định vẫn là lab template. Nguồn: github.com/Zalo-MiniApp (observed 2026-08-20); gallery https://miniapp.zaloplatforms.com/zaui-templates là SPA, org GitHub là ground truth. Scaffold bằng tarball codeload, KHÔNG dùng `zmp init` (interactive, treo non-tty).",
-    "tarballUrlPattern": "https://codeload.github.com/Zalo-MiniApp/{repo}/tar.gz/refs/heads/{branch}",
+    "note": "Opt-in, không bắt buộc — chỉ entry releaseSupported=true được public route/scaffold. verified ghi bằng chứng đã chạy; releaseSupported là quyết định support riêng. Nguồn catalog: github.com/Zalo-MiniApp (observed 2026-08-22). Template public pin commit SHA để release tái hiện được; không dùng branch mutable hoặc `zmp init` interactive.",
+    "tarballUrlPattern": "https://codeload.github.com/Zalo-MiniApp/{repo}/tar.gz/{revision}",
     "optInPhrases": [
       "mẫu có sẵn",
       "template có sẵn",
@@ -90,6 +90,7 @@
       {
         "id": "zaui-fashion",
         "branch": "main",
+        "revision": "d59cfad4d79b2ba57e6dfdf6be82d967cf9e7f5c",
         "keywords": [
           "quần áo",
           "thời trang",
@@ -100,7 +101,9 @@
           "shop đồ",
           "clothes"
         ],
-        "verified": true
+        "verified": true,
+        "releaseSupported": true,
+        "releaseCaseId": "official-template-golden"
       },
       {
         "id": "zaui-coffee",
@@ -113,7 +116,8 @@
           "trà sữa",
           "coffee shop"
         ],
-        "verified": false
+        "verified": false,
+        "releaseSupported": false
       },
       {
         "id": "zaui-bistro",
@@ -125,7 +129,8 @@
           "food ordering",
           "đồ ăn"
         ],
-        "verified": false
+        "verified": false,
+        "releaseSupported": false
       },
       {
         "id": "zaui-menu",
@@ -136,7 +141,8 @@
           "gọi món",
           "order food"
         ],
-        "verified": false
+        "verified": false,
+        "releaseSupported": false
       },
       {
         "id": "zaui-restaurant",
@@ -145,7 +151,8 @@
           "nhà hàng",
           "restaurant"
         ],
-        "verified": false
+        "verified": false,
+        "releaseSupported": false
       },
       {
         "id": "zaui-market",
@@ -158,7 +165,8 @@
           "market",
           "grocery"
         ],
-        "verified": false
+        "verified": false,
+        "releaseSupported": false
       },
       {
         "id": "zaui-doctor",
@@ -172,7 +180,8 @@
           "đặt lịch khám",
           "booking khám"
         ],
-        "verified": false
+        "verified": false,
+        "releaseSupported": false
       },
       {
         "id": "zaui-uni",
@@ -183,7 +192,8 @@
           "education",
           "khóa học"
         ],
-        "verified": false
+        "verified": false,
+        "releaseSupported": false
       },
       {
         "id": "zaui-egovernment",
@@ -193,7 +203,8 @@
           "dịch vụ công",
           "government"
         ],
-        "verified": false
+        "verified": false,
+        "releaseSupported": false
       },
       {
         "id": "zaui-lucky-wheel",
@@ -204,7 +215,8 @@
           "minigame",
           "trúng thưởng"
         ],
-        "verified": false
+        "verified": false,
+        "releaseSupported": false
       },
       {
         "id": "zaui-shop",
@@ -216,11 +228,12 @@
           "e-commerce",
           "thương mại"
         ],
-        "verified": false
+        "verified": false,
+        "releaseSupported": false
       }
     ],
     "matchOrder": "duyệt catalog theo thứ tự khai báo, match keyword đầu tiên thắng (specific trước generic — zaui-shop cuối cùng)",
-    "noMatchBehavior": "opt-in nhưng không match keyword nào → needs_input hỏi user chọn template id từ catalog; KHÔNG tự đoán, không fallback lab template âm thầm",
+    "noMatchBehavior": "opt-in nhưng match entry chưa releaseSupported hoặc không match → needs_template_choice chỉ liệt kê catalog được support; KHÔNG fetch entry unsupported, không tự đoán, không fallback lab template âm thầm",
     "matchNormalization": "match sau khi normalize CẢ brief lẫn keyword: lowercase + NFD bỏ dấu + đ→d — 'quần áo'/'quan ao'/'Quần Áo' đều khớp (bổ sung 2026-08-21 theo yêu cầu đa ngôn ngữ)"
   },
   "sdkHostContract": {

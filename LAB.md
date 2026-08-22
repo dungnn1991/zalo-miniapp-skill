@@ -24,9 +24,11 @@ Không login, không tạo/deploy app, không nhận credential. `APP_ID` không
 
 Mọi script: `node skill/create-zmp-app/scripts/<name>.mjs [--workspace <dir>] [--run-id <id>] ...`
 
-- **Workspace** (chứa `app/`, `runs/`, `feedback/`) mặc định là lab root; forward-test đổi bằng
-  `--workspace` hoặc env `MB_WORKSPACE`. Skill install (config, runner, `node_modules`) luôn resolve
-  từ lab root qua `scripts/lib/paths.mjs`.
+- **Workspace** (chứa `app/`, `runs/`, `feedback/`) mặc định là **cwd** — LUÔN LUÔN, kể cả khi
+  chạy từ trong lab (v0.3.1 bỏ heuristic `IN_LAB`: plugin Claude cài nguyên repo nên marker
+  `evaluation/cases` luôn khớp và output rơi vào plugin cache). Làm việc trong lab thì truyền
+  `--workspace` hoặc env `MB_WORKSPACE` tường minh. Skill assets (config, runner, template,
+  `node_modules`) luôn resolve từ vị trí package qua `scripts/lib/paths.mjs`.
 - **Exit codes** (khóa trong `skill/create-zmp-app/config.json`): `0` pass · `1` gate fail (đã ghi finding) ·
   `2` needs_input (chưa mutate gì) · `3` precondition/config error.
 - Mọi stage append `runs/<run-id>/events.jsonl` qua `lib/run-context.mjs` (allowlist + redact).
@@ -132,15 +134,18 @@ User không chuyên có thể xin scaffold từ template chính thức của pla
 mặc định vẫn là lab template; chỉ kích hoạt khi prompt chứa opt-in phrase (skill/create-zmp-app/config.json
 `officialTemplates.optInPhrases`) hoặc `--template official:<id>` explicit.
 
-- Catalog + keyword mapping + tarball URL pattern: `skill/create-zmp-app/config.json` `officialTemplates`
-  (nguồn: github.com/Zalo-MiniApp, observed 2026-08-20). Match theo thứ tự catalog, specific
-  trước generic. Opt-in mà không match → **exit 3** với stdout JSON cuối
+- Catalog discovery + keyword mapping + support policy + tarball URL pattern:
+  `skill/create-zmp-app/config.json` `officialTemplates` (nguồn: github.com/Zalo-MiniApp,
+  observed 2026-08-22). Chỉ entry `releaseSupported=true`, `verified=true` và pin commit SHA
+  được public route/scaffold. Match theo thứ tự catalog, specific trước generic. Opt-in
+  không match support set, hoặc match entry experimental → **exit 3** với stdout JSON cuối
   `{"status":"needs_template_choice","catalog":[...]}` — agent dừng, hỏi user chọn id rồi
   chạy lại với `--template official:<id>`; không tự đoán, không fallback âm thầm.
   (Không đụng needsInput.reason enum của result schema — needs_input dành cho App ID/login.)
-- Scaffold: tarball codeload (KHÔNG `zmp init` — interactive treo non-tty; KHÔNG git clone),
+- Scaffold: tarball codeload theo `revision` immutable (KHÔNG `zmp init` — interactive treo
+  non-tty; KHÔNG git clone),
   strip top dir, set name trong package.json + zmp-cli.json, app title trong app-config.json;
-  `.env` APP_ID binding y hệt lab template. `input.json` ghi `template: {source, id}`
+  `.env` APP_ID binding y hệt lab template. `input.json` ghi `template: {source, id, revision}`
   (input.schema.json đã có field optional này; vắng mặt = lab).
 - Build: template chính thức có thể có script `build:css` (chạy trước nếu có; **fail →
   finding major category dependency + continue** — vite build mới là gate thật, vì template
@@ -206,7 +211,10 @@ node $S/render.mjs --run-id <id>
 node $S/verify.mjs --run-id <id>
 ```
 
-Negative controls: xem `evaluation/cases/`. Validate skill packaging:
+Negative controls: xem `evaluation/cases/`. Chạy CẢ BỘ case (release gate, cũng là CI):
+`npm test` (= validator release + `node evaluation/run-all.mjs`); release mode strict nên
+`FAIL` **hoặc** `BLOCKED` đều exit 1. `--allow-blocked` chỉ dùng cho exploratory local,
+không được dùng trong CI. Validate skill packaging:
 `python3 <skill-creator>/scripts/quick_validate.py skill/create-zmp-app`.
 
 ## Trạng thái
@@ -243,9 +251,10 @@ Negative controls: xem `evaluation/cases/`. Validate skill packaging:
   - Case suite: 15 cases pass (8 Phase 1 + conflict-resolve + 4 Phase 2 + deploy-qr-parse + golden).
   - Chưa làm: simulator adapter (P4 plan 26); production release ngoài scope.
 - 2026-08-20 — **Phase 2.5 hoàn thành: option official templates (opt-in)**:
-  - Scaffold từ 11 template chính thức github.com/Zalo-MiniApp qua tarball (không `zmp init`);
-    map brief→template theo catalog keywords trong `skill/create-zmp-app/config.json`; opt-in phrase bắt buộc,
-    mặc định vẫn lab template; mơ hồ → `needs_template_choice` (exit 3), không đoán.
+  - Discovery catalog ghi 11 repo github.com/Zalo-MiniApp; release support là tập con riêng.
+    Từ candidate v0.3.1 chỉ `zaui-fashion` được support, pin commit SHA và E2E;
+    entry experimental dừng trước fetch. Mặc định vẫn lab template; mơ hồ →
+    `needs_template_choice` (exit 3), không đoán/fallback.
   - E2E thật với `zaui-fashion` (case `official-template-golden`): scaffold → install → build
     (build:css tolerant + prep entry có finding + outDir detect `src/www`) → render profile
     `official-template` với host URL contract (`/zapps/<appId>/` + inject `window.APP_ID`)
@@ -262,7 +271,8 @@ Negative controls: xem `evaluation/cases/`. Validate skill packaging:
   - **Single entry `scripts/run.mjs`** chain toàn pipeline (kể cả deploy/preview opt-in);
     `preview.mjs` mở browser mặc định. Agent chạy ngầm, user không gõ lệnh tay.
   - 8 preflight gates (size limit 10/3MB fail, server-side-API scan fail-blocking, asset-path
-    warn, **CORS OPTIONS probe thật** warn, permission-registry hint, Checkout-SDK hint,
+    warn, CORS source scan passive warn; OPTIONS live chỉ opt-in bằng
+    `MB_ENABLE_CORS_PROBE=1`, permission-registry hint, Checkout-SDK hint,
     ZMP_TOKEN env trap, quota parse); gate `warn` không fail run; insight vào `result.insights[]`.
   - Tier-2: `references/error-signatures.json` (11 chữ ký từ community FAQ, có nguồn) +
     matcher đính `insight` vào finding khi log khớp. References mới: `troubleshooting.md`,
@@ -288,3 +298,19 @@ Negative controls: xem `evaluation/cases/`. Validate skill packaging:
     doctor-autoinstall). Finding runner gap `requiresPermission` verified qua re-run.
   - Trung thực: mock ≠ native — pass sim không thay UAT Zalo thật (FAQ 21); API `login`
     không có Portal doc (mock ít doc-backed nhất, đã flag).
+- 2026-08-22 — **Candidate v0.3.1 release-hardening (chưa commit/tag)**:
+  - 3 P0 từ audit install/rerun/workspace được phủ regression; canonical plugin chỉ còn
+    một skill path; root `.env` bỏ tracking và ignore mọi cấp.
+  - Official template public support khoá ở `zaui-fashion` pin SHA; 10 entry còn lại
+    experimental và dừng trước network/mutation.
+  - `npm test` gồm release metadata validator + 32 behavioral case, strict với `BLOCKED`;
+    CI exposes context `release-gate`. Ruleset chỉ có thể require context này sau khi
+    workflow được commit/push và chạy lần đầu.
+  - Verification local trên base `43ad3ee` + working tree candidate: hai full-suite run đều
+    `32/32 pass, 0 blocked`; release validator `27/27`; skill-creator quick validator và
+    Claude marketplace/plugin manifest validator pass. E2E từ bản cài Codex và Claude
+    plugin-cache cô lập đều pass `54 gate + 2 policy warning` (không deploy).
+  - Còn hai release decision không tự chốt trong source: owner chọn license cho repo public
+    (finding_38a04a6460d6), và sau push gắn required status check vào ruleset
+    (finding_3768b1ae9aab). Deploy còn known upstream risk zmp-cli 4.0.3 tắt TLS verify
+    (finding_6ba23dbd9ccc), đã nêu công khai trong README.

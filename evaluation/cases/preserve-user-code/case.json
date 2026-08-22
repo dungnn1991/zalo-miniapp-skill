@@ -1,0 +1,10 @@
+{
+  "caseId": "preserve-user-code",
+  "title": "v0.3.1 P0 — rerun pipeline không được ghi đè code user đã sửa (safe-rerun contract)",
+  "expectation": {
+    "exitCode": 2,
+    "findingCategory": null,
+    "findingSlugHint": "existing_app",
+    "description": "Scaffold → sửa app/src/app.tsx (sentinel) → rerun bootstrap mặc định phải exit 2 needs_input existing_app, sentinel còn nguyên. --existing chạy tiếp và giữ sentinel (template.source kế thừa từ manifest). --force-scaffold mới được ghi đè. Rerun trên app chưa sửa vẫn idempotent exit 0."
+  }
+}

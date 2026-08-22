@@ -2,8 +2,9 @@
 // run.mjs — SINGLE ENTRY for the whole create-zmp-app pipeline (Subagent C, plan 29 §3.2).
 //
 //   node scripts/run.mjs --brief "..." [--app-id X] [--confirm-app-id X] [--app-name N]
-//        [--template official:<id>] [--invoked-via S] [--deploy] [--deploy-testing]
-//        [--desc "..."] [--preview] [--workspace W]
+//        [--template official:<id>] [--existing | --force-scaffold] [--invoked-via S]
+//        [--deploy] [--deploy-testing] [--desc "..."] [--preview] [--preview-timeout <ms>]
+//        [--workspace W]
 //
 // Chains: bootstrap → portal-fetch → install → build → render → verify
 //         [--deploy/--deploy-testing: → ensure-login → deploy → verify]
@@ -18,6 +19,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { resolveWorkspace, getArg, SKILL_DIR } from './lib/paths.mjs';
+import { doctorVersionLine } from './lib/version.mjs';
 
 const SCRIPTS_DIR = path.dirname(fileURLToPath(import.meta.url));
 const argv = process.argv.slice(2);
@@ -29,6 +31,11 @@ const bootstrapArgs = [];
 for (const flag of ['brief', 'app-id', 'confirm-app-id', 'app-name', 'template', 'invoked-via']) {
   const v = getArg(argv, flag);
   if (v !== null) bootstrapArgs.push(`--${flag}`, v);
+}
+// Boolean safe-rerun flags (no value): --existing = verify/build the app already in the
+// workspace; --force-scaffold = user-authorized overwrite of a modified app.
+for (const flag of ['existing', 'force-scaffold']) {
+  if (argv.includes(`--${flag}`)) bootstrapArgs.push(`--${flag}`);
 }
 const wantDeploy = argv.includes('--deploy') || argv.includes('--deploy-testing');
 const deployTesting = argv.includes('--deploy-testing');
@@ -74,20 +81,9 @@ function doctor({ needZmp }) {
       process.exit(3);
     }
   }
-  // version stamp trong output — báo bug phải kèm đúng version (INSTALLED_VERSION do
-  // install.sh ghi khi cài từ repo; thiếu = bản dev/copy tay)
-  let verLine = 'doctor: ok';
-  try {
-    const pkg = JSON.parse(fs.readFileSync(path.join(SKILL_DIR, 'package.json'), 'utf8'));
-    let ref = '';
-    const ivPath = path.join(SKILL_DIR, 'INSTALLED_VERSION');
-    if (fs.existsSync(ivPath)) {
-      const m = /ref=(.+)/.exec(fs.readFileSync(ivPath, 'utf8'));
-      if (m) ref = ` (${m[1].trim()})`;
-    } else ref = ' (dev copy)';
-    verLine = `doctor: ok — create-zmp-app v${pkg.version}${ref}`;
-  } catch { /* giữ dòng mặc định */ }
-  console.error(verLine);
+  // Version provenance must remain useful on both supported install paths: install.sh
+  // stamps an immutable ref; Claude's plugin cache carries the matching plugin manifest.
+  console.error(doctorVersionLine(SKILL_DIR));
 }
 if (!argv.includes('--skip-doctor')) doctor({ needZmp: wantDeploy });
 
@@ -160,10 +156,13 @@ console.log(JSON.stringify({
   resultPath,
 }));
 
-// 8. optional human preview — blocks until Ctrl+C (JSON above already printed).
+// 8. optional human preview — blocks until Ctrl+C (JSON above already printed), or until
+// --preview-timeout <ms> for scripted/agent use (forwarded as preview.mjs --timeout).
 // --preview-sim opens the headed simulator window instead of the plain static preview.
 if (wantPreview || wantPreviewSim) {
   const previewArgs = ['--run-id', runId, ...workspaceArg];
+  const previewTimeout = getArg(argv, 'preview-timeout');
+  if (previewTimeout !== null) previewArgs.push('--timeout', previewTimeout);
   if (wantPreviewSim) {
     previewArgs.push('--sim');
     if (getArg(argv, 'sim-decision') !== null) previewArgs.push('--sim-decision', simDecision);

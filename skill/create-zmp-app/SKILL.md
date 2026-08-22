@@ -1,12 +1,13 @@
 ---
 name: create-zmp-app
-description: Bootstrap a Zalo Mini App POC from a natural-language brief plus a user-supplied Mini App ID — scaffold from the lab template, bind APP_ID exactly, ground on live Portal Markdown, install, build with Vite 5, then render-verify in a browser with evidence; on explicit request, deploy the verified build to Development/Testing via zmp-cli with a user-scanned QR login. Brief hiểu cả tiếng Anh và tiếng Việt có dấu lẫn không dấu ("tao app ban quan ao", "create a food ordering app"). Trigger on requests like "tạo Zalo Mini App", "tạo app bán quần áo", "tạo mini app", "bootstrap mini app", "scaffold zmp app", "create a zalo mini app", "deploy mini app lên development/testing". Do NOT trigger for knowledge-only questions about Zalo Mini App, for provisioning/app-creation or production-release requests, or when intent is ambiguous — never scaffold or deploy without a clear request.
+description: Bootstrap a small Zalo Mini App demo from a natural-language brief plus a user-supplied Mini App ID — scaffold the deterministic clothing/neutral lab shell or a release-supported official template, bind APP_ID exactly, ground on live Portal Markdown, install, build, then render-verify in a browser with evidence; on explicit request, deploy the verified build to Development/Testing via zmp-cli with a user-scanned QR login. Brief hiểu cả tiếng Anh và tiếng Việt có dấu lẫn không dấu ("tao app ban quan ao", "create a clothing store app"). Trigger on requests like "tạo Zalo Mini App", "tạo app bán quần áo", "tạo mini app", "bootstrap mini app", "scaffold zmp app", "create a zalo mini app", "deploy mini app lên development/testing". Do NOT trigger for knowledge-only questions about Zalo Mini App, for provisioning/app-creation or production-release requests, or when intent is ambiguous — never scaffold or deploy without a clear request.
 ---
 
 # create-zmp-app
 
-Bootstrap a real (small) Zalo Mini App from a brief + Mini App ID, then prove it renders.
-The brief shapes copy/data/layout; the mechanics stay deterministic. Everything below routes to
+Bootstrap a small Zalo Mini App demo from a brief + Mini App ID, then prove it renders.
+The bundled lab template selects clothing-store or neutral demo data; it does not generate an
+arbitrary domain UI. The mechanics stay deterministic. Everything below routes to
 locked contracts — facts live in `config.json`, `schemas/`, and `references/`, all inside this
 self-contained skill package.
 
@@ -21,6 +22,8 @@ self-contained skill package.
   `app/.env`.
 - Any script exiting `2` means **STOP and ask the user**. Do not proceed, retry with a made-up
   value, or overwrite files to "fix" it.
+- CORS inspection is passive by default. Do not set `MB_ENABLE_CORS_PROBE=1` unless the user
+  has authorized live requests to the app's API origins; a live probe never replaces Zalo UAT.
 - Knowledge-only or ambiguous intent → answer the question; do not scaffold.
 
 ## No improvisation (hard rules)
@@ -46,7 +49,8 @@ Normalized input is written to `runs/<run-id>/input.json` and must conform to
 `schemas/input.schema.json` (in this package; `additionalProperties: false`). Key fields:
 `brief` (null → neutral demo shell, no extra questions), `miniAppId` (required string),
 `appIdSource`, `appName`, `variant`, `renderProvider`, `defaultViewport`, `packageManager`,
-`invokedVia`. Defaults come from `config.json` so a short prompt still runs. The brief is
+`invokedVia`, and optional `template` provenance (`source`, `id`, immutable `revision` for an
+official template). Defaults come from `config.json` so a short prompt still runs. The brief is
 stored exactly as the user gave it — when `--app-id` is absent, an embedded `appId=`/`miniAppId=`
 value is extracted from it as the prompt App ID, but it is never stripped from the stored brief.
 
@@ -73,7 +77,8 @@ Run the whole pipeline through the **single entry** (from the skill directory):
 
 ```bash
 node scripts/run.mjs --brief "tạo app bán quần áo" [--app-id <id>] \
-  [--invoked-via <surface>] [--deploy | --deploy-testing] [--preview] \
+  [--existing | --force-scaffold] [--invoked-via <surface>] \
+  [--deploy | --deploy-testing] [--preview] [--preview-timeout <ms>] \
   [--verify-sim] [--preview-sim] [--sim-decision accept|deny|manual] [--workspace <dir>]
 ```
 
@@ -83,11 +88,13 @@ exit-code contract says, and prints a final JSON status line for you to read.
 
 **Agent conduct — the user's whole UX is the prompt:**
 
-- **Run the command yourself, silently.** Never tell the user to run commands, never paste raw
+- **Run the command yourself.** Never tell the user to run commands, never paste raw
   logs at them, never hand them a "next steps: run X" list.
-- Surface to the user at exactly **four points**: (1) missing/conflicting App ID ·
-  (2) official-template choice when ambiguous · (3) QR scan for login ·
-  (4) confirmation before deploy. Everything else runs unattended.
+- **Stop and ask the user** at exactly **four points**: (1) missing/conflicting App ID, or an
+  existing modified app (`existing_app` — user chooses `--existing` vs `--force-scaffold`) ·
+  (2) official-template choice when ambiguous or the requested template is not release-supported · (3) QR scan for login ·
+  (4) confirmation before deploy. Everything else runs unattended — no other questions;
+  the milestone narration below is one-way status, not a stop.
 - **Preview by default.** For a create request, always include `--preview` so the user gets
   the built app opened for review the moment verify passes — or `--preview-sim` instead when
   their prompt mentions giả lập/simulator/thử quyền. Skip the preview flag only when the user
@@ -107,8 +114,19 @@ exit-code contract says, and prints a final JSON status line for you to read.
 
 `run.mjs` and every per-stage script accept `--workspace <dir>` to redirect the generated
 output — `app/`, `runs/`, `feedback/`. **Warning:** all stages of one run must receive the
-**same** `--workspace` (or set `MB_WORKSPACE` once). Default: the lab root inside the dev lab,
-the current directory in a shipped copy.
+**same** `--workspace` (or set `MB_WORKSPACE` once). Default: the **current working
+directory**, always — the package location (plugin cache, `~/.codex/skills`, dev lab) never
+decides where output lands. The dev lab redirects explicitly with `--workspace`/`MB_WORKSPACE`.
+
+**Safe rerun (never lose user code):** scaffolding records a manifest
+(`app/.scaffold-manifest.json`) of exactly the files it wrote. Re-running a create command
+stops with exit `2` (`existing_app`) before touching anything when the app was edited since
+scaffold, was not created by the skill, resolves to a **different template** than it was
+scaffolded from, or when the incoming template would overwrite a file the manifest does not
+own. Resume with `--existing` (keep the code, bind + build + verify only) or
+`--force-scaffold` (explicit user-authorized overwrite). An untouched same-template app
+re-scaffolds silently (idempotent retry); files the user added are never absorbed into the
+manifest and never block a rerun.
 
 **Exit codes** (locked in `config.json`):
 
@@ -119,9 +137,10 @@ the current directory in a shipped copy.
 | `2` | needs_input (nothing mutated) | **stop and ask the user** (see below) |
 | `3` | precondition/config error | stop; fix environment/invocation, do not touch locked files |
 
-> **Exception on exit `3`:** final-line status `needs_template_choice` (ambiguous official
-> template) also uses exit `3` but is an **ASK-USER** stop, not an environment error: stop,
-> list the printed catalog for the user to choose, then re-run with
+> **Exception on exit `3`:** final-line status `needs_template_choice` (ambiguous or
+> unsupported official template) also uses exit `3` but is an **ASK-USER** stop, not an
+> environment error: stop, list the printed release-supported catalog for the user to choose,
+> then re-run with
 > `--template official:<id>`. (Design note: exit `3` was chosen so the `needsInput.reason`
 > enum stays reserved for App ID/login.)
 
@@ -156,23 +175,29 @@ node $S/verify.mjs --run-id <runId>
 
 ## Official templates (opt-in)
 
-**Never mandatory** — the default is always the lab template (a custom app shaped by the
-brief); the user always keeps the right to an app built their way. Activate only when the user
+**Never mandatory** — the default is always the lab template (a deterministic demo shell,
+not an arbitrary-domain UI generator); the user can ask the agent to integrate features on
+that shell. Activate official routing only when the user
 explicitly asks for a ready-made template ("dùng mẫu có sẵn", "template chính thức", "tạo
 nhanh từ template chính thức") or passes `--template official:<id>`. Catalog, opt-in phrases
-and keyword mapping are locked in `config.json` `officialTemplates`.
+and keyword mapping are locked in `config.json` `officialTemplates`. Only entries with
+`releaseSupported=true` are exposed; `verified` is evidence, not the support decision.
 
 - Opt-in phrase in the brief → bootstrap maps it to a catalog id by keywords, in catalog
-  order (first match wins). Explicit `--template official:<id>` always wins.
-- Opt-in but no keyword match → bootstrap exits `3` with a final stdout JSON
+  order (first match wins). Explicit `--template official:<id>` wins routing, but cannot bypass
+  `releaseSupported`.
+- Opt-in with no supported keyword match, or a known but unsupported id → bootstrap exits `3`
+  **before fetch/app mutation** with a final stdout JSON
   `{"status":"needs_template_choice","catalog":[...]}` — **stop and ask the user to pick an
-  id from that catalog**, then re-run with `--template official:<id>`. Never guess, never
-  fall back to the lab template silently.
+  id from that release-supported catalog**, or remove the template request to use the lab
+  template. Never guess, never fall back silently.
+- Release-supported official templates are fetched at the immutable `revision` in config;
+  `input.json` and the scaffold manifest preserve that revision.
 - APP_ID resolution/binding, `input.json`, and the rest of the pipeline are identical; render
   runs the `official-template` oracle profile (lab marker/interaction/CTA gates report
   `skipped` — official templates have no lab `data-testid` markers). Deploy is **not**
   automatic for official-template builds in this round.
-- Example: `$create-zmp-app tạo app cà phê từ mẫu có sẵn với appId="..."` → `zaui-coffee`.
+- Example: `$create-zmp-app tạo app thời trang dùng mẫu zaui-fashion với appId="..."`.
 - Details: `references/official-templates.md`.
 
 ## Simulator (Phase 3, opt-in)
@@ -210,9 +235,11 @@ sửa code app đã sinh — đây là ngoại lệ hợp lệ của rule "khôn
    getSetting → authorize → getUserInfo → cache storage) thì theo ĐÚNG recipe, không tự chế
    pattern khác. Chưa có recipe → fetch Portal docs của API liên quan trước, làm theo docs,
    ghi nguồn vào code comment.
-2. Sau khi sửa: chạy lại build + verify qua `run.mjs`, rồi mở preview cho user — flow liên
-   quan quyền thì dùng simulator (`--preview-sim`, hoặc `preview.mjs --sim` với app official)
-   để user tự bấm thử; nhớ ranh giới: form quyền thật chỉ có khi app LIVE.
+2. Sau khi sửa: chạy lại build + verify qua `run.mjs` **với `--existing`** — bắt buộc, vì
+   không có nó pipeline sẽ dừng ở `existing_app` (và `--force-scaffold` sẽ XÓA code vừa
+   tích hợp). Rồi mở preview cho user — flow liên quan quyền thì dùng simulator
+   (`--preview-sim`, hoặc `preview.mjs --sim` với app official) để user tự bấm thử; nhớ ranh
+   giới: form quyền thật chỉ có khi app LIVE.
 3. Báo cáo: đã đổi file nào, theo recipe/nguồn nào, kết quả verify, bước tiếp theo.
 
 ## Deploy (Phase 2, opt-in)
@@ -266,16 +293,20 @@ re-running the same `run.mjs` command with the extra flag:
   never preemptively, never to "avoid" the question.
 - **Conflict, user chooses the project ID** — re-run without any prompt App ID (drop `--app-id`
   and any `appId=` embedded in the brief); the existing `.env` value is reused unchanged.
+- **`existing_app`** — the workspace already holds an app with user-edited (or foreign) files.
+  Ask which way to go, then re-run with `--existing` (keep the code) or `--force-scaffold`
+  (user-authorized overwrite). Never pick for the user, never force-scaffold to "unblock".
 
 Never proceed past exit `2`, never invent an ID, never edit `app/.env` by hand to bypass a
 conflict.
 
 ## Invocation surfaces
 
-`/create-zmp-app ...` (slash-command hosts), `$create-zmp-app ...` (Codex-style hosts, see
-`agents/openai.yaml`), or natural language ("Dùng create-zmp-app tạo app ..."). All surfaces map
-to the **same** input schema and workflow — adapters translate invocation syntax only and must
-not fork the workflow, guardrails, or gates. Pass the surface via `--invoked-via
+`/create-zmp-app ...` (slash-command hosts), `$create-zmp-app ...` (Codex-style hosts —
+`agents/openai.yaml` carries UI metadata only; the contract is this file), or natural language
+("Dùng create-zmp-app tạo app ..."). All surfaces map to the **same** input schema and
+workflow — adapters translate invocation syntax only and must not fork the workflow,
+guardrails, or gates. Pass the surface via `--invoked-via
 slash-command|codex-skill|natural-language|harness`.
 
 ## Example prompts
@@ -283,7 +314,7 @@ slash-command|codex-skill|natural-language|harness`.
 - `/create-zmp-app tạo app bán quần áo với appId="37853..."`
 - `$create-zmp-app tạo app bán quần áo với appId="37853..."`
 - `Dùng create-zmp-app tạo app bán quần áo, miniAppId=001234567890`
-- `tao app dat mon cho quan an, dung mau co san, appId=...` (không dấu — brief VN có dấu/không dấu/EN đều hiểu)
+- `tao app thoi trang dung mau zaui-fashion, appId=...` (không dấu — brief VN có dấu/không dấu/EN đều hiểu)
 - `/create-zmp-app scaffold a clothing store mini app, appId=37853...`
 - `app đang lỗi Network Error, check giúp` → no re-scaffold: match the error against
   `references/error-signatures.json` (here: CORS entry — fix is on the **server**), then walk

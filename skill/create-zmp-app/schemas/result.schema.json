@@ -71,6 +71,7 @@
           "enum": [
             "app_id_missing",
             "app_id_conflict",
+            "existing_app",
             "login_required"
           ]
         },
