@@ -76,7 +76,12 @@ export function resolveServeContext(ctx, ws) {
   const outDir = ctx.readJson('evidence/build-info.json')?.outDir ?? 'dist';
   const distDir = path.join(ws.appDir, outDir);
   const input = ctx.readJson('input.json');
-  const isOfficial = input?.template?.source === 'official';
+  const src = input?.template?.source;
+  // 'existing' (app ngoài, không có scaffold manifest — bootstrap --existing) dùng chung
+  // đường generic với official template: host URL contract + oracle profile không đòi lab
+  // markers. Chỉ app scaffold từ LAB template (source 'lab' hoặc input cũ không có template)
+  // mới chịu bộ 8 marker gates.
+  const isOfficial = src === 'official' || src === 'existing';
   const appId = input?.miniAppId ?? null;
   return {
     outDir,
@@ -119,10 +124,11 @@ async function main() {
     // App scaffold từ official template chưa được wire cho sim UI-demo — fail rõ thay vì
     // để runner rơi vào react_mount fail khó hiểu (guard sau finding_30d7006aeaa7 incident).
     const tmplSource = ctx.readJson('input.json')?.template?.source;
-    if (tmplSource === 'official') {
+    if (tmplSource === 'official' || tmplSource === 'existing') {
       console.error(
         'render: simulator demo flow xin quyền hiện chỉ hỗ trợ app tạo từ LAB template ' +
-        '(tab "Tài khoản" + demo markers). App này scaffold từ official template. ' +
+        '(tab "Tài khoản" + demo markers). App này scaffold từ ' +
+        (tmplSource === 'official' ? 'official template. ' : 'nguồn ngoài (--existing, không có manifest). ') +
         'Muốn thử flow quyền: tạo app lab template (prompt KHÔNG kèm "mẫu có sẵn"), vd: ' +
         '"tạo app bán quần áo với appId=..." rồi chạy giả lập trên app đó.'
       );

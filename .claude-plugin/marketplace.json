@@ -7,8 +7,8 @@
     {
       "name": "create-zmp-app",
       "source": "./",
-      "description": "Tạo, verify, giả lập và deploy Zalo Mini App từ một câu prompt (browser oracle + simulator mock host + deploy Development/Testing qua zmp-cli)."
+      "description": "Dựng, verify, giả lập và deploy demo Zalo Mini App từ prompt + App ID (browser oracle + simulator mock host + deploy Development/Testing qua zmp-cli)."
     }
   ],
-  "description": "Marketplace nội bộ cho skill Zalo Mini App (create-zmp-app): tạo app từ prompt, verify browser/simulator, deploy Development/Testing."
+  "description": "Marketplace cho skill Zalo Mini App (create-zmp-app): dựng demo từ prompt + App ID, verify browser/simulator, deploy Development/Testing."
 }

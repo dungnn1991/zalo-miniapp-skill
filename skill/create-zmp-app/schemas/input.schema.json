@@ -34,8 +34,9 @@
       "additionalProperties": false,
       "description": "Nguồn scaffold. Vắng mặt = lab template (backward compat với run cũ).",
       "properties": {
-        "source": { "type": "string", "enum": ["lab", "official"] },
-        "id": { "type": "string", "description": "lab: 'lab-template'; official: id trong lab.config.json officialTemplates.catalog" }
+        "source": { "type": "string", "enum": ["lab", "official", "existing"] },
+        "id": { "type": "string", "description": "lab: 'lab-template'; official: id trong config.json officialTemplates.catalog; existing: 'existing-app' (--existing, không scaffold)" },
+        "revision": { "type": "string", "description": "Official template immutable commit SHA (or legacy ref). Omitted for lab/existing apps without pinned provenance." }
       }
     },
     "renderProvider": { "type": "string", "enum": ["browser", "simulator"] },

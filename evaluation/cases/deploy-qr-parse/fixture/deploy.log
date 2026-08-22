@@ -1,0 +1,37 @@
+  _____  __  __   ____       ____   _       ___
+ |__  / |  \/  | |  _ \     / ___| | |     |_ _|
+   / /  | |\/| | | |_) |   | |     | |      | |
+  / /_  | |  | | |  __/    | |___  | |___   | |
+ /____| |_|  |_| |_|        \____| |_____| |___|
+                                                 Version: 4.0.3
+
+ℹ View app at:
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+█ ▄▄▄▄▄ █▀ ▀  ▄▄ █▀ █▀██  █ ▄▄▄▄▄ █
+█ █   █ █▄▀▄ ██     █ ██ ▀█ █   █ █
+█ █▄▄▄█ █ ▄▀▄▀█▄ ▄█ ▀ ▀▄▄ █ █▄▄▄█ █
+█▄▄▄▄▄▄▄█ █ █▄█ █ ▀ ▀ ▀▄▀▄█▄▄▄▄▄▄▄█
+█▄▄▀ ▀█▄ █▀█▄ ▄▄█▀ ▀█   ▄█▀  ▄▀▄▄▀█
+██▄▀█ ▀▄▀ ▀▀█▄▀▀▀ ▄█▄▄  █▀██▄█▄█▀ █
+█▄▀██▀█▄  ▀▄▄█  █▄▀█   ▄██  █▀ ▀▀ █
+████ ▄▄▄██▀▄▄ ▀ █  ▀▀ ▀  ▄█▀▄  █ ██
+█▀ ▀█▄▀▄▀▀  ▀ ███ ▀█▄▄ ▀ █ ▄█▄▀▀█▄█
+█▄ ██▀▀▄▀▄▄▀██▄▄█▄▀█▀▀▀█▀▄ ▀██ █▄▄█
+██▀▀▄▄█▄ ▄ ▄▄█ ▄█▄▄█▄▄  ███▀▀█▄▀▄▀█
+█▄   █▄▄▄▀▀ ▀█ ▀▀▀▄▀▄█▀ ▀▀ ▄▄  █▀ █
+█▄█▄██▄▄▄▀███ ▄█▀█▀▀ ▄ ▄█ ▄▄▄  ▀█▀█
+█ ▄▄▄▄▄ █▄▀▄  ▀ █  ▄▀▄ ▀▀ █▄█ ▄█ ██
+█ █   █ █▀██▀ ▀█ ▀▀█▄▀ ▀█▄    ██▀▀█
+█ █▄▄▄█ █▀▀ ▀▀▄█▀█▀▀██▀▄█  █  ▄▄▄▄█
+█▄▄▄▄▄▄▄█▄▄▄█▄▄██▄▄█▄▄▄▄▄▄█▄▄█▄█▄██
+
+ℹ️ File "index.html" will NOT be uploaded. If you define custom scripts or styles, declare them in "app-config.json".
+♻️ Deploy Quota:
+  - Development: 2 / 300
+  - Testing: 0 / 60
+
+- undefined
+(node:13142) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED environment variable to '0' makes TLS connections and HTTPS requests insecure by disabling certificate verification.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ Deploy Done! ✅
+✔ Version: zdev-dc3f8ce8

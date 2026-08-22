@@ -1,0 +1,8 @@
+{
+  "id": "version-reporting",
+  "title": "Doctor reports trustworthy install provenance",
+  "expectation": {
+    "description": "install.sh stamp reports its immutable ref; a matching Claude plugin-cache manifest reports claude-plugin plus version; a manual copy or ordinary source checkout reports dev copy.",
+    "exitCode": 0
+  }
+}

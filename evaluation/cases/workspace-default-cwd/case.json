@@ -1,0 +1,10 @@
+{
+  "caseId": "workspace-default-cwd",
+  "title": "v0.3.1 P0 — workspace mặc định là cwd, không bao giờ là vị trí package (plugin cache)",
+  "expectation": {
+    "exitCode": 0,
+    "findingCategory": null,
+    "findingSlugHint": null,
+    "description": "Copy package vào layout giống plugin cache (<ws>/skill/create-zmp-app với evaluation/cases bên cạnh — marker của heuristic IN_LAB cũ), chạy bootstrap từ cwd user không có --workspace/MB_WORKSPACE: app/, runs/, .env APP_ID phải nằm ở cwd; cây package và repo stand-in sạch."
+  }
+}

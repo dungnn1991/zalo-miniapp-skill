@@ -6,8 +6,17 @@
 // CLI:
 //   node bootstrap.mjs --brief <text> [--app-id <id>] [--app-name <name>]
 //                      [--confirm-app-id <id>] [--template official:<id>]
+//                      [--existing | --force-scaffold]
 //                      [--invoked-via slash-command|codex-skill|natural-language|harness]
 //                      [--workspace <dir>]
+//
+// Safe-rerun contract (v0.3.1 P0): scaffolding writes app/.scaffold-manifest.json (sha256 of
+// every file it produced). A later default run may re-scaffold ONLY when the current app/
+// still hash-matches that manifest (idempotent retry). Otherwise it stops with exit 2
+// needs_input `existing_app` — user-edited or foreign files are never overwritten silently.
+//   --existing        skip scaffolding entirely: bind APP_ID + input.json against the app
+//                     already in the workspace (feature-integration / verify-existing mode).
+//   --force-scaffold  explicit user-authorized overwrite; rewrites the manifest.
 //
 // --template official:<id> (Phase 2.5, opt-in): scaffold from the platform's official
 // template catalog (lab.config.json `officialTemplates` — authoritative). Also activated
@@ -27,6 +36,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { TEMPLATE_DIR, loadLabConfig, resolveWorkspace, getArg } from './lib/paths.mjs';
 import { newRunId, openRun, fingerprint } from './lib/run-context.mjs';
@@ -131,11 +141,13 @@ function resolveTemplateSelection(argv, brief, config) {
   if (explicit !== null) {
     if (!ot) die('lab.config.json has no officialTemplates section; --template unsupported');
     const ids = ot.catalog.map((c) => c.id);
+    const supported = ot.catalog.filter((c) => c.releaseSupported === true);
     const m = /^official:(.+)$/.exec(explicit.trim());
     if (!m) die(`invalid --template "${explicit}" (expected official:<id>; ids: ${ids.join(', ')})`);
     const id = m[1].trim();
     const entry = ot.catalog.find((c) => c.id === id);
     if (!entry) die(`unknown official template id "${id}"; valid ids: ${ids.join(', ')}`);
+    if (entry.releaseSupported !== true) return { mode: 'unsupported', entry, supported };
     return { mode: 'official', entry };
   }
   if (!ot || !brief) return { mode: 'lab' };
@@ -143,11 +155,18 @@ function resolveTemplateSelection(argv, brief, config) {
   const nt = normalizeVi(brief);
   const optIn = ot.optInPhrases.some((p) => matchNormalized(nt, p));
   if (!optIn) return { mode: 'lab' };
-  // Catalog declaration order, first keyword match wins (specific before generic).
+  const supported = ot.catalog.filter((c) => c.releaseSupported === true);
+  // Catalog declaration order, first keyword match wins (specific before generic). A known
+  // but unsupported match is surfaced explicitly; it is never fetched and never silently
+  // replaced with a different-domain template.
   for (const entry of ot.catalog) {
-    if (entry.keywords.some((k) => matchNormalized(nt, k))) return { mode: 'official', entry };
+    if (entry.keywords.some((k) => matchNormalized(nt, k))) {
+      return entry.releaseSupported === true
+        ? { mode: 'official', entry }
+        : { mode: 'unsupported', entry, supported };
+    }
   }
-  return { mode: 'ambiguous' };
+  return { mode: 'ambiguous', supported };
 }
 
 function slugify(name) {
@@ -167,10 +186,12 @@ function slugify(name) {
 // existing title field of app-config.json. No __APP_NAME__ token, no variants — those are
 // lab-template mechanisms. .env is never copied; APP_ID binding happens in the caller,
 // identical to the lab path.
-async function scaffoldOfficial(entry, appName, config, workspace, ctx) {
+async function scaffoldOfficial(entry, appName, config, workspace, ctx, { force, manifest, templateInfo }) {
+  const revision = entry.revision ?? entry.branch;
   const url = config.officialTemplates.tarballUrlPattern
     .replace('{repo}', entry.id)
-    .replace('{branch}', entry.branch);
+    .replace('{revision}', revision)
+    .replace('{branch}', revision); // backward-compatible with old local config copies
   const tmpDir = fs.mkdtempSync(path.join(workspace.root, '.official-tpl-'));
   try {
     ctx.event('bootstrap', { stage: 'scaffold', status: 'ok', detail: `fetching official template ${entry.id}`, url });
@@ -186,6 +207,9 @@ async function scaffoldOfficial(entry, appName, config, workspace, ctx) {
     }
     const names = fs.readdirSync(extractDir).filter((n) => !n.startsWith('.'));
     const top = names.length === 1 ? path.join(extractDir, names[0]) : extractDir;
+    // Write-set known only now (tarball content) — collision check BEFORE any app mutation.
+    const writeSet = copyWriteSet(top);
+    if (!force) assertNoCollisions(workspace.appDir, writeSet, manifest);
     fs.mkdirSync(workspace.appDir, { recursive: true });
     fs.cpSync(top, workspace.appDir, {
       recursive: true,
@@ -193,27 +217,34 @@ async function scaffoldOfficial(entry, appName, config, workspace, ctx) {
       filter: (src) => path.basename(src) !== '.env',
     });
 
-    const slug = slugify(appName);
-    for (const relFile of ['package.json', 'zmp-cli.json']) {
-      const file = path.join(workspace.appDir, relFile);
-      if (fs.existsSync(file)) {
-        const obj = JSON.parse(fs.readFileSync(file, 'utf8'));
-        obj.name = slug;
-        fs.writeFileSync(file, JSON.stringify(obj, null, 2) + '\n');
+    // From here app/ is populated. If the rebrand below throws (e.g. unparsable
+    // package.json in the upstream template), still record the manifest so the exit-1
+    // retry is not misclassified as an unmanaged foreign app.
+    try {
+      const slug = slugify(appName);
+      for (const relFile of ['package.json', 'zmp-cli.json']) {
+        const file = path.join(workspace.appDir, relFile);
+        if (fs.existsSync(file)) {
+          const obj = JSON.parse(fs.readFileSync(file, 'utf8'));
+          obj.name = slug;
+          fs.writeFileSync(file, JSON.stringify(obj, null, 2) + '\n');
+        }
       }
+      const appCfgFile = path.join(workspace.appDir, 'app-config.json');
+      if (fs.existsSync(appCfgFile)) {
+        const cfg = JSON.parse(fs.readFileSync(appCfgFile, 'utf8'));
+        if (cfg.app && typeof cfg.app.title === 'string') cfg.app.title = appName;
+        else if (typeof cfg.title === 'string') cfg.title = appName;
+        fs.writeFileSync(appCfgFile, JSON.stringify(cfg, null, 2) + '\n');
+      }
+      ctx.event('bootstrap', {
+        stage: 'scaffold',
+        status: 'ok',
+        detail: `official template ${entry.id} scaffolded (name=${slug}, title=${appName})`,
+      });
+    } finally {
+      writeScaffoldManifest(workspace.appDir, templateInfo, writeSet);
     }
-    const appCfgFile = path.join(workspace.appDir, 'app-config.json');
-    if (fs.existsSync(appCfgFile)) {
-      const cfg = JSON.parse(fs.readFileSync(appCfgFile, 'utf8'));
-      if (cfg.app && typeof cfg.app.title === 'string') cfg.app.title = appName;
-      else if (typeof cfg.title === 'string') cfg.title = appName;
-      fs.writeFileSync(appCfgFile, JSON.stringify(cfg, null, 2) + '\n');
-    }
-    ctx.event('bootstrap', {
-      stage: 'scaffold',
-      status: 'ok',
-      detail: `official template ${entry.id} scaffolded (name=${slug}, title=${appName})`,
-    });
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
@@ -265,22 +296,154 @@ async function recordFindingSafe(args) {
   return record;
 }
 
+// --- Scaffold safety (safe-rerun contract, see header) --------------------------------
+// Metadata/derived dirs never hashed and never counted as "content": they are either
+// regenerated (node_modules, dist, www) or owned by the binding step (.env).
+const MANIFEST_NAME = '.scaffold-manifest.json';
+const SCAFFOLD_IGNORE_DIRS = new Set(['node_modules', 'dist', 'www', '.git']);
+const SCAFFOLD_IGNORE_FILES = new Set(['.env', MANIFEST_NAME, '.DS_Store']);
+
+function listAppFiles(appDir) {
+  const out = [];
+  const stack = [appDir];
+  while (stack.length) {
+    const dir = stack.pop();
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (!SCAFFOLD_IGNORE_DIRS.has(entry.name)) stack.push(full);
+      } else if (entry.isFile() && !SCAFFOLD_IGNORE_FILES.has(entry.name)) {
+        out.push(path.relative(appDir, full));
+      }
+    }
+  }
+  return out.sort();
+}
+
+function sha256File(file) {
+  return crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+}
+
+// Manifest records ONLY the files the scaffold itself wrote (the write-set), hashed after
+// the final content settled (token/variant/rebrand). Files the user or the pipeline adds
+// later (pnpm-lock.yaml, generated entries, custom sources) are never absorbed — the guard
+// must not raise false existing_app stops on them, and --force-scaffold must not claim to
+// overwrite files no template owns.
+function writeScaffoldManifest(appDir, template, writtenRels) {
+  const files = {};
+  for (const rel of [...writtenRels].sort()) {
+    const full = path.join(appDir, rel);
+    if (fs.existsSync(full)) files[rel] = sha256File(full);
+  }
+  fs.writeFileSync(
+    path.join(appDir, MANIFEST_NAME),
+    JSON.stringify({ schemaVersion: '1.0', template, createdAt: new Date().toISOString(), files }, null, 2) + '\n'
+  );
+}
+
+function readScaffoldManifest(appDir) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(appDir, MANIFEST_NAME), 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+// null → scaffold may proceed. Otherwise {reason, files} describing why it must not:
+//   unmanaged        app/ has content but no (parsable) manifest — not scaffolded by us
+//   template_changed manifest provenance differs from the incoming resolved template —
+//                    re-scaffolding would produce an incoherent two-template hybrid
+//   modified         a scaffold-owned file was edited/deleted since scaffold
+// User-ADDED files are handled separately by assertNoCollisions (pre-copy, per write-set).
+function scaffoldConflict(appDir, incomingTemplate) {
+  if (!fs.existsSync(appDir)) return null;
+  const current = listAppFiles(appDir);
+  if (current.length === 0) return null; // empty or .env-only — nothing to clobber
+  const manifest = readScaffoldManifest(appDir);
+  if (!manifest) return { reason: 'unmanaged', files: [] };
+  const old = manifest.template ?? {};
+  if (
+    old.source !== incomingTemplate.source
+    || old.id !== incomingTemplate.id
+    || (old.revision ?? null) !== (incomingTemplate.revision ?? null)
+  ) {
+    return { reason: 'template_changed', files: [], from: old, to: incomingTemplate };
+  }
+  const modified = [];
+  for (const [rel, hash] of Object.entries(manifest.files ?? {})) {
+    const full = path.join(appDir, rel);
+    if (!fs.existsSync(full)) modified.push(`${rel} (deleted)`);
+    else if (sha256File(full) !== hash) modified.push(rel);
+  }
+  return modified.length ? { reason: 'modified', files: modified } : null;
+}
+
+// Thrown BEFORE any copy when the incoming write-set would overwrite on-disk files the
+// manifest does not own (user-added, or paths a newer template gained). Nothing is mutated
+// when this fires — main converts it to the same existing_app needs_input stop.
+class ScaffoldCollisionError extends Error {
+  constructor(files) {
+    super(`scaffold would overwrite ${files.length} file(s) not owned by the previous scaffold`);
+    this.name = 'ScaffoldCollisionError';
+    this.files = files;
+  }
+}
+
+function assertNoCollisions(appDir, writtenRels, manifest) {
+  if (!fs.existsSync(appDir)) return;
+  const owned = manifest?.files ?? {};
+  const collisions = writtenRels.filter(
+    (rel) => !(rel in owned) && fs.existsSync(path.join(appDir, rel))
+  );
+  if (collisions.length) throw new ScaffoldCollisionError(collisions);
+}
+
 // --- Scaffold ------------------------------------------------------------------------
-function scaffoldFromTemplate(appDir, appName, variant, config, ctx) {
+// Rel paths (relative to dstRoot semantics) of every file a recursive copy of srcDir with
+// the standard exclusions would write. Used both to pre-check collisions and as the
+// manifest write-set.
+function copyWriteSet(srcDir, excludeTopDirs = []) {
+  const out = [];
+  const stack = [srcDir];
+  while (stack.length) {
+    const dir = stack.pop();
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      const rel = path.relative(srcDir, full);
+      if (entry.isDirectory()) {
+        if (!excludeTopDirs.includes(rel) && !SCAFFOLD_IGNORE_DIRS.has(entry.name)) stack.push(full);
+      } else if (entry.isFile() && !SCAFFOLD_IGNORE_FILES.has(entry.name)) {
+        out.push(rel);
+      }
+    }
+  }
+  return out.sort();
+}
+
+function scaffoldFromTemplate(appDir, appName, variant, config, ctx, { force, manifest, templateInfo }) {
   const variantSourceDir = config.template.variantSourceDir; // "variants"
   const templateExists =
     fs.existsSync(TEMPLATE_DIR) && fs.readdirSync(TEMPLATE_DIR).length > 0;
 
-  fs.mkdirSync(appDir, { recursive: true });
-
   if (!templateExists) {
+    fs.mkdirSync(appDir, { recursive: true });
     ctx.event('bootstrap', {
       stage: 'scaffold',
       status: 'skipped',
       detail: 'template dir missing or empty; copied nothing (env binding still runs)',
     });
+    writeScaffoldManifest(appDir, templateInfo, []);
     return;
   }
+
+  // Write-set = template files (minus variants/, .env) + the variant target file.
+  const writeSet = copyWriteSet(TEMPLATE_DIR, [variantSourceDir]);
+  const variantSrc = path.join(TEMPLATE_DIR, variantSourceDir, variant, 'catalog.ts');
+  const variantTargetRel = config.template.variantTargetFile;
+  if (fs.existsSync(variantSrc) && !writeSet.includes(variantTargetRel)) writeSet.push(variantTargetRel);
+  if (!force) assertNoCollisions(appDir, writeSet, manifest); // throws pre-copy, nothing mutated
+
+  fs.mkdirSync(appDir, { recursive: true });
 
   // Copy everything except the variants/ source dir. Never copy a template .env:
   // the workspace app/.env is only ever key-level-updated, never overwritten wholesale.
@@ -308,8 +471,7 @@ function scaffoldFromTemplate(appDir, appName, variant, config, ctx) {
   }
 
   // Variant data: variants/<variant>/catalog.ts -> src/data/catalog.ts.
-  const variantSrc = path.join(TEMPLATE_DIR, variantSourceDir, variant, 'catalog.ts');
-  const variantTarget = path.join(appDir, config.template.variantTargetFile);
+  const variantTarget = path.join(appDir, variantTargetRel);
   if (fs.existsSync(variantSrc)) {
     fs.mkdirSync(path.dirname(variantTarget), { recursive: true });
     fs.copyFileSync(variantSrc, variantTarget);
@@ -321,6 +483,10 @@ function scaffoldFromTemplate(appDir, appName, variant, config, ctx) {
       detail: `variant source ${variant}/catalog.ts not found in template; kept template default`,
     });
   }
+
+  // Manifest AFTER token replacement + variant copy: hashes describe the final scaffold
+  // state, so an untouched re-run compares equal (idempotent) and any edit is detected.
+  writeScaffoldManifest(appDir, templateInfo, writeSet);
 }
 
 // --- Main ----------------------------------------------------------------------------
@@ -341,30 +507,52 @@ async function main() {
     die(`invalid --invoked-via "${invokedVia}" (allowed: ${INVOKED_VIA.join(', ')})`);
   }
 
+  // Safe-rerun modes (header contract). --existing never scaffolds, so a template request
+  // alongside it is contradictory input, not something to guess through.
+  const useExisting = argv.includes('--existing');
+  const forceScaffold = argv.includes('--force-scaffold');
+  if (useExisting && forceScaffold) die('--existing and --force-scaffold are mutually exclusive');
+  if (useExisting && getArg(argv, 'template', null) !== null) {
+    die('--existing keeps the app as-is; it cannot be combined with --template');
+  }
+  if (useExisting && (!fs.existsSync(workspace.appDir) || listAppFiles(workspace.appDir).length === 0)) {
+    die(`--existing requires an existing app/ with content in the workspace (${workspace.appDir})`);
+  }
+
   const startedAt = new Date().toISOString();
   const provider = config.defaults.renderProvider;
 
   // Phase 2.5: resolve template selection first (pure parse of argv/brief vs the locked
   // catalog). Explicit invalid id die()s above (exit 3, ids listed). Opt-in without a
   // keyword match -> ask the user to choose; no scaffold, no guessing.
-  const templateSel = resolveTemplateSelection(argv, brief, config);
-  if (templateSel.mode === 'ambiguous') {
-    const ids = config.officialTemplates.catalog.map((c) => c.id);
+  const templateSel = useExisting ? { mode: 'existing' } : resolveTemplateSelection(argv, brief, config);
+  if (templateSel.mode === 'ambiguous' || templateSel.mode === 'unsupported') {
+    const supported = templateSel.supported
+      ?? config.officialTemplates.catalog.filter((c) => c.releaseSupported === true);
+    const ids = supported.map((c) => c.id);
     const ambRunId = newRunId();
     const ambCtx = openRun(workspace.runsDir, ambRunId);
     ambCtx.event('bootstrap', {
       stage: 'input',
-      status: 'fail',
-      detail: 'official-template opt-in without a keyword match; user must choose a template id from the catalog',
+      status: 'needs_input',
+      detail: templateSel.mode === 'unsupported'
+        ? `official template ${templateSel.entry.id} is not release-supported; no fetch or app mutation`
+        : 'official-template opt-in without a supported keyword match; user must choose a release-supported template',
     });
+    const unavailable = templateSel.mode === 'unsupported' ? templateSel.entry.id : null;
     process.stdout.write(
       JSON.stringify({
         runId: ambRunId,
         status: 'needs_template_choice',
-        question:
-          'Brief yêu cầu dùng mẫu có sẵn nhưng không khớp mẫu nào trong catalog. ' +
-          'Chọn một template id rồi chạy lại bootstrap với --template official:<id>.',
+        question: unavailable
+          ? `Template ${unavailable} hiện chưa đạt release gate nên skill không tải hoặc scaffold. ` +
+            `Các template đang được support: ${ids.join(', ') || '(chưa có)'}. ` +
+            'Chọn một id được support, hoặc bỏ yêu cầu "mẫu có sẵn" để dùng lab template.'
+          : 'Brief yêu cầu dùng mẫu có sẵn nhưng không khớp template đã đạt release gate. ' +
+            `Các template đang được support: ${ids.join(', ') || '(chưa có)'}. ` +
+            'Chọn một id được support, hoặc bỏ yêu cầu "mẫu có sẵn" để dùng lab template.',
         catalog: ids,
+        unavailableTemplate: unavailable,
       }) + '\n'
     );
     process.exit(3);
@@ -501,13 +689,93 @@ async function main() {
     });
   }
 
+  // The template this run resolves to — needed by the guard (template-identity check) and
+  // by the scaffold fns (manifest provenance). --existing inherits the provenance recorded
+  // at scaffold time (render/build/preview pick their oracle profile from template.source —
+  // an official-template app must stay official); only an app with no manifest reports the
+  // opaque 'existing' source.
+  const priorManifest = readScaffoldManifest(workspace.appDir);
+  const templateInfo = (() => {
+    if (templateSel.mode === 'official') {
+      return {
+        source: 'official',
+        id: templateSel.entry.id,
+        revision: templateSel.entry.revision ?? templateSel.entry.branch,
+      };
+    }
+    if (templateSel.mode === 'lab') return { source: 'lab', id: 'lab-template' };
+    const recorded = priorManifest?.template;
+    return recorded?.source && recorded?.id ? recorded : { source: 'existing', id: 'existing-app' };
+  })();
+
+  // Shared existing_app stop (exit 2, nothing mutated) — used by the pre-scaffold guard and
+  // by the pre-copy collision check inside the scaffold fns.
+  const stopExistingApp = (what, detail) => {
+    ctx.event('bootstrap', { stage: 'scaffold', status: 'needs_input', detail: `existing_app: ${detail}; stopped before mutation` });
+    ctx.writeJson('result.json', {
+      schemaVersion: '1.0',
+      runId,
+      status: 'needs_input',
+      stage: 'scaffold',
+      provider,
+      needsInput: {
+        reason: 'existing_app',
+        question:
+          `app/ trong workspace ${what}. Chưa có gì bị sửa. ` +
+          'Giữ nguyên code và chỉ build/verify app hiện có → chạy lại với --existing. ' +
+          'Chấp nhận GHI ĐÈ để scaffold lại từ template → chạy lại với --force-scaffold.',
+        promptAppId,
+        projectAppId,
+      },
+      appIdSource: null,
+      expectedAppId: null,
+      resolvedAppId: null,
+      appIdBound: false,
+      gates: [],
+      findingIds: [],
+      startedAt,
+      finishedAt: new Date().toISOString(),
+    });
+    process.stdout.write(JSON.stringify({ runId, status: 'needs_input' }) + '\n');
+    process.exit(2);
+  };
+  const fileList = (files) => `${files.length} file: ${files.slice(0, 5).join(', ')}${files.length > 5 ? ', ...' : ''}`;
+
+  // Scaffold guard (safe-rerun contract): a non-empty app/ that no longer matches its
+  // scaffold manifest — no manifest, edited files, or a DIFFERENT resolved template — must
+  // never be overwritten silently. Stop BEFORE any mutation and ask; --force-scaffold is
+  // the explicit user authorization.
+  const variant = classifyVariant(brief, config.template.variants);
+  if (!useExisting && !forceScaffold) {
+    const conflict = scaffoldConflict(workspace.appDir, templateInfo);
+    if (conflict) {
+      const what =
+        conflict.reason === 'modified'
+          ? `đã bị sửa so với lần scaffold trước (${fileList(conflict.files)})`
+          : conflict.reason === 'template_changed'
+            ? `được scaffold từ template khác (${conflict.from.source}:${conflict.from.id}, lần này resolve ra ${conflict.to.source}:${conflict.to.id}) — không trộn hai template`
+            : 'không do skill scaffold ra (không có .scaffold-manifest.json)';
+      stopExistingApp(what, `app/ ${conflict.reason}`);
+    }
+  }
+
+  const scaffoldOpts = { force: forceScaffold, manifest: priorManifest, templateInfo };
+
   // Scaffold app/ (idempotent; never touches .env wholesale). Official path replaces the
   // lab-template mechanics entirely (no token, no variants); .env binding below is shared.
-  const variant = classifyVariant(brief, config.template.variants);
-  if (templateSel.mode === 'official') {
+  if (templateSel.mode === 'existing') {
+    ctx.event('bootstrap', {
+      stage: 'scaffold',
+      status: 'skipped',
+      detail: '--existing: app kept as-is, no template copy (bind + verify only)',
+    });
+  } else if (templateSel.mode === 'official') {
     try {
-      await scaffoldOfficial(templateSel.entry, appName, config, workspace, ctx);
+      await scaffoldOfficial(templateSel.entry, appName, config, workspace, ctx, scaffoldOpts);
     } catch (e) {
+      if (e instanceof ScaffoldCollisionError) {
+        stopExistingApp(`có file không thuộc scaffold trước sẽ bị template mới ghi đè (${fileList(e.files)})`, 'write-set collision');
+      }
       const finding = await recordFindingSafe({
         workspace,
         runId,
@@ -545,15 +813,24 @@ async function main() {
       process.exit(1);
     }
   } else {
-    scaffoldFromTemplate(workspace.appDir, appName, variant, config, ctx);
+    try {
+      scaffoldFromTemplate(workspace.appDir, appName, variant, config, ctx, scaffoldOpts);
+    } catch (e) {
+      if (e instanceof ScaffoldCollisionError) {
+        stopExistingApp(`có file không thuộc scaffold trước sẽ bị template ghi đè (${fileList(e.files)})`, 'write-set collision');
+      }
+      throw e;
+    }
   }
   ctx.event('bootstrap', {
     stage: 'scaffold',
     status: 'ok',
     detail:
-      templateSel.mode === 'official'
-        ? `template=official:${templateSel.entry.id} (variant ignored)`
-        : `variant=${variant}`,
+      templateSel.mode === 'existing'
+        ? 'existing app reused (no scaffold)'
+        : templateSel.mode === 'official'
+          ? `template=official:${templateSel.entry.id} (variant ignored)`
+          : `variant=${variant}`,
   });
 
   // Bind APP_ID: key-level upsert, then read back and exact-compare (binding invariant §5.2).
@@ -617,10 +894,7 @@ async function main() {
     appIdSource,
     appName,
     variant,
-    template:
-      templateSel.mode === 'official'
-        ? { source: 'official', id: templateSel.entry.id }
-        : { source: 'lab', id: 'lab-template' },
+    template: templateInfo,
     renderProvider: provider,
     defaultViewport: config.defaults.defaultViewport,
     packageManager: config.defaults.packageManager,

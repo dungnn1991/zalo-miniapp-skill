@@ -1,9 +1,10 @@
 // Locked path resolution for all create-zmp-app scripts (lead-owned).
 // The skill dir is a SELF-CONTAINED package (config.json, schemas/, scripts/ incl. browser
 // runner, references/, assets/template/, package.json) — Phase 2.6 packaging.
-// Workspace = where generated output lives (app/, runs/, feedback/). Default: the lab root
-// when the package sits inside the dev lab (evaluation/cases marker), else process.cwd()
-// (shipped/standalone mode). Redirect with --workspace <dir> or MB_WORKSPACE.
+// Workspace = where generated output lives (app/, runs/, feedback/). Default: process.cwd(),
+// ALWAYS — the package location never decides the workspace (a Claude-plugin install carries
+// the whole repo, so any content-marker heuristic misfires and writes into the plugin cache;
+// finding v0.3.0 P0). The lab redirects explicitly with --workspace <dir> or MB_WORKSPACE.
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -16,19 +17,25 @@ export const CONFIG_PATH = path.join(SKILL_DIR, 'config.json');
 export const SCHEMAS_DIR = path.join(SKILL_DIR, 'schemas');
 export const RUNNER_PATH = path.join(SKILL_DIR, 'scripts', 'browser', 'runner.mjs');
 
-// Lab layout: .../labs/miniapp-bootstrap-poc/skill/create-zmp-app — two levels up.
-// In a shipped copy this resolves to arbitrary parents; the marker check below decides.
-export const LAB_ROOT = path.resolve(SKILL_DIR, '..', '..');
-export const IN_LAB = fs.existsSync(path.join(LAB_ROOT, 'evaluation', 'cases'));
-
 export function loadLabConfig() {
   return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
 }
 
 export function resolveWorkspace(argv = process.argv.slice(2)) {
   const i = argv.indexOf('--workspace');
-  const fromArg = i >= 0 ? argv[i + 1] : null;
-  const ws = path.resolve(fromArg || process.env.MB_WORKSPACE || (IN_LAB ? LAB_ROOT : process.cwd()));
+  let fromArg = null;
+  if (i >= 0) {
+    const v = argv[i + 1];
+    // Never let a flag token double as the workspace path (`--workspace --force-scaffold`
+    // would otherwise scaffold into ./--force-scaffold AND enable the flag). Loud exit 3 —
+    // this is an invocation error, not something to guess through.
+    if (v === undefined || v.startsWith('--')) {
+      process.stderr.write('paths: --workspace cần một đường dẫn ngay sau nó\n');
+      process.exit(3);
+    }
+    fromArg = v;
+  }
+  const ws = path.resolve(fromArg || process.env.MB_WORKSPACE || process.cwd());
   return {
     root: ws,
     appDir: path.join(ws, 'app'),
