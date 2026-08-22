@@ -1,4 +1,5 @@
 *.log
+!evaluation/cases/deploy-qr-parse/fixture/deploy.log
 .DS_Store
 .env
 app/.env

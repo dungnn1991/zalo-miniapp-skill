@@ -82,6 +82,14 @@ check('duplicate legacy skills/create-zmp-app path is absent',
 check('root .env is absent and ignored',
   !fs.existsSync(path.join(ROOT, '.env')) && read('.gitignore').split(/\r?\n/).includes('.env'),
   'remove tracked root .env and add exact .env ignore rule');
+const deployQrFixture = 'evaluation/cases/deploy-qr-parse/fixture/deploy.log';
+const trackedDeployQrFixture = spawnSync('git', ['ls-files', '--error-unmatch', deployQrFixture], {
+  cwd: ROOT,
+  encoding: 'utf8',
+});
+check('deploy QR regression fixture exists and is committed',
+  fs.existsSync(path.join(ROOT, deployQrFixture)) && trackedDeployQrFixture.status === 0,
+  `${deployQrFixture} is missing or ignored/untracked`);
 
 const cfg = json('skill/create-zmp-app/config.json');
 const catalog = cfg.officialTemplates?.catalog ?? [];

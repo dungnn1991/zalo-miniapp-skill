@@ -68,6 +68,9 @@ Thay đổi phát sinh từ finding formal phải gắn id; expected/actual/life
 - Release suite strict: `FAIL` hoặc `BLOCKED` đều làm `npm test` đỏ; metadata validator
   chặn version/plugin/docs/template/CI drift; workflow expose context ổn định `release-gate`
   (finding_3768b1ae9aab). Ruleset require context này sau workflow run đầu tiên.
+- CI fixture hygiene: commit ngoại lệ có chủ đích cho `deploy-qr-parse/fixture/deploy.log` và
+  validator bắt fixture phải vừa tồn tại vừa được Git track; vòng GitHub đầu tiên đã phát hiện
+  local pass giả do global `*.log` ignore (finding_7b5b15643ca1).
 
 ### Added
 - Release gate: `npm test` = metadata validator + `evaluation/run-all.mjs` chạy tuần tự
