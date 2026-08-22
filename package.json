@@ -2,12 +2,18 @@
   "name": "miniapp-bootstrap-poc-harness",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@9.15.4",
   "description": "Harness dependencies for the miniapp-bootstrap-poc lab. The generated Mini App under app/ has its own package.json.",
   "engines": {
     "node": ">=20"
   },
+  "scripts": {
+    "validate:release": "node evaluation/validate-release.mjs",
+    "test": "npm run validate:release && node evaluation/run-all.mjs"
+  },
   "devDependencies": {
     "jsqr": "^1.4.0",
-    "playwright-core": "^1.45.0"
+    "playwright-core": "^1.45.0",
+    "yaml": "2.8.1"
   }
 }

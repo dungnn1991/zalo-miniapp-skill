@@ -30,7 +30,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
-import { resolveWorkspace, getArg, loadLabConfig, LAB_ROOT } from './lib/paths.mjs';
+import { resolveWorkspace, getArg, loadLabConfig } from './lib/paths.mjs';
 import { openRun } from './lib/run-context.mjs';
 import { recordFinding } from './record-finding.mjs';
 import { tokenKeyExists, upsertLoginRequired } from './ensure-login.mjs';

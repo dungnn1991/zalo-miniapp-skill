@@ -1,0 +1,31 @@
+# Required release gate: npm test chạy validator + toàn bộ case suite ở strict mode.
+# FAIL hoặc BLOCKED đều làm job đỏ. Ruleset main/staging phải require check "release-gate".
+name: release-gate
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main, staging]
+jobs:
+  release-gate:
+    name: release-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Google Chrome (doctor + playwright channel chrome)
+        run: |
+          wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo apt-get install -y ./google-chrome-stable_current_amd64.deb
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile
+        working-directory: skill/create-zmp-app
+      - name: Static syntax checks
+        run: |
+          bash -n install.sh
+          find skill/create-zmp-app/scripts evaluation -name '*.mjs' -print0 | xargs -0 -n1 node --check
+      - run: npm test

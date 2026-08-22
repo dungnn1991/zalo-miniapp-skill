@@ -4,6 +4,7 @@
 // Pure helpers: no process.exit, no direct evidence writes except through the passed ctx.
 import fs from 'node:fs';
 import path from 'node:path';
+import dns from 'node:dns/promises';
 import { SKILL_DIR } from './lib/paths.mjs';
 
 // ---------------------------------------------------------------------------------------
@@ -185,10 +186,10 @@ export function scanZmpTokenEnvOverride(env = process.env) {
 }
 
 // ---------------------------------------------------------------------------------------
-// FAQ 04: CORS preflight probe. Extract http(s) URL literals that sit on a fetch/axios line,
-// dedupe by origin, skip Zalo-owned hosts, then really probe OPTIONS with the h5.zdn.vn
-// Origin. 127.0.0.1/localhost origins are probed (case mock servers); other http/bare-IP
-// origins warn without probing (secure-context rule).
+// FAQ 04: CORS preflight inspection. Extract http(s) URL literals that sit on a fetch/axios
+// line, dedupe by origin, and skip Zalo-owned hosts. Default is passive: source from an
+// existing/user project must never cause an unsolicited outbound request. A caller can opt
+// into the real OPTIONS probe with { probe: true } or MB_ENABLE_CORS_PROBE=1.
 const ZALO_OWNED_RE = /(^|\.)(zalo\.me|zdn\.vn|zaloplatforms\.com)$/i;
 export function extractFetchOrigins(srcTexts) {
   const origins = new Set();
@@ -206,16 +207,47 @@ export function extractFetchOrigins(srcTexts) {
   return [...origins];
 }
 
+// Outbound-probe safety: never send the OPTIONS probe to private/link-local address space.
+// The URLs come from arbitrary app source (feature-integration mode may verify code the
+// skill did not write), so an unguarded probe is an unwanted internal-network request.
+function isPrivateIp(ip) {
+  if (ip.includes(':')) {
+    const v4mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(ip);
+    if (v4mapped) return isPrivateIp(v4mapped[1]);
+    const lower = ip.toLowerCase();
+    return lower === '::1' || lower === '::' || /^f[cd]/.test(lower) || /^fe[89ab]/.test(lower);
+  }
+  const parts = ip.split('.').map(Number);
+  if (parts.length !== 4 || parts.some((n) => Number.isNaN(n))) return true; // unparsable → treat as unsafe
+  const [a, b] = parts;
+  return a === 0 || a === 10 || a === 127 || (a === 100 && b >= 64 && b <= 127)
+    || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
+}
+
 export async function probeCorsOrigin(origin, { timeoutMs = 5000 } = {}) {
   const u = new URL(origin);
   const isLocal = u.hostname === '127.0.0.1' || u.hostname === 'localhost';
   if (!isLocal) {
     if (u.protocol === 'http:') return { origin, status: 'warn', problem: 'insecure_http' };
     if (/^\d+\.\d+\.\d+\.\d+$/.test(u.hostname)) return { origin, status: 'warn', problem: 'bare_ip' };
+    try {
+      const addrs = await dns.lookup(u.hostname, { all: true });
+      if (addrs.some(({ address }) => isPrivateIp(address))) {
+        return { origin, status: 'warn', problem: 'private_address' };
+      }
+    } catch (err) {
+      return { origin, status: 'warn', problem: 'unreachable', detail: String(err?.code ?? err.message).slice(0, 120) };
+    }
+    // Known residual: fetch() re-resolves the hostname itself, so a TTL~0 rebinding DNS
+    // could still answer private on the second lookup. Accepted: the probe is a fixed
+    // OPTIONS to '/', no attacker-controlled path/body, and the response never leaves the
+    // local preflight.json. redirect:'manual' below closes the bigger hole (a public origin
+    // 302-ing the probe into private address space).
   }
   try {
     const res = await fetch(`${origin}/`, {
       method: 'OPTIONS',
+      redirect: 'manual',
       headers: { Origin: 'https://h5.zdn.vn', 'Access-Control-Request-Method': 'GET' },
       signal: AbortSignal.timeout(timeoutMs),
     });
@@ -229,9 +261,22 @@ export async function probeCorsOrigin(origin, { timeoutMs = 5000 } = {}) {
   }
 }
 
-export async function corsPreflightGate(srcTexts, { timeoutMs = 5000 } = {}) {
+export async function corsPreflightGate(srcTexts, { timeoutMs = 5000, probe = false } = {}) {
   const origins = extractFetchOrigins(srcTexts);
   if (!origins.length) return { id: 'cors_preflight_probe', status: 'pass', detail: 'no external fetch/axios origins in src/' };
+  const enabled = probe === true || process.env.MB_ENABLE_CORS_PROBE === '1';
+  if (!enabled || process.env.MB_NO_CORS_PROBE) {
+    return {
+      id: 'cors_preflight_probe',
+      status: 'warn',
+      detail: `passive scan only; OPTIONS not sent: ${origins.join(', ')}. Set MB_ENABLE_CORS_PROBE=1 only with authorization.`,
+      insight: {
+        diagnosis: 'Phát hiện API origin trong source nhưng chưa kiểm tra live CORS; skill không tự gửi request ra endpoint của project.',
+        fix: 'Kiểm tra CORS trong UAT, hoặc chạy lại với MB_ENABLE_CORS_PROBE=1 sau khi đã xác nhận được phép probe endpoint.',
+        source: 'community-faq #04',
+      },
+    };
+  }
   const results = await Promise.all(origins.map((o) => probeCorsOrigin(o, { timeoutMs })));
   const problems = results.filter((r) => r.status === 'warn');
   if (!problems.length) {
@@ -246,6 +291,9 @@ export async function corsPreflightGate(srcTexts, { timeoutMs = 5000 } = {}) {
       : null,
     hasInsecure ? 'Origin dùng http:// hoặc IP trần — Mini App chạy trong secure context, yêu cầu HTTPS + domain hợp lệ.' : null,
     hasUnreachable ? 'Một số origin unreachable khi probe — có thể server chưa chạy hoặc chặn OPTIONS (semantics khác thiếu CORS).' : null,
+    problems.some((p) => p.problem === 'private_address')
+      ? 'Origin phân giải về địa chỉ private/link-local — skill không probe (an toàn outbound); app chạy trên Zalo thật cũng sẽ không gọi được host nội bộ.'
+      : null,
   ].filter(Boolean).join(' ');
   return {
     id: 'cors_preflight_probe',

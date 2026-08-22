@@ -6,6 +6,6 @@
     "resultStatus": "needs_input",
     "findingCategory": null,
     "findingSlugHint": "login_required",
-    "description": ".env có ZMP_TOKEN=<JWT-shaped rác sinh runtime> → deploy.mjs spawn thật zmp deploy (an toàn: server từ chối -2001) → exit 2 needs_login, deploy.log tồn tại, giá trị rác KHÔNG xuất hiện ở bất kỳ artifact nào dưới runs/ (redaction trên đường deploy thật). Cần zmp binary + mạng tới zmp-api.developers.zalo.me; thiếu → blocked."
+    "description": ".env có ZMP_TOKEN=<JWT-shaped rác sinh runtime> → deploy.mjs spawn executable zmp cô lập do case tạo, fake CLI echo token rồi trả auth failure đã pin → exit 2 needs_login; deploy.log tồn tại và chỉ chứa [REDACTED]. Không cần zmp-cli hay network live."
   }
 }

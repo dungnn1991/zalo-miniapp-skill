@@ -1,0 +1,10 @@
+{
+  "caseId": "official-template-support",
+  "title": "v0.3.1 release gate — chỉ expose official template đã verify và pin revision",
+  "expectation": {
+    "exitCode": 0,
+    "findingCategory": null,
+    "findingSlugHint": null,
+    "description": "Catalog public chỉ có releaseSupported template đã verified + pin commit SHA. Prompt/flag trỏ zaui-coffee (known nhưng unsupported) phải exit 3 needs_template_choice, chỉ liệt kê zaui-fashion và không fetch/scaffold app/."
+  }
+}

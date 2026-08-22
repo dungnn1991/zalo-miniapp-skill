@@ -2,7 +2,8 @@
   "name": "create-zmp-app",
   "private": true,
   "type": "module",
-  "version": "0.3.0",
+  "packageManager": "pnpm@9.15.4",
+  "version": "0.3.1",
   "description": "SKILL create-zmp-app — bootstrap, verify, deploy and inspect Zalo Mini Apps. Self-contained package: copy this folder, run `pnpm install` once inside it.",
   "engines": {
     "node": ">=20"

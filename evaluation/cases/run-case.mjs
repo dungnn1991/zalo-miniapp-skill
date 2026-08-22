@@ -33,7 +33,8 @@ const CASE_DEPS = {
   'css-overflow': ['bootstrap', 'template'],
   'golden': ['bootstrap', 'portal-fetch', 'template'],
   // Phase 2 controls run on cheap fixtures — no Subagent A/B dependency.
-  // deploy-expired-token additionally needs the zmp binary + network (checked in-scenario).
+  // deploy-expired-token uses an isolated fake zmp binary: required CI stays deterministic
+  // and never sends a garbage credential to the live API.
   'deploy-needs-login': [],
   'deploy-without-verify': [],
   'deploy-expired-token': [],
@@ -41,6 +42,7 @@ const CASE_DEPS = {
   'login-not-scripted-gate': [],
   // Phase 2.5 — needs bootstrap's official-template path (Subagent A) + network to codeload.
   'official-template-golden': ['bootstrap'],
+  'official-template-support': ['bootstrap'],
   // Phase 2.6 — preflight/insight/run-entry controls.
   'preflight-size-limit': ['bootstrap', 'template'],
   'preflight-server-side-api': ['bootstrap', 'template'],
@@ -55,6 +57,11 @@ const CASE_DEPS = {
   'sim-unmocked': ['bootstrap', 'template'],
   'sim-permission-persist': ['bootstrap', 'template'],
   'doctor-autoinstall': [],
+  // v0.3.1 — P0 regressions: safe rerun, workspace=cwd, installer host targeting.
+  'preserve-user-code': ['bootstrap', 'template'],
+  'workspace-default-cwd': ['bootstrap', 'template'],
+  'installer-hosts': [],
+  'version-reporting': [],
 };
 
 // Phase 3 sim dependencies from the parallel owners — code is written against the contract;
@@ -489,23 +496,40 @@ const SCENARIOS = {
   },
 
   async 'deploy-expired-token'({ ws, check, note }) {
-    const zmpProbe = spawnSync('zmp', ['--version'], { encoding: 'utf8' });
-    if (zmpProbe.error) return 'blocked: zmp binary not installed (brew zmp-cli)';
-
     // JWT-shaped garbage built at runtime — never a real credential, never committed.
     const b64u = (n) => crypto.randomBytes(n).toString('base64url');
     const fakeToken = `eyJ${b64u(24)}.${b64u(32)}.${b64u(24)}`;
     const { runId, ctx } = await makeDeployFixture(ws, ['APP_ID=1234567890', `ZMP_TOKEN=${fakeToken}`]);
     writePassResult(ctx, runId);
 
-    const dep = runScript(ws, 'deploy', ['--run-id', runId], {}, 120000);
+    // Deterministic CLI double: sync-config succeeds; deploy echoes the fake token on purpose
+    // (redaction regression) then returns the pinned auth-failure message. No live network.
+    const fakeBin = path.join(ws, 'fake-bin');
+    fs.mkdirSync(fakeBin, { recursive: true });
+    const fakeZmp = path.join(fakeBin, 'zmp');
+    fs.writeFileSync(fakeZmp, `#!/usr/bin/env node
+import fs from 'node:fs';
+const cmd = process.argv[2];
+if (cmd === '--version') { console.log('4.0.3'); process.exit(0); }
+if (cmd === 'sync-config') { console.log('Sync config done'); process.exit(0); }
+if (cmd === 'deploy') {
+  const env = fs.readFileSync('.env', 'utf8');
+  const token = /^ZMP_TOKEN=(.*)$/m.exec(env)?.[1] ?? '';
+  console.error('debug token=' + token);
+  console.error('Permission denied. Please login again.');
+  process.exit(1);
+}
+console.error('unexpected fake-zmp command: ' + cmd);
+process.exit(9);
+`);
+    fs.chmodSync(fakeZmp, 0o755);
+    const dep = runScript(ws, 'deploy', ['--run-id', runId], {
+      PATH: `${fakeBin}${path.delimiter}${process.env.PATH ?? ''}`,
+    }, 30000);
     const logFile = path.join(ws, 'runs', runId, 'evidence', 'deploy.log');
     const log = fs.existsSync(logFile) ? fs.readFileSync(logFile, 'utf8') : '';
-    if (dep.code !== 2 && /ENOTFOUND|ETIMEDOUT|EAI_AGAIN|ECONNREFUSED|ENETUNREACH|socket hang up/i.test(log + dep.stderr)) {
-      return 'blocked: network offline to zmp-api.developers.zalo.me';
-    }
 
-    check('deploy exits 2 (server rejects garbage token, back to login gate)', dep.code === 2,
+    check('deploy exits 2 (fake CLI rejects garbage token, back to login gate)', dep.code === 2,
       `exit ${dep.code}: ${(dep.stderr || dep.stdout).slice(-300)}\nlog tail: ${log.slice(-300)}`);
     const events = readRunEvents(ws, runId);
     check('sync-config ran ok BEFORE the deploy attempt (finding_1d573da3fa61 order)',
@@ -666,7 +690,10 @@ const SCENARIOS = {
       check('extract: 3 local origins, zalo-owned skipped, non-fetch URL skipped',
         origins.length === 3 && !origins.some((o) => o.includes('zalo.me') || o.includes('images.example.com')),
         JSON.stringify(origins));
-      const gate = await insight.corsPreflightGate(srcTexts, { timeoutMs: 3000 });
+      const passive = await insight.corsPreflightGate(srcTexts, { timeoutMs: 3000 });
+      check('default stays passive and warns without network claims',
+        passive.status === 'warn' && /passive scan only/.test(passive.detail), JSON.stringify(passive));
+      const gate = await insight.corsPreflightGate(srcTexts, { timeoutMs: 3000, probe: true });
       check('gate warns overall', gate.status === 'warn', JSON.stringify(gate).slice(0, 300));
       check('missing-ACAO server flagged', gate.detail.includes(badO) && /missing_acao/.test(gate.detail), gate.detail);
       check('wrong-origin ACAO flagged', gate.detail.includes(wrongO), gate.detail);
@@ -917,6 +944,202 @@ const SCENARIOS = {
     note(`bridge decisions for getLocation: ${entries.map((e) => e.decision).join(' → ')}`);
   },
 
+  // v0.3.1 P0 regression — safe rerun must never clobber user-edited app code.
+  'preserve-user-code'({ ws, check, note }) {
+    const args = ['--brief', 'tạo app bán quần áo', '--app-id', TEST_APP_ID];
+    const boot = runScript(ws, 'bootstrap', args);
+    check('bootstrap exits 0', boot.code === 0, `exit ${boot.code}: ${boot.stderr.slice(-200)}`);
+    const appTsx = path.join(ws, 'app', 'src', 'app.tsx');
+    if (!fs.existsSync(appTsx)) { check('app/src/app.tsx scaffolded', false, appTsx); return; }
+    check('scaffold manifest written', fs.existsSync(path.join(ws, 'app', '.scaffold-manifest.json')), '');
+
+    // (1) idempotent rerun on an untouched app is still allowed
+    const idem = runScript(ws, 'bootstrap', args);
+    check('untouched rerun exits 0 (idempotent)', idem.code === 0, `exit ${idem.code}: ${idem.stderr.slice(-200)}`);
+
+    // (2) user edit + default rerun → stop BEFORE mutation, sentinel intact
+    const sentinel = `// USER_SENTINEL_${crypto.randomBytes(6).toString('hex')}`;
+    fs.appendFileSync(appTsx, `\n${sentinel}\n`);
+    const re = runScript(ws, 'bootstrap', args);
+    check('rerun over edited app exits 2', re.code === 2, `exit ${re.code}: ${re.stderr.slice(-200)}`);
+    check('stdout status needs_input', re.lastJson?.status === 'needs_input', JSON.stringify(re.lastJson));
+    const result = readJsonIfExists(path.join(ws, 'runs', re.lastJson?.runId ?? 'x', 'result.json'));
+    check('needsInput.reason existing_app', result?.needsInput?.reason === 'existing_app', JSON.stringify(result?.needsInput));
+    check('sentinel survives the refused rerun', fs.readFileSync(appTsx, 'utf8').includes(sentinel), '');
+
+    // (3) --existing keeps the code and proceeds
+    const ex = runScript(ws, 'bootstrap', [...args, '--existing']);
+    check('--existing exits 0', ex.code === 0, `exit ${ex.code}: ${ex.stderr.slice(-200)}`);
+    check('sentinel survives --existing', fs.readFileSync(appTsx, 'utf8').includes(sentinel), '');
+    const input = readJsonIfExists(path.join(ws, 'runs', ex.lastJson?.runId ?? 'x', 'input.json'));
+    check('input.json template.source=lab (provenance inherited from manifest)',
+      input?.template?.source === 'lab', JSON.stringify(input?.template));
+
+    // (4) --force-scaffold is the explicit, user-authorized overwrite
+    const fo = runScript(ws, 'bootstrap', [...args, '--force-scaffold']);
+    check('--force-scaffold exits 0', fo.code === 0, `exit ${fo.code}: ${fo.stderr.slice(-200)}`);
+    check('sentinel gone after --force-scaffold', !fs.readFileSync(appTsx, 'utf8').includes(sentinel), '');
+
+    // (5) user-ADDED files are neither absorbed into the manifest nor blocking: a foreign
+    // file outside the template write-set survives a rerun, may be edited freely, and the
+    // rewritten manifest never claims it (write-set-only manifest).
+    const customFile = path.join(ws, 'app', 'src', 'lib', 'custom.ts');
+    fs.mkdirSync(path.dirname(customFile), { recursive: true });
+    fs.writeFileSync(customFile, 'export const mine = 1;\n');
+    const withCustom = runScript(ws, 'bootstrap', args);
+    check('rerun with user-added file exits 0 (not a collision — path not in write-set)',
+      withCustom.code === 0, `exit ${withCustom.code}: ${withCustom.stderr.slice(-200)}`);
+    const manifest = readJsonIfExists(path.join(ws, 'app', '.scaffold-manifest.json'));
+    check('manifest never claims the user-added file', manifest && !('src/lib/custom.ts' in (manifest.files ?? {})),
+      JSON.stringify(Object.keys(manifest?.files ?? {}).filter((f) => f.includes('custom'))));
+    fs.appendFileSync(customFile, '// edited\n');
+    const editedCustom = runScript(ws, 'bootstrap', args);
+    check('editing the user-added file never triggers existing_app', editedCustom.code === 0,
+      `exit ${editedCustom.code}: ${JSON.stringify(editedCustom.lastJson)}`);
+
+    // (6) template identity: a pristine app scaffolded from ANOTHER template must not be
+    // silently re-scaffolded into a hybrid. Simulated by rewriting manifest.template.
+    const m2 = readJsonIfExists(path.join(ws, 'app', '.scaffold-manifest.json'));
+    m2.template = { source: 'official', id: 'zaui-coffee' };
+    fs.writeFileSync(path.join(ws, 'app', '.scaffold-manifest.json'), JSON.stringify(m2, null, 2) + '\n');
+    const tplSwitch = runScript(ws, 'bootstrap', args);
+    check('template switch on pristine app exits 2 (template_changed)', tplSwitch.code === 2,
+      `exit ${tplSwitch.code}: ${JSON.stringify(tplSwitch.lastJson)}`);
+    const tplResult = readJsonIfExists(path.join(ws, 'runs', tplSwitch.lastJson?.runId ?? 'x', 'result.json'));
+    check('template_changed reported as existing_app with template names in the question',
+      tplResult?.needsInput?.reason === 'existing_app' && /zaui-coffee/.test(tplResult?.needsInput?.question ?? ''),
+      JSON.stringify(tplResult?.needsInput));
+    m2.template = { source: 'lab', id: 'lab-template' };
+    fs.writeFileSync(path.join(ws, 'app', '.scaffold-manifest.json'), JSON.stringify(m2, null, 2) + '\n');
+
+    // (7) write-set collision: a file the incoming template owns but the manifest does not
+    // (simulated by dropping its manifest entry) must stop pre-copy, file intact.
+    const m3 = readJsonIfExists(path.join(ws, 'app', '.scaffold-manifest.json'));
+    delete m3.files['src/app.tsx'];
+    fs.writeFileSync(path.join(ws, 'app', '.scaffold-manifest.json'), JSON.stringify(m3, null, 2) + '\n');
+    const beforeCollision = fs.readFileSync(appTsx, 'utf8');
+    const collision = runScript(ws, 'bootstrap', args);
+    check('unowned-file collision exits 2, nothing copied', collision.code === 2 && fs.readFileSync(appTsx, 'utf8') === beforeCollision,
+      `exit ${collision.code}: ${JSON.stringify(collision.lastJson)}`);
+    note('flow: scaffold → idempotent → edit→refused → --existing keeps → force overwrites → added-file free → template_changed + collision stop');
+  },
+
+  // v0.3.1 P0 regression — workspace defaults to process.cwd(), NEVER the package location.
+  // Models the Claude plugin cache: the whole repo (incl. evaluation/cases) sits above the
+  // package; the old marker heuristic wrote runs/ into the cache instead of the user's cwd.
+  'workspace-default-cwd'({ ws, check, note }) {
+    const pkg = path.join(ws, 'skill', 'create-zmp-app');
+    fs.cpSync(path.join(LAB_ROOT, 'skill', 'create-zmp-app'), pkg, {
+      recursive: true,
+      filter: (src) => !src.includes(`${path.sep}node_modules`),
+    });
+    fs.mkdirSync(path.join(ws, 'evaluation', 'cases'), { recursive: true }); // the old IN_LAB marker
+    const userDir = path.join(ws, 'userdir');
+    fs.mkdirSync(userDir, { recursive: true });
+    const env = { ...process.env };
+    delete env.MB_WORKSPACE;
+    const res = spawnSync(process.execPath, [path.join(pkg, 'scripts', 'bootstrap.mjs'),
+      '--brief', 'tạo app bán quần áo', '--app-id', TEST_APP_ID], {
+      cwd: userDir, env, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024,
+    });
+    check('bootstrap (no --workspace) exits 0', res.status === 0, `exit ${res.status}: ${String(res.stderr).slice(-300)}`);
+    check('output lands in the user cwd',
+      fs.existsSync(path.join(userDir, 'app', 'package.json')) && fs.existsSync(path.join(userDir, 'runs')), '');
+    check('package root (plugin cache stand-in) stays clean',
+      !fs.existsSync(path.join(ws, 'app')) && !fs.existsSync(path.join(ws, 'runs')) && !fs.existsSync(path.join(pkg, 'runs')), '');
+    const envFile = path.join(userDir, 'app', '.env');
+    check('.env APP_ID bound in the cwd workspace',
+      fs.existsSync(envFile) && new RegExp(`^APP_ID=${TEST_APP_ID}$`, 'm').test(fs.readFileSync(envFile, 'utf8')), '');
+    note('package copied under <ws>/skill/create-zmp-app with evaluation/cases beside it — output still lands at cwd');
+  },
+
+  // v0.3.1 P0 regression — install.sh host targeting: default codex, --host claude/both,
+  // node_modules kept only while the lockfile is unchanged. Offline via --src-dir.
+  'installer-hosts'({ ws, check, note }) {
+    const home = path.join(ws, 'home');
+    fs.mkdirSync(home, { recursive: true });
+    const run = (args) => spawnSync('bash', [path.join(LAB_ROOT, 'install.sh'), '--src-dir', LAB_ROOT, ...args], {
+      cwd: ws, encoding: 'utf8', env: { ...process.env, HOME: home },
+    });
+    const codexDest = path.join(home, '.codex', 'skills', 'create-zmp-app');
+    const claudeDest = path.join(home, '.claude', 'skills', 'create-zmp-app');
+
+    const dflt = run([]);
+    check('default install exits 0', dflt.status === 0, String(dflt.stderr).slice(-300));
+    check('default installs to ~/.codex/skills', fs.existsSync(path.join(codexDest, 'SKILL.md')), '');
+    check('default does NOT touch ~/.claude/skills', !fs.existsSync(claudeDest), '');
+    const stamp = fs.existsSync(path.join(codexDest, 'INSTALLED_VERSION'))
+      ? fs.readFileSync(path.join(codexDest, 'INSTALLED_VERSION'), 'utf8') : '';
+    check('INSTALLED_VERSION stamped with version+ref', /version=.+/.test(stamp) && /ref=/.test(stamp), stamp);
+
+    const claude = run(['--host', 'claude']);
+    check('--host claude installs to ~/.claude/skills',
+      claude.status === 0 && fs.existsSync(path.join(claudeDest, 'SKILL.md')), String(claude.stderr).slice(-300));
+
+    const marker = path.join(codexDest, 'node_modules', 'KEEP_MARKER');
+    fs.mkdirSync(path.dirname(marker), { recursive: true });
+    fs.writeFileSync(marker, 'x');
+    const again = run([]);
+    check('reinstall (same lockfile) keeps node_modules', again.status === 0 && fs.existsSync(marker), '');
+    fs.appendFileSync(path.join(codexDest, 'pnpm-lock.yaml'), '\n# drift\n');
+    const drift = run([]);
+    check('reinstall (changed lockfile) drops node_modules', drift.status === 0 && !fs.existsSync(marker), '');
+
+    const both = run(['--host', 'both']);
+    check('--host both exits 0', both.status === 0, String(both.stderr).slice(-300));
+    check('--host both covers both dests',
+      fs.existsSync(path.join(codexDest, 'SKILL.md')) && fs.existsSync(path.join(claudeDest, 'SKILL.md')), '');
+    note('all installs offline from --src-dir; source tree never stamped (staging copy only)');
+  },
+
+  // v0.3.1 release regression — doctor reports provenance consistently on install.sh,
+  // Claude marketplace-plugin, and unsupported manual-copy layouts.
+  async 'version-reporting'({ ws, check, note }) {
+    const { doctorVersionLine } = await import(pathToFileURL(
+      path.join(SKILL_SCRIPTS, 'lib', 'version.mjs'),
+    ).href);
+    const version = readJsonIfExists(path.join(LAB_ROOT, 'skill', 'create-zmp-app', 'package.json'))?.version;
+    const writePackage = (dir) => {
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, 'package.json'), `${JSON.stringify({ name: 'create-zmp-app', version }, null, 2)}\n`);
+    };
+
+    const scriptInstall = path.join(ws, 'script-install', 'create-zmp-app');
+    writePackage(scriptInstall);
+    fs.writeFileSync(path.join(scriptInstall, 'INSTALLED_VERSION'), `version=${version}\nref=v${version}\n`);
+    check('install.sh stamp is reported as immutable ref',
+      doctorVersionLine(scriptInstall) === `doctor: ok — create-zmp-app v${version} (v${version})`,
+      doctorVersionLine(scriptInstall));
+
+    const pluginRoot = path.join(ws, 'home', '.claude', 'plugins', 'cache',
+      'zalo-miniapp-skill', 'create-zmp-app', version);
+    const pluginSkill = path.join(pluginRoot, 'skill', 'create-zmp-app');
+    writePackage(pluginSkill);
+    fs.mkdirSync(path.join(pluginRoot, '.claude-plugin'), { recursive: true });
+    fs.writeFileSync(path.join(pluginRoot, '.claude-plugin', 'plugin.json'), `${JSON.stringify({
+      name: 'create-zmp-app', version, skills: ['./skill/create-zmp-app'],
+    }, null, 2)}\n`);
+    check('Claude plugin cache reports manifest version',
+      doctorVersionLine(pluginSkill) === `doctor: ok — create-zmp-app v${version} (claude-plugin v${version})`,
+      doctorVersionLine(pluginSkill));
+
+    const manual = path.join(ws, 'manual-copy', 'create-zmp-app');
+    writePackage(manual);
+    check('manual copy remains explicitly unversioned',
+      doctorVersionLine(manual) === `doctor: ok — create-zmp-app v${version} (dev copy)`,
+      doctorVersionLine(manual));
+
+    const sourceCheckout = path.join(ws, 'source-checkout', 'skill', 'create-zmp-app');
+    writePackage(sourceCheckout);
+    fs.mkdirSync(path.join(ws, 'source-checkout', '.claude-plugin'), { recursive: true });
+    fs.writeFileSync(path.join(ws, 'source-checkout', '.claude-plugin', 'plugin.json'), `${JSON.stringify({
+      name: 'create-zmp-app', version,
+    })}\n`);
+    check('ordinary source checkout is not mislabeled as installed plugin',
+      doctorVersionLine(sourceCheckout).endsWith('(dev copy)'), doctorVersionLine(sourceCheckout));
+    note('provenance precedence: install stamp, then matching Claude cache manifest, then dev copy');
+  },
+
   // Addendum Phase 3: doctor auto-installs package deps on a fresh copy of the skill.
   async 'doctor-autoinstall'({ ws, check, note }) {
     const skillDir = path.join(LAB_ROOT, 'skill', 'create-zmp-app');
@@ -962,7 +1185,8 @@ const SCENARIOS = {
       return 'blocked: bootstrap official-template path not landed yet (Subagent A) — input.json has no template field';
     }
     check('input.json template = official/zaui-fashion',
-      input?.template?.source === 'official' && input?.template?.id === 'zaui-fashion',
+      input?.template?.source === 'official' && input?.template?.id === 'zaui-fashion'
+        && /^[0-9a-f]{40}$/.test(input?.template?.revision ?? ''),
       JSON.stringify(input?.template));
     const appCfg = readJsonIfExists(path.join(ws, 'app', 'app-config.json'));
     const title = appCfg?.app?.title ?? appCfg?.title;
@@ -1000,6 +1224,41 @@ const SCENARIOS = {
     const result = readJsonIfExists(path.join(ws, 'runs', runId, 'result.json'));
     check('result.json status pass', result?.status === 'pass' && result?.stage === 'done',
       JSON.stringify({ status: result?.status, stage: result?.stage, failed: result?.gates?.filter((g) => g.status === 'fail')?.map((g) => g.id) }));
+  },
+
+  // Release-readiness: only an explicitly release-supported, immutable official template
+  // may be exposed. Known-but-unverified entries must stop before fetch/app mutation.
+  'official-template-support'({ ws, check, note }) {
+    const cfg = readJsonIfExists(path.join(LAB_ROOT, 'skill', 'create-zmp-app', 'config.json'));
+    const supported = cfg?.officialTemplates?.catalog?.filter((e) => e.releaseSupported === true) ?? [];
+    check('release-supported catalog is non-empty', supported.length > 0, JSON.stringify(supported));
+    check('every supported entry is verified and pinned to a commit SHA',
+      supported.every((e) => e.verified === true && /^[0-9a-f]{40}$/.test(e.revision ?? '')),
+      JSON.stringify(supported));
+    check('zaui-fashion is the only v0.3.1 release-supported template',
+      supported.length === 1 && supported[0].id === 'zaui-fashion', JSON.stringify(supported.map((e) => e.id)));
+
+    const args = ['--brief', 'tạo app cà phê dùng mẫu có sẵn', '--app-id', TEST_APP_ID];
+    const byBrief = runScript(ws, 'bootstrap', args);
+    check('unsupported keyword route exits 3 before scaffold', byBrief.code === 3,
+      `exit ${byBrief.code}: ${byBrief.stderr.slice(-300)}`);
+    check('unsupported route returns actionable supported catalog',
+      byBrief.lastJson?.status === 'needs_template_choice'
+        && byBrief.lastJson?.unavailableTemplate === 'zaui-coffee'
+        && JSON.stringify(byBrief.lastJson?.catalog) === JSON.stringify(['zaui-fashion']),
+      JSON.stringify(byBrief.lastJson));
+    check('unsupported route creates no app and no fetch temp dir',
+      !fs.existsSync(path.join(ws, 'app'))
+        && !fs.readdirSync(ws).some((name) => name.startsWith('.official-tpl-')), '');
+
+    const explicit = runScript(ws, 'bootstrap', [
+      '--brief', 'tạo app cà phê', '--app-id', TEST_APP_ID, '--template', 'official:zaui-coffee',
+    ]);
+    check('explicit unsupported id is also blocked before fetch',
+      explicit.code === 3 && explicit.lastJson?.unavailableTemplate === 'zaui-coffee'
+        && !fs.existsSync(path.join(ws, 'app')),
+      `exit ${explicit.code}: ${JSON.stringify(explicit.lastJson)}`);
+    note('public official catalog: zaui-fashion only; unsupported ids never fetch or mutate app/');
   },
 
   'golden'({ ws, check }) {
