@@ -122,16 +122,35 @@ check('official tarball URL resolves immutable revision, not branch',
   cfg.officialTemplates?.tarballUrlPattern);
 
 const readme = read('README.md');
+const readmeVi = read('README.vi.md');
+const publicReadmes = `${readme}\n${readmeVi}`;
+check('README.md is the English default and links the Vietnamese version',
+  readme.includes('**English**') && readme.includes('[Tiếng Việt](./README.vi.md)'),
+  'missing English default marker or README.vi.md language link');
+check('README.vi.md links back to the English default',
+  readmeVi.includes('[English](./README.md)') && readmeVi.includes('**Tiếng Việt**'),
+  'missing README.md language link or Vietnamese marker');
+const officialResourceUrls = [
+  'https://docs.zaloplatforms.com/docs/MA',
+  'https://miniapp.zaloplatforms.com/',
+];
+check('both READMEs link the official documentation and Mini App Center',
+  officialResourceUrls.every((url) => readme.includes(url) && readmeVi.includes(url)),
+  JSON.stringify(officialResourceUrls));
 check('README does not advertise all experimental official templates',
-  !/11\s+template/i.test(readme) && !/cà phê dùng mẫu có sẵn/i.test(readme),
-  'public README still advertises unsupported catalog entries');
-check('README names the supported official template',
-  supported.every((entry) => readme.includes(entry.id)), JSON.stringify(supported.map((entry) => entry.id)));
+  !/11\s+template/i.test(publicReadmes) && !/cà phê dùng mẫu có sẵn/i.test(publicReadmes),
+  'a public README still advertises unsupported catalog entries');
+check('both READMEs name the supported official template',
+  supported.every((entry) => readme.includes(entry.id) && readmeVi.includes(entry.id)),
+  JSON.stringify(supported.map((entry) => entry.id)));
 const caseCount = fs.readdirSync(path.join(ROOT, 'evaluation', 'cases'), { withFileTypes: true })
   .filter((entry) => entry.isDirectory()
     && fs.existsSync(path.join(ROOT, 'evaluation', 'cases', entry.name, 'case.json'))).length;
-check('README behavioral-case count matches the suite',
-  readme.includes(`bộ ${caseCount} case`), `README does not state bộ ${caseCount} case`);
+check('English README behavioral-case count matches the suite',
+  new RegExp(`\\b${caseCount}[-\\s]case\\b`, 'i').test(readme),
+  `README.md does not state ${caseCount}-case`);
+check('Vietnamese README behavioral-case count matches the suite',
+  readmeVi.includes(`bộ ${caseCount} case`), `README.vi.md does not state bộ ${caseCount} case`);
 
 let workflow = null;
 try { workflow = YAML.parse(read('.github/workflows/ci.yml')); } catch (err) {
