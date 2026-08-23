@@ -27,10 +27,34 @@ const MIME = {
 
 export const simUrl = (appId) => `https://h5.zdn.vn/zapps/${appId}/`;
 
-// Inject __SIM_CONFIG__ + the shim source right before the first module script (or right
-// after <head>) — the shim must run before the app bundle (sdkHostContract.injectionPoint).
+// The stable contract a template/adapter is allowed to read (mandate 42 §3.2). Deliberately
+// separate from __SIM_CONFIG__, which stays the shim's private config and may change shape.
+//
+// It must be a MARKER, not an inference: the simulator serves from the real hostname and path
+// (h5.zdn.vn/zapps/<appId>) precisely so zmp-sdk detects the right environment, so URL,
+// hostname and user-agent cannot tell simulator from production. Anything that reads this
+// contract fails CLOSED — no marker, or a different schemaVersion, means "not the simulator".
+//
+// It only ever exists in memory at serve time. It is never written into source, .env, a dist
+// artifact or a deploy.
+export const DX_RUNTIME_SCHEMA_VERSION = 1;
+export function buildRuntimeMarker(manifest) {
+  return {
+    schemaVersion: DX_RUNTIME_SCHEMA_VERSION,
+    mode: 'simulator',
+    appId: manifest.appId ?? null,
+    mockData: {
+      phoneNumber: manifest.simConfig?.persona?.phoneNumber ?? '0000000000',
+    },
+  };
+}
+
+// Inject the DX runtime marker + __SIM_CONFIG__ + the shim source right before the first
+// module script (or right after <head>) — all three must run before the app bundle
+// (sdkHostContract.injectionPoint).
 function injectShim(html, manifest, shimSource) {
-  const tag = `<script>window.__SIM_CONFIG__=${JSON.stringify(manifest.simConfig)};</script>\n<script>${shimSource}</script>`;
+  const tag = `<script>window.__ZMP_DX_RUNTIME__=${JSON.stringify(buildRuntimeMarker(manifest))};`
+    + `window.__SIM_CONFIG__=${JSON.stringify(manifest.simConfig)};</script>\n<script>${shimSource}</script>`;
   const moduleScript = /<script[^>]*type=["']?module/i;
   if (moduleScript.test(html)) return html.replace(moduleScript, (m) => `${tag}${m}`);
   if (/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, (m) => `${m}${tag}`);

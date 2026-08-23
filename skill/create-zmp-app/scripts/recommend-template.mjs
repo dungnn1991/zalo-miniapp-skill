@@ -533,10 +533,19 @@ export function rankTemplates(brief, opts = {}) {
   const semantic = scored.filter((c) => c.score > 0 && !c.vetoed
     && (!intent.primaryDomain || c.domainMatched));
   const eligible = semantic.filter((c) => c.eligible);
-  // A question is only useful between options the same decision can act on: if anything is
-  // scaffoldable today we choose among those, otherwise we clarify the product flow among
-  // the semantic candidates (and say they are not release-supported yet).
-  const tierAll = eligible.length ? eligible : semantic;
+  // Ranking is SEMANTIC; the hard filter decides what can be acted on, and the two must not be
+  // collapsed. Until 2026-08-23 the tier was `eligible.length ? eligible : semantic`, so as soon
+  // as one template in a domain got qualified every better-matching-but-unqualified rival
+  // vanished from the margin computation — and the report then claimed a huge margin for a weaker match.
+  // Measured the day zaui-bistro was promoted: "app đặt bàn trước cho nhà hàng" scored
+  // zaui-restaurant 17 (it is the only template declaring job table.reserve) and zaui-bistro 10,
+  // and the ranker auto-selected bistro "margin 10" — a template with no table booking at all.
+  // Same shape broke DoD #3 ("app nhà hàng" must ask one classifying question).
+  //
+  // The tier is therefore every semantic candidate. Eligibility comes back in below, where it
+  // belongs: 3a only asks when at least one option in the tier is actionable today, and 3b
+  // refuses to substitute a different template when the best match itself cannot be built.
+  const tierAll = semantic;
 
   if (!tierAll.length) {
     selection.mode = 'lab';
@@ -579,8 +588,11 @@ export function rankTemplates(brief, opts = {}) {
     return { selection, templateOptions: buildOptions(tier, taxonomy), blocked: null, candidates: scored, intent };
   }
 
-  // 3b. Best semantic candidate exists but nothing passed the hard filter.
-  if (!eligible.length) {
+  // 3b. The best semantic match itself cannot be built today. Never silently substitute a
+  // lower-scoring template that happens to be qualified — say which one fits and why it is
+  // blocked, then fall back to the lab shell (or ask, when the user explicitly wanted a
+  // template).
+  if (!top.eligible) {
     if (intent.optInRequested) {
       // User nói rõ "dùng mẫu có sẵn": im lặng dựng lab là bỏ qua ý định của họ.
       const tier = [top, ...tierAll.filter((c) => c.id !== top.id)].slice(0, 3);

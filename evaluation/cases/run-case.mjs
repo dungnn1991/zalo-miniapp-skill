@@ -56,6 +56,7 @@ const CASE_DEPS = {
   'sim-deny': ['bootstrap', 'portal-fetch', 'template'],
   'sim-manual-sheet': ['bootstrap', 'portal-fetch', 'template'],
   'sim-unmocked': ['bootstrap', 'template'],
+  'sim-runtime-marker': ['bootstrap', 'portal-fetch', 'template'],
   'sim-permission-persist': ['bootstrap', 'template'],
   'doctor-autoinstall': [],
   // v0.3.1 — P0 regressions: safe rerun, workspace=cwd, installer host targeting.
@@ -807,6 +808,49 @@ process.exit(9);
   },
 
   // ---- Phase 3 simulator cases (plan 28) ----
+
+  // Mandate 42 §3.2: the DX runtime marker is the ONLY thing separating simulator from
+  // production, because the simulator deliberately serves from the real hostname and path.
+  // Both directions are the contract: present under sim serving, absent everywhere else.
+  async 'sim-runtime-marker'({ ws, check, note }) {
+    const missing = simDepsMissing();
+    if (missing.length) return `blocked: ${missing.join('; ')}`;
+    const runId = simBuildPipeline(ws, check);
+    if (!runId) return;
+    const gatesOf = () => readJsonIfExists(path.join(ws, 'runs', runId, 'evidence', 'gates.json'))?.gates ?? [];
+    const domOf = () => readJsonIfExists(path.join(ws, 'runs', runId, 'evidence', 'dom.json'))?.viewports ?? {};
+
+    const sim = runScript(ws, 'render', ['--run-id', runId, '--provider', 'simulator', '--sim-decision', 'accept']);
+    check('render (simulator) exits 0', sim.code === 0, `exit ${sim.code}: ${(sim.stderr || sim.stdout).slice(-400)}`);
+    const simMarkerGates = gatesOf().filter((g) => g.id === 'sim_runtime_marker');
+    check('sim_runtime_marker passes on every viewport',
+      simMarkerGates.length === 3 && simMarkerGates.every((g) => g.status === 'pass'),
+      JSON.stringify(simMarkerGates));
+    const simDom = Object.values(domOf());
+    check('marker read back from the page is schemaVersion 1 / mode simulator',
+      simDom.length === 3 && simDom.every((v) => v.dxRuntime?.schemaVersion === 1 && v.dxRuntime?.mode === 'simulator' && v.dxRuntime?.hasMockData),
+      JSON.stringify(simDom.map((v) => v.dxRuntime)));
+
+    const plain = runScript(ws, 'render', ['--run-id', runId]);
+    check('render (no simulator) exits 0', plain.code === 0, `exit ${plain.code}: ${(plain.stderr || plain.stdout).slice(-400)}`);
+    const plainMarkerGates = gatesOf().filter((g) => g.id === 'no_sim_runtime_marker');
+    check('no_sim_runtime_marker passes on every viewport — nothing leaked',
+      plainMarkerGates.length === 3 && plainMarkerGates.every((g) => g.status === 'pass'),
+      JSON.stringify(plainMarkerGates));
+    check('no sim_runtime_marker gate in a non-simulator run', !gatesOf().some((g) => g.id === 'sim_runtime_marker'),
+      JSON.stringify(gatesOf().map((g) => g.id)));
+    check('marker absent from the page in a non-simulator run',
+      Object.values(domOf()).every((v) => v.dxRuntime === null),
+      JSON.stringify(Object.values(domOf()).map((v) => v.dxRuntime)));
+
+    // Serve-time only: the built artefact on disk must never carry the marker, or a deploy
+    // would ship a page that believes it is running in a simulator.
+    const outDir = readJsonIfExists(path.join(ws, 'runs', runId, 'evidence', 'build-info.json'))?.outDir ?? 'dist';
+    const distIndex = path.join(ws, 'app', outDir, 'index.html');
+    check('built index.html on disk contains no marker',
+      fs.existsSync(distIndex) && !fs.readFileSync(distIndex, 'utf8').includes('__ZMP_DX_RUNTIME__'), distIndex);
+    note('marker is injected in memory by scripts/sim/intercept.mjs, never written to dist');
+  },
 
   async 'sim-accept'({ ws, check }) {
     const missing = simDepsMissing();

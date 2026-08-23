@@ -34,16 +34,21 @@ const configPath = arg('config', path.resolve(__dirname, '..', '..', 'config.jso
 const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 const { markers, viewports, interactionCheck } = cfg;
 
-// Oracle profile: "full" (default), "official-template", or "simulator" (Phase 3).
-// simulator: full gates + sim serve-interception (no external server) + demo API checks.
+// Oracle profile: "full" (default), "official-template", "simulator" (Phase 3) or
+// "simulator-official". Two orthogonal axes, deliberately not one flag (mandate 42 §3.3):
+//   sim SERVING   — host interception + shim + runtime marker + bridge log (isSim)
+//   lab MARKERS   — the 8 data-testid gates, cta and the interaction check (isFull)
+//   sim DEMO-FLOW — the lab template's account-tab permission demo (demoFlow)
+// An official template gets sim serving without lab markers and without the demo flow.
 const profileName = arg('profile', 'full');
 const profile = (cfg.oracleProfiles || {})[profileName];
 if (!profile) {
   console.error(`runner_error: unknown profile "${profileName}" (see config.json oracleProfiles)`);
   process.exit(3);
 }
-const isSim = profileName === 'simulator';
-const isFull = profileName === 'full' || isSim;
+const isSim = profileName === 'simulator' || profileName === 'simulator-official';
+const isFull = profileName === 'full' || profileName === 'simulator';
+const runsDemoFlow = isSim && profile.demoFlow !== false;
 const mountSelector = isFull ? markers.appRoot : profile.mountSelector;
 
 // Simulator mode: --sim-manifest replaces --url; pages are served via route interception
@@ -260,6 +265,29 @@ try {
       gate('mount_not_empty', content.children > 0 && content.textLen > 0 ? 'pass' : 'fail',
         `children=${content.children} textLen=${content.textLen}`, vpName);
 
+      // DX runtime marker (mandate 42 §3.2). The simulator serves from the REAL hostname and
+      // path so zmp-sdk detects the right environment — which means nothing about the URL can
+      // distinguish simulator from production. The marker is the only signal, so both
+      // directions are gated: present and well-formed under sim serving, and absent everywhere
+      // else. A leaked marker outside the simulator would let a template hand out mock data in
+      // a real host.
+      const dxRuntime = await page.evaluate(() => {
+        const m = window.__ZMP_DX_RUNTIME__;
+        if (!m || typeof m !== 'object') return null;
+        return { schemaVersion: m.schemaVersion ?? null, mode: m.mode ?? null, hasMockData: !!m.mockData };
+      });
+      vpSummary.dxRuntime = dxRuntime;
+      if (isSim) {
+        const ok = dxRuntime && dxRuntime.schemaVersion === 1 && dxRuntime.mode === 'simulator';
+        gate('sim_runtime_marker', ok ? 'pass' : 'fail',
+          ok ? 'window.__ZMP_DX_RUNTIME__ schemaVersion=1 mode=simulator' : `marker missing/invalid: ${JSON.stringify(dxRuntime)}`,
+          vpName);
+      } else {
+        gate('no_sim_runtime_marker', dxRuntime === null ? 'pass' : 'fail',
+          dxRuntime === null ? 'no window.__ZMP_DX_RUNTIME__ outside the simulator' : `marker leaked into a non-simulator run: ${JSON.stringify(dxRuntime)}`,
+          vpName);
+      }
+
       const overflow = await page.evaluate(() => ({
         scrollWidth: document.documentElement.scrollWidth,
         innerWidth: window.innerWidth,
@@ -309,7 +337,8 @@ try {
       }
 
       // Simulator demo API checks — default viewport only (config.simulatorDemo contract).
-      if (isSim && vp.isDefault && cfg.simulatorDemo) {
+      // Lab profile only: the markers this drives are the lab template's account tab.
+      if (runsDemoFlow && vp.isDefault && cfg.simulatorDemo) {
         const sd = cfg.simulatorDemo;
         const decision = simManifest.simConfig?.decision || 'accept';
         try {
@@ -371,7 +400,17 @@ try {
 if (isSim) {
   const logPath = simManifest.logEvidencePathAbs;
   const ok = logPath && fs.existsSync(logPath) && fs.statSync(logPath).size > 0;
-  gate('sim_bridge_log_written', ok ? 'pass' : 'fail', ok ? logPath : 'bridge-log missing/empty');
+  if (runsDemoFlow) {
+    // Lab demo flow always crosses the bridge (it clicks every demo API), so an empty log
+    // means the interception never engaged.
+    gate('sim_bridge_log_written', ok ? 'pass' : 'fail', ok ? logPath : 'bridge-log missing/empty');
+  } else {
+    // An official template may legitimately make no native call at all on first render
+    // (zaui-fashion and zaui-doctor do not). Absence of a log is then evidence of nothing —
+    // `sim_runtime_marker` is what proves the shim was injected and running.
+    gate('sim_bridge_log_written', ok ? 'pass' : 'skipped',
+      ok ? logPath : `profile ${profileName}: app made no native call — nothing to log (marker gate proves the shim ran)`);
+  }
 }
 
 fs.writeFileSync(path.join(outDir, 'dom.json'), JSON.stringify(domSummary, null, 2) + '\n');

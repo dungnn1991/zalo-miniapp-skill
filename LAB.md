@@ -220,6 +220,50 @@ không được dùng trong CI. Validate skill packaging:
 
 ## Trạng thái
 
+- 2026-08-23 — **Official template chạy được dưới sim serving; tách khỏi lab demo-flow**
+  (mandate 42 §3.2–3.3). `render.mjs --provider simulator` trước đây từ chối thẳng mọi app
+  official vì "sim serving" và "sim demo-flow" bị gộp làm một; giờ là hai trục riêng và official
+  đi profile mới `simulator-official` (sim serving, không marker lab, không demo-flow).
+  Kèm theo:
+  - **Runtime marker `window.__ZMP_DX_RUNTIME__`** (schemaVersion 1, mode, mockData) inject
+    in-memory trước bundle. Không nhận biết sim bằng URL/hostname/UA được — sim cố ý dùng
+    hostname thật. Gate cả hai chiều: `sim_runtime_marker` (phải có) và `no_sim_runtime_marker`
+    (phải không có ở mọi run khác); case `sim-runtime-marker` giữ cả hai + chứng minh marker
+    không lọt vào dist.
+  - **MPDS mock trong shim.** CONFIRMED zmp-sdk@2.53.0: khi `zaloVersionCode` đủ mới và
+    `isMp`, storage đổi sang NativeResourceStorage nói MPDS qua `action.zbrowser.mpds` (async)
+    và `processActionMPDS` (sync). Thiếu nó thì `getItem`/`setStorage` trả -1.
+  - **`getStatusBarHeight`** — method native đồng bộ zmp-ui gọi khi
+    `window.ANDROID_STATUS_BAR_HEIGHT` là NaN. Thiếu nó, zaui-coffee chết
+    `K2.getStatusBarHeight is not a function` và render trắng ngay khi official bắt đầu chạy
+    dưới sim serving.
+  - **Qualification chạy HAI oracle.** no-host (server tĩnh, không Zalo host) ghi lại nhưng
+    KHÔNG blocking — đó không phải môi trường Mini App bao giờ chạy; simulator là verdict
+    blocking. Gate `no_fatal_console_error` không đổi một chữ: không hạ `console.error` thành
+    warn (mandate R41-4 cấm đúng việc đó), chỉ chạy app trong môi trường nó được viết cho.
+  Kết quả đo được, thay cho phỏng đoán "bistro/menu/uni" của report 41: bốn template cùng một
+  bệnh (`-2000` do thiếu host) — bistro `getItem`, menu `setStorage`, uni `showOAWidget`,
+  market `login`. Sim serving mở khoá **bistro + market** (đã promote). **menu và uni giờ PASS
+  runtime nhưng vẫn fail `external_dependency`** (`VITE_API_URL` / `VITE_API_BASE_URL`) — thuộc
+  N3, để vòng sau. egovernment còn đúng một blocker thật `VITE_BASE_URL` sau khi
+  `VITE_MINI_APP_ID` được phân loại là false positive của scanner (R41-2): nó là fallback sau
+  `window.APP_ID ||`, không phải input user phải cấp.
+  Auto-scaffoldable hôm nay: **fashion, coffee, bistro, market, doctor** (2 → 5).
+
+- 2026-08-23 — **Ranker: margin phải tính trên ứng viên NGỮ NGHĨA, không chỉ ứng viên eligible.**
+  Lỗi lộ ra ngay khi zaui-bistro được promote: "app đặt bàn trước cho nhà hàng" chấm
+  zaui-restaurant 17 (template duy nhất khai job `table.reserve`) và zaui-bistro 10, nhưng vì
+  tier chỉ gồm ứng viên eligible nên restaurant biến mất khỏi phép tính và ranker auto-select
+  bistro với "margin 10" — một template không có đặt bàn. Cùng cơ chế đó phá DoD #3
+  ("app nhà hàng" phải hỏi một câu). Sửa: tier = toàn bộ semantic candidate; eligibility quay
+  lại ở đúng chỗ của nó — 3a chỉ hỏi khi có ít nhất một lựa chọn dựng được ngay, 3b từ chối
+  thay thầm bằng template khác khi ứng viên khớp nhất không dựng được.
+  Ba case corpus blocking từng "xanh" nhờ trạng thái registry chứ không nhờ cơ chế nào
+  (`ambiguous-app-nha-hang` có `acceptedTemplateIds` rỗng nên nhánh guard chưa từng chạy) đã
+  được sửa kỳ vọng, lý do ghi trong `note` từng case.
+  Verify: 33 release checks 33 pass · corpus blocking 46/46 top-1 35/35 (100%) · 34 cases
+  34 pass 0 blocked 0 fail · smoke `fixtures/smoke.html` 47/47.
+
 - 2026-08-23 — **zaui-coffee đạt render-qualified và được promote** (report 41 N1, mandate 42
   R41-3). Adapter copy nguyên `react-router@^7.6.1` từ zaui-doctor trong khi coffee khai
   `react-router-dom@^6.8.2`, nên cây pnpm có cả 6.30.6 lẫn 7.18.2: build pass, runtime trắng

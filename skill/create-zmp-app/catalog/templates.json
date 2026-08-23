@@ -150,7 +150,7 @@
         "owner": "Zalo-MiniApp",
         "repository": "zaui-bistro",
         "defaultBranch": "main",
-        "revision": null,
+        "revision": "5079a416c895254d6a6bf4c56e44b6a2718dc177",
         "headObserved": "5079a416c895254d6a6bf4c56e44b6a2718dc177",
         "portalListed": true,
         "observedAt": "2026-08-22",
@@ -198,11 +198,14 @@
         "capabilityAdapters": []
       },
       "qualification": {
-        "state": "candidate",
-        "testedRevision": null,
-        "adapterId": null,
-        "evidence": null,
-        "note": "chưa chạy qualification factory"
+        "state": "release-supported",
+        "testedRevision": "5079a416c895254d6a6bf4c56e44b6a2718dc177",
+        "adapterId": "zaui-bistro-upstream-fixes",
+        "evidence": {
+          "qualificationResult": "catalog/qualification/zaui-bistro-5079a41.json",
+          "runId": "qualify-zaui-bistro-2026-08-23T06-43-41Z"
+        },
+        "note": "qualification factory pass đủ 7 blocking gate tại 5079a41 — evidence catalog/qualification/zaui-bistro-5079a41.json"
       }
     },
     {
@@ -264,7 +267,7 @@
         "owner": "Zalo-MiniApp",
         "repository": "zaui-market",
         "defaultBranch": "main",
-        "revision": null,
+        "revision": "2659835c48e0eac4ef328d6aa4583a2d6bf6f4f6",
         "headObserved": "2659835c48e0eac4ef328d6aa4583a2d6bf6f4f6",
         "portalListed": true,
         "observedAt": "2026-08-22",
@@ -312,11 +315,14 @@
         "capabilityAdapters": []
       },
       "qualification": {
-        "state": "candidate",
-        "testedRevision": null,
-        "adapterId": null,
-        "evidence": null,
-        "note": "chưa chạy qualification factory"
+        "state": "release-supported",
+        "testedRevision": "2659835c48e0eac4ef328d6aa4583a2d6bf6f4f6",
+        "adapterId": "zaui-market-upstream-fixes",
+        "evidence": {
+          "qualificationResult": "catalog/qualification/zaui-market-2659835.json",
+          "runId": "qualify-zaui-market-2026-08-23T06-44-06Z"
+        },
+        "note": "qualification factory pass đủ 7 blocking gate tại 2659835 — evidence catalog/qualification/zaui-market-2659835.json"
       }
     },
     {

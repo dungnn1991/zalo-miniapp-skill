@@ -16,6 +16,64 @@ không cần tài khoản Zalo, không đụng dữ liệu thật.
 Mọi sheet consent của sim đều mang **badge SIMULATOR** — nghĩa là consent GIẢ, do
 `simDecision` hoặc người xem bấm, không phải người dùng thật đồng ý.
 
+## 1b. Hai thứ khác nhau: sim SERVING và sim DEMO-FLOW
+
+Trước 2026-08-23 hai thứ này bị gộp làm một, nên `render.mjs --provider simulator` **từ chối
+thẳng** mọi app scaffold từ official template. Hệ quả: template chính thức không bao giờ chạy
+được dưới đúng môi trường của nó, và bốn template Portal bị đánh trượt runtime chỉ vì
+zmp-sdk trả `-2000` khi không có Zalo host.
+
+| | Gồm gì | Áp dụng cho |
+|---|---|---|
+| **sim serving** | host interception tại `h5.zdn.vn/zapps/<appId>`, SDK shim, runtime marker, bridge log | MỌI app |
+| **sim demo-flow** | tab "Tài khoản" + marker `api-btn-*`/`api-result-*` của LAB template | chỉ app từ lab template |
+
+Chọn oracle profile theo `input.json` `template.source`:
+
+| Nguồn app | Profile | Marker của lab | Demo-flow |
+|---|---|---|---|
+| lab | `simulator` | có | có |
+| official / existing | `simulator-official` | không | không |
+
+Guard cũ (`finding_30d7006aeaa7` — official template rơi vào `react_mount` fail khó hiểu) vẫn
+còn nguyên giá trị: nó nằm ở chính profile `simulator-official`, vốn không đòi marker của lab.
+
+## 1c. Runtime marker `window.__ZMP_DX_RUNTIME__` — contract fail-closed
+
+Simulator **cố ý** serve từ hostname/path thật để zmp-sdk nhận đúng môi trường. Vì vậy
+**không được** nhận biết simulator bằng URL, hostname hay user-agent — cả ba đều giống
+production. Tín hiệu duy nhất là marker được inject in-memory trước app bundle:
+
+```js
+window.__ZMP_DX_RUNTIME__ = {
+  schemaVersion: 1,
+  mode: 'simulator',
+  appId: '<appId>',
+  mockData: { phoneNumber: '0000000000' },
+};
+```
+
+Template/adapter chỉ được đọc contract này; `window.__SIM_CONFIG__` là config nội bộ của shim
+và có thể đổi shape bất cứ lúc nào. Luật đọc:
+
+```ts
+const isSimulator =
+  window.__ZMP_DX_RUNTIME__?.schemaVersion === 1 &&
+  window.__ZMP_DX_RUNTIME__?.mode === 'simulator';
+```
+
+- `isSimulator === true` → được dùng mock, nhưng UI **phải** gắn nhãn rõ là dữ liệu giả lập.
+- Mọi trường hợp khác (thiếu marker, sai `schemaVersion`, sai `mode`) → **không** mock, không
+  gọi endpoint server-side từ client; hiển thị trạng thái `backend-required` và giữ đường nhập
+  tay. Không cần phân biệt "browser local" với "Zalo thật" — cả hai đều là nhánh
+  non-simulator và fail-closed như nhau.
+
+Marker chỉ tồn tại trong bộ nhớ lúc serve: không ghi vào source, `.env`, dist trên đĩa hay bản
+deploy. Runner gate cả hai chiều — `sim_runtime_marker` (phải có, dưới sim serving) và
+`no_sim_runtime_marker` (phải KHÔNG có, mọi run khác); case
+`evaluation/cases/sim-runtime-marker` giữ cả hai chiều đó cùng với việc `index.html` trong
+dist không chứa marker.
+
 ## 2. Lệnh
 
 Chạy qua single entry `run.mjs` — flag cụ thể xem SKILL.md mục "Golden workflow" và
@@ -70,6 +128,17 @@ authorize; GET_SETTING luôn nhất quán với store (SDK pre-check trước AP
 - **API ngoài registry fail rõ.** Shim chỉ mock 7 API trong `sim-mock-data.json`; app gọi API
   khác → lỗi rõ ràng + finding, **không** silent-mock. Muốn thêm API: bổ sung registry với
   docSource Portal, không chế dữ liệu không nguồn.
+- **Ngoại lệ có chủ đích: native storage (MPDS).** Đây là hạ tầng, không phải API nghiệp vụ,
+  nên nó nằm trong shim chứ không nằm trong registry. CONFIRMED zmp-sdk@2.53.0
+  (`apis/common/apis/general/storage/index.js`): backend mặc định là localStorage, nhưng khi
+  `zaloVersionCode >= ZALO_SUPPORT_STORAGE_VERSION[platform]` **và** `appEnv.isMp` — đúng
+  trạng thái dưới shim — SDK đổi sang `NativeResourceStorage` nói giao thức MPDS qua hai
+  đường: jsCall `action.zbrowser.mpds` (async) và `ZaloJavaScriptInterface.processActionMPDS`
+  (sync, `nativeStorage.handleResult`). Shim hiện thực cả hai trên một store localStorage
+  theo appId, đúng năm `mpds_action` của SDK (`get`, `set`, `remove.key`, `clear.appData`,
+  `get.size`); `mpds_action` lạ vẫn fail rõ. Thiếu phần này thì `getItem`/`setStorage` trả
+  `error_code -1` và mọi template khôi phục trạng thái UI lúc mount đều log console error
+  (đo thật 2026-08-23: `zaui-bistro` getItem, `zaui-menu` setStorage).
 - Consent trên sheet sim là **consent giả** (badge SIMULATOR) — không có ý nghĩa pháp
   lý/chính sách; quyền thật vẫn phải xin ở Quản lý quyền và được user thật đồng ý
   (`references/operations.md` mục 5).

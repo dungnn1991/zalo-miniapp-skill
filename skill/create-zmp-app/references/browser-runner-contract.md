@@ -1,9 +1,10 @@
 # Browser render oracle — locked contract
 
 **Owner:** integration lead. Subagents call the runner; they do not edit it.
-**Status:** LOCKED 2026-08-20 · last locked-file change 2026-08-23 (uncaught-payload capture,
-report 41 §6.1) — smoke-verified against `fixtures/smoke.html` (**44/44** gates, exit 0) and
-against `fixtures/throw-object.html` via case `pageerror-object-detail`.
+**Status:** LOCKED 2026-08-20 · last locked-file change 2026-08-23 (uncaught-payload capture
+report 41 §6.1, and the `simulator-official` profile + runtime-marker gates, mandate 42 §3.2–3.3)
+— smoke-verified against `fixtures/smoke.html` (**47/47** gates, exit 0) and against
+`fixtures/throw-object.html` via case `pageerror-object-detail`.
 
 ## Invocation
 
@@ -24,6 +25,21 @@ node scripts/browser/runner.mjs --url <http-url> --out <evidence-dir> [--config 
 | `gates.json` | `{gates: [{id, status: pass|fail, detail, viewport}]}` — consumed by `verify.mjs` |
 | `<viewport>.png` | Screenshot per viewport with `screenshot: true`, **initial state** (taken before the interaction check) |
 
+## Oracle profiles
+
+Three independent axes, deliberately not one flag — `config.json` `oracleProfiles` is the
+source of truth:
+
+| Profile | sim serving | lab markers (8 `data-testid` + cta + interaction) | sim demo-flow |
+|---|---|---|---|
+| `full` (default) | no | yes | — |
+| `official-template` | no | no | — |
+| `simulator` | yes | yes | yes |
+| `simulator-official` | yes | no | no |
+
+`--profile simulator*` requires `--sim-manifest <path>` instead of `--url`; the app is served
+by route interception at `https://h5.zdn.vn/zapps/<appId>/`.
+
 ## Gates per viewport
 
 - `react_mount` — `markers.appRoot` attached within 15 s.
@@ -34,7 +50,15 @@ node scripts/browser/runner.mjs --url <http-url> --out <evidence-dir> [--config 
 - `interaction_add_to_cart` — only on `interactionCheck.runOnViewports`: click first `addToCart`,
   `cartBadge` integer text increments by exactly 1.
 - `no_fatal_console_error` — zero `pageerror` + zero `console.error`. Exception: a
-  `favicon.ico` "Failed to load resource" 404 is logged but not fatal.
+  `favicon.ico` "Failed to load resource" 404 is logged but not fatal. **Unchanged by the
+  simulator profiles**: nothing is downgraded to a warning, the app is simply run in the
+  environment it is written for.
+- `sim_runtime_marker` (sim serving only) — `window.__ZMP_DX_RUNTIME__` present with
+  `schemaVersion === 1` and `mode === "simulator"`.
+- `no_sim_runtime_marker` (every other profile) — that marker must be **absent**. The
+  simulator serves from the real hostname and path, so the marker is the only thing separating
+  simulator from production; a leaked marker would let a template hand out mock data inside a
+  real host. Both directions are covered by `evaluation/cases/sim-runtime-marker`.
 
 ## Uncaught-payload capture (`kind: "error-detail"`)
 
