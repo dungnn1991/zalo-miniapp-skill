@@ -220,6 +220,18 @@ không được dùng trong CI. Validate skill packaging:
 
 ## Trạng thái
 
+- 2026-08-23 — **Locked-file change: uncaught-payload capture trong browser runner**
+  (report 41 §6.1–6.3, mandate 42 §4.2). Đo thật: playwright làm phẳng một `throw {…}` thành
+  `Error("Object")` trước khi tới node, nên `name/message/stack` và `JSON.stringify(err)` đều
+  rỗng — hướng fix ghi trong report 41 §6.1 KHÔNG chạy được. Runner giờ serialize payload
+  **trong page** (listener `error`/`unhandledrejection` cài trước bundle) và ghi dòng
+  `kind="error-detail"` có redaction + size cap; `no_fatal_console_error` vẫn chỉ đếm
+  `pageerror` + `console.error` nên verdict của gate không đổi. Kèm: qualification evidence
+  lưu `consoleExcerpt` thay vì chỉ số đếm, và gate build phân biệt `preflight_failed` với
+  `vite_build` (lucky-wheel từng bị đọc nhầm là lỗi build vì nhãn này).
+  Verify: smoke `fixtures/smoke.html` **44/44** exit 0; case mới `pageerror-object-detail`;
+  full release gate `33 release checks 33 pass` + `33 cases: 33 pass, 0 blocked, 0 fail`.
+
 - 2026-08-22 — **Candidate v0.3.2:** sửa contract relay QR sau phiên deploy thật qua Codex
   Remote: chụp/crop và gửi một ảnh, không stream raw PTY/spinner/ANSI; agent ngừng poll đến
   khi user báo đã quét. Release validator có gate chống regress về wording cũ; runtime/token

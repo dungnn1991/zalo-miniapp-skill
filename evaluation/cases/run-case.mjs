@@ -49,6 +49,7 @@ const CASE_DEPS = {
   'preflight-asset-path': ['bootstrap', 'portal-fetch', 'template'],
   'cors-probe': [],
   'signature-match': [],
+  'pageerror-object-detail': [],
   'run-entry': ['bootstrap', 'portal-fetch', 'template'],
   // Phase 3 — simulator (extra sim deps checked in-scenario: registry A, runner sim, template tab B).
   'sim-accept': ['bootstrap', 'portal-fetch', 'template'],
@@ -707,6 +708,53 @@ process.exit(9);
     } finally {
       bad.close(); good.close(); wrong.close();
     }
+  },
+
+  // Report 41 §6.1 / review 42 R41-5: an uncaught value that is NOT an Error must still be
+  // diagnosable from evidence alone. `pageerror` cannot carry it (playwright flattens the
+  // payload to Error("Object") before node sees it) — the runner's in-page capture must.
+  async 'pageerror-object-detail'({ ws, check, note }) {
+    const fixture = path.join(LAB_ROOT, 'evaluation', 'browser', 'fixtures', 'throw-object.html');
+    if (!fs.existsSync(fixture)) return 'blocked: evaluation/browser/fixtures/throw-object.html missing';
+    const outDir = path.join(ws, 'evidence');
+    const runner = path.join(LAB_ROOT, 'skill', 'create-zmp-app', 'scripts', 'browser', 'runner.mjs');
+    const res = spawnSync(process.execPath, [
+      runner, '--url', pathToFileURL(fixture).href, '--out', outDir, '--profile', 'official-template',
+    ], { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
+    check('runner exits 1 (uncaught payload is still fatal)', res.status === 1,
+      `exit ${res.status}: ${(res.stderr || res.stdout || '').slice(-300)}`);
+
+    const lines = fs.existsSync(path.join(outDir, 'console.jsonl'))
+      ? fs.readFileSync(path.join(outDir, 'console.jsonl'), 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l))
+      : [];
+    const detail = lines.filter((l) => l.kind === 'error-detail');
+    const pageerror = lines.filter((l) => l.kind === 'pageerror');
+
+    check('pageerror line still records only the flattened text (bug reproduced, not hidden)',
+      pageerror.length > 0 && pageerror.every((l) => !String(l.text).includes('NEGATIVE_CONTROL')),
+      JSON.stringify(pageerror.slice(0, 2)));
+    check('window.onerror payload keeps the nested field',
+      detail.some((l) => l.source === 'window.onerror' && String(l.text).includes('NEGATIVE_CONTROL_NESTED_VALUE')
+        && String(l.text).includes('"code":-2000')),
+      JSON.stringify(detail.filter((l) => l.source === 'window.onerror').slice(0, 1)));
+    check('unhandledrejection payload keeps the nested field',
+      detail.some((l) => l.source === 'unhandledrejection' && String(l.text).includes('NEGATIVE_CONTROL_REJECTION_VALUE')),
+      JSON.stringify(detail.filter((l) => l.source === 'unhandledrejection').slice(0, 1)));
+
+    const cfg = readJsonIfExists(path.join(LAB_ROOT, 'skill', 'create-zmp-app', 'config.json'));
+    const vpNames = (cfg?.viewports ?? []).map((v) => v.name);
+    check('every viewport captured the payload, not just the default one',
+      vpNames.length > 0 && vpNames.every((v) => detail.some((l) => l.viewport === v)),
+      JSON.stringify({ vpNames, seen: [...new Set(detail.map((l) => l.viewport))] }));
+
+    // The detail lines are evidence only: the fatal counter must still be exactly the number
+    // of pageerror events per viewport (2 here), never inflated by the capture.
+    const gatesJson = readJsonIfExists(path.join(outDir, 'gates.json'));
+    const fatal = (gatesJson?.gates ?? []).filter((g) => g.id === 'no_fatal_console_error');
+    check('no_fatal_console_error counts pageerror only (error-detail is not counted)',
+      fatal.length === vpNames.length && fatal.every((g) => g.status === 'fail' && /^2 error\/pageerror event\(s\)/.test(g.detail)),
+      JSON.stringify(fatal));
+    note(`error-detail lines: ${detail.length}, pageerror lines: ${pageerror.length}`);
   },
 
   // Phase 2.6 Tier-2: curated signature map turns a known log line into a diagnosis.

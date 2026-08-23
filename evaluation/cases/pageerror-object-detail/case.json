@@ -1,0 +1,8 @@
+{
+  "caseId": "pageerror-object-detail",
+  "title": "Negative control — uncaught non-Error payload phải giữ được nội dung trong console.jsonl",
+  "expectation": {
+    "exitCode": 1,
+    "description": "Chạy locked runner trên fixtures/throw-object.html (throw một plain object có nested field, và một promise rejection object). Playwright làm phẳng cả hai thành Error(\"Object\") nên dòng kind=pageerror vẫn chỉ ghi \"Object\" — đúng như bug của zaui-market. Runner phải ghi thêm dòng kind=error-detail mang nguyên payload đã serialize (nested marker còn nguyên) cho CẢ window.onerror lẫn unhandledrejection, ở mọi viewport, đồng thời KHÔNG đổi số đếm fatal của gate no_fatal_console_error."
+  }
+}

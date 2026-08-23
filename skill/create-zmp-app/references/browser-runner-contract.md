@@ -1,7 +1,9 @@
 # Browser render oracle — locked contract
 
 **Owner:** integration lead. Subagents call the runner; they do not edit it.
-**Status:** LOCKED 2026-08-20 — smoke-verified against `fixtures/smoke.html` (41/41 gates, exit 0).
+**Status:** LOCKED 2026-08-20 · last locked-file change 2026-08-23 (uncaught-payload capture,
+report 41 §6.1) — smoke-verified against `fixtures/smoke.html` (**44/44** gates, exit 0) and
+against `fixtures/throw-object.html` via case `pageerror-object-detail`.
 
 ## Invocation
 
@@ -17,7 +19,7 @@ node scripts/browser/runner.mjs --url <http-url> --out <evidence-dir> [--config 
 
 | File | Content |
 |---|---|
-| `console.jsonl` | One line per console/pageerror event: `{viewport, kind, type, text, url, at}` |
+| `console.jsonl` | One line per console/pageerror event: `{viewport, kind, type, text, url, at}`, plus `kind: "error-detail"` companion lines (see below) |
 | `dom.json` | Per-viewport marker boxes, route, `scrollWidth`/`innerWidth` |
 | `gates.json` | `{gates: [{id, status: pass|fail, detail, viewport}]}` — consumed by `verify.mjs` |
 | `<viewport>.png` | Screenshot per viewport with `screenshot: true`, **initial state** (taken before the interaction check) |
@@ -33,6 +35,35 @@ node scripts/browser/runner.mjs --url <http-url> --out <evidence-dir> [--config 
   `cartBadge` integer text increments by exactly 1.
 - `no_fatal_console_error` — zero `pageerror` + zero `console.error`. Exception: a
   `favicon.ico` "Failed to load resource" 404 is logged but not fatal.
+
+## Uncaught-payload capture (`kind: "error-detail"`)
+
+Playwright rebuilds the page's error before node sees it, and a thrown **non-Error** is
+flattened on the way: `throw {code:-2000, detail:{…}}` arrives as `name="" message="Object"
+stack=""`, so `String(err)`, the individual fields and `JSON.stringify(err)` all yield nothing
+usable. That is why `zaui-market`'s evidence read literally `"Object"` and the template stayed
+undiagnosable (report 41 §6.1).
+
+The runner therefore also serializes the value **in the page**, from a `window` `error` /
+`unhandledrejection` listener installed by an init script before the app bundle, and ships it
+out through an exposed function:
+
+```json
+{"viewport":"mobile-390x844","kind":"error-detail","source":"window.onerror",
+ "valueType":"object","isError":false,"text":"{\"code\":-2000,\"detail\":{…}}","at":"…"}
+```
+
+- `source` — `window.onerror` or `unhandledrejection`.
+- `text` — JSON of the serialized value; Errors keep `name`/`message`/`stack`. Bounded in the
+  page (depth 4, 30 keys, 20 array items, 500 chars per string) and again in node
+  (4000 chars per record, 25 records per viewport), then passed through `lib/redact.mjs`.
+- Resource-load failures are skipped — they fire a payload-less `Event`, and `page.on('console')`
+  already records them.
+- **These lines are evidence only.** `no_fatal_console_error` still counts `pageerror` +
+  `console.error` and nothing else, so the gate's verdict is byte-for-byte what it was before.
+- Regression: `evaluation/cases/pageerror-object-detail` (fixture
+  `evaluation/browser/fixtures/throw-object.html`) asserts the nested payload survives on every
+  viewport while the fatal count stays at the number of `pageerror` events.
 
 ## Exit codes
 
