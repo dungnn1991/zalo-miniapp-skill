@@ -1,0 +1,25 @@
+{
+  "id": "disc-uni-vi",
+  "group": "clear-domain",
+  "brief": "app cho trường đại học xem ngành học và đăng ký tuyển sinh",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-uni"
+    ],
+    "mustNotSelect": [
+      "zaui-egovernment"
+    ],
+    "requiredDomains": [
+      "education.university"
+    ],
+    "requiredJobs": [
+      "course.browse",
+      "admission.apply"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Discovery probe cho zaui-uni; non-blocking vì template chưa release-supported (review 35 F6)."
+}

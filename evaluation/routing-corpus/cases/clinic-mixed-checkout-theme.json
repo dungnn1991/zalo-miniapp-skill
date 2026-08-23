@@ -1,0 +1,26 @@
+{
+  "id": "clinic-mixed-checkout-theme",
+  "group": "mixed-intent",
+  "brief": "app phòng khám cho bệnh nhân đặt lịch, có thanh toán viện phí trong app, theme màu xanh lá",
+  "blocking": true,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-doctor"
+    ],
+    "mustNotSelect": [
+      "zaui-fashion",
+      "zaui-shop",
+      "zaui-market"
+    ],
+    "requiredDomains": [
+      "healthcare.clinic"
+    ],
+    "requiredJobs": [
+      "appointment.booking"
+    ]
+  },
+  "source": "plan 34 §6.2 (mixed intent) + CONTRACT DoD #1",
+  "note": "Base phải ở lại clinic; \"thanh toán\" là capability checkout, \"xanh lá\" là style hint — không cái nào được đổi base."
+}

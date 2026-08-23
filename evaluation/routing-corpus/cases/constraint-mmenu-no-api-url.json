@@ -1,0 +1,26 @@
+{
+  "id": "constraint-mmenu-no-api-url",
+  "group": "constraint",
+  "brief": "dùng mmenu làm app gọi món cho chuỗi trà sữa",
+  "blocking": true,
+  "expected": {
+    "decisionWhenSupported": "choice",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-mmenu",
+      "zaui-coffee"
+    ],
+    "mustNotSelect": [
+      "zaui-fashion"
+    ],
+    "requiredDomains": [
+      "fnb.menu",
+      "fnb.coffee"
+    ],
+    "requiredJobs": [
+      "menu.view"
+    ]
+  },
+  "source": "plan 34 §6.2 (constraint) + registry constraints.requiredInputs",
+  "note": "zaui-mmenu khai backendRequiredForPreview + requiredInputs=[VITE_API_URL]. Thiếu API URL thì kể cả khi được promote cũng KHÔNG auto-scaffold — phải hỏi. Hôm nay state=discovered nên là lab."
+}

@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
-  "crawledAt": "2026-08-21",
-  "note": "Curated từ FAQ công khai của Hồng Phát (Supporter) — miniapp.zaloplatforms.com/community, crawl 2026-08-21 (DX/community-faq-best-practice/). Matcher do harness sở hữu; file này chỉ là dữ liệu. Pattern là JS regex string, compile bằng new RegExp(pattern, flags). Log không khớp signature nào → không đoán.",
+  "crawledAt": "2026-08-23",
+  "note": "Curated từ FAQ công khai của Hồng Phát (Supporter) — miniapp.zaloplatforms.com/community, crawl 2026-08-21 (DX/community-faq-best-practice/); bổ sung 2026-08-23 từ qualification factory (không phải crawl), crawledAt là lần cập nhật file gần nhất. Matcher do harness sở hữu; file này chỉ là dữ liệu. Pattern là JS regex string, compile bằng new RegExp(pattern, flags). Log không khớp signature nào → không đoán.",
   "signatures": [
     {
       "id": "minified-react-error",
@@ -112,6 +112,26 @@
       "fix": "Dùng URL bản Development/Testing (với tài khoản Developer/Admin) trong lúc phát triển; user thường chỉ dùng được sau khi app có bản Live.",
       "source": "https://miniapp.zaloplatforms.com/community/8891086357977462223/ung-dung-dang-trong-giai-doan-phat-trien-vui-long-thu-lai-sau",
       "sourceTitle": "Ứng dụng đang trong giai đoạn phát triển, vui lòng thử lại sau!"
+    },
+    {
+      "id": "rollup-unresolved-transitive-import",
+      "pattern": "Rollup failed to resolve import \"(react-router|[^\"]+)\" from",
+      "flags": "i",
+      "stage": "build",
+      "diagnosis": "Source import một package KHÔNG khai trong package.json. Nó chạy được với npm vì npm hoist node_modules phẳng nên package transitive vẫn nhìn thấy; pnpm cô lập nên rollup không resolve. Hay gặp nhất: import 'react-router' trong khi chỉ khai 'react-router-dom' — từ v7, react-router là dependency của react-router-dom chứ không phải cùng cấp.",
+      "fix": "Khai dependency đó trực tiếp trong package.json đúng version đang dùng (vd react-router cùng version với react-router-dom). KHÔNG bật shamefully-hoist và KHÔNG đổi sang npm chỉ để né — làm vậy là giấu lỗi khai báo chứ không sửa.",
+      "source": "https://github.com/Zalo-MiniApp/zaui-doctor",
+      "sourceTitle": "Quan sát trên zaui-doctor/coffee/market khi qualify template (2026-08-23)"
+    },
+    {
+      "id": "vite-alias-absolute-src",
+      "pattern": "Could not load /src/[^ ]+ \\(imported by",
+      "flags": "i",
+      "stage": "build",
+      "diagnosis": "vite.config có resolve.alias {\"@\": \"/src\"} — giá trị bắt đầu bằng '/' được hiểu là đường dẫn tuyệt đối trên FILESYSTEM, nên vite đi tìm /src/... ở gốc ổ đĩa và báo ENOENT. Cấu hình này chỉ 'chạy được' trong flow của zmp-cli, không chạy với vite build thuần.",
+      "fix": "Trỏ alias vào thư mục src thật của project: new URL(\"./src\", import.meta.url).pathname (config ESM .mts) hoặc path.resolve(__dirname, \"src\").",
+      "source": "https://github.com/Zalo-MiniApp/zaui-doctor",
+      "sourceTitle": "Quan sát trên zaui-doctor và zaui-bistro khi qualify template (2026-08-23)"
     }
   ]
 }

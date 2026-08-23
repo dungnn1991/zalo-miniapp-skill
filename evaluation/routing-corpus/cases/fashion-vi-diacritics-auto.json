@@ -1,0 +1,26 @@
+{
+  "id": "fashion-vi-diacritics-auto",
+  "group": "clear-domain",
+  "brief": "tạo mini app bán quần áo thời trang cho shop của tôi, appId=1234567890",
+  "blocking": true,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-fashion"
+    ],
+    "mustNotSelect": [
+      "zaui-shop",
+      "zaui-market",
+      "zaui-doctor"
+    ],
+    "requiredDomains": [
+      "commerce.fashion"
+    ],
+    "requiredJobs": [
+      "product.browse"
+    ]
+  },
+  "source": "plan 34 §6.2 (clear-domain) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "zaui-fashion là template duy nhất release-supported hôm nay → đây là case auto thật sự đo được."
+}

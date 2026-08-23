@@ -1,0 +1,27 @@
+{
+  "id": "fnb-menu-qr-table",
+  "group": "fnb-overlap",
+  "brief": "menu điện tử quét QR để khách gọi món tại bàn",
+  "blocking": true,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-menu"
+    ],
+    "mustNotSelect": [
+      "zaui-coffee",
+      "zaui-bistro",
+      "zaui-restaurant"
+    ],
+    "requiredDomains": [
+      "fnb.menu"
+    ],
+    "requiredJobs": [
+      "menu.view",
+      "food.order"
+    ]
+  },
+  "source": "plan 34 §6.2 (F&B overlap, ví dụ trực tiếp trong plan)",
+  "note": "Job menu.view + food.order tại bàn (không delivery, không đặt bàn) phân biệt zaui-menu."
+}

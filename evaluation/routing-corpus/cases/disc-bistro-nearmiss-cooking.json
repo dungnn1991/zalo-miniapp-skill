@@ -1,0 +1,19 @@
+{
+  "id": "disc-bistro-nearmiss-cooking",
+  "group": "unsupported",
+  "brief": "app dạy nấu ăn tại nhà theo video",
+  "blocking": false,
+  "expected": {
+    "decision": "lab",
+    "acceptedTemplateIds": [],
+    "mustNotSelect": [
+      "zaui-bistro",
+      "zaui-menu",
+      "zaui-uni"
+    ],
+    "requiredDomains": [],
+    "requiredJobs": []
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Dạy nấu ăn không phải F&B service và cũng không phải education.university → lab."
+}

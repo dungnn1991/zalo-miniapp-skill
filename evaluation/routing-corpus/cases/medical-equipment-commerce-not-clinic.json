@@ -1,0 +1,24 @@
+{
+  "id": "medical-equipment-commerce-not-clinic",
+  "group": "entity-vs-domain",
+  "brief": "app bán thiết bị y tế cho các phòng khám",
+  "blocking": true,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-shop"
+    ],
+    "mustNotSelect": [
+      "zaui-doctor"
+    ],
+    "requiredDomains": [
+      "commerce.general"
+    ],
+    "requiredJobs": [
+      "product.browse"
+    ]
+  },
+  "source": "plan 34 §6.2 (entity-vs-domain) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "\"bán thiết bị y tế\" là negativeSignal của zaui-doctor; \"phòng khám\" ở đây là KHÁCH HÀNG, không phải chủ app."
+}

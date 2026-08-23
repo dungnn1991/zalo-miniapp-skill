@@ -1,0 +1,25 @@
+{
+  "id": "disc-wheel-paraphrase",
+  "group": "paraphrase",
+  "brief": "khách quay thưởng trúng voucher giảm giá rồi đổi tại cửa hàng",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-lucky-wheel"
+    ],
+    "mustNotSelect": [
+      "zaui-shop",
+      "zaui-market"
+    ],
+    "requiredDomains": [
+      "campaign.loyalty"
+    ],
+    "requiredJobs": [
+      "voucher.redeem"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Discovery probe cho zaui-lucky-wheel; non-blocking vì template chưa release-supported (review 35 F6)."
+}

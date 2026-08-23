@@ -3,12 +3,28 @@
   "$id": "miniapp-bootstrap-poc/input.schema.json",
   "title": "create-zmp-app normalized input (runs/<run-id>/input.json)",
   "type": "object",
-  "required": ["schemaVersion", "miniAppId", "appName", "renderProvider", "defaultViewport", "packageManager"],
+  "required": [
+    "schemaVersion",
+    "miniAppId",
+    "appName",
+    "renderProvider",
+    "defaultViewport",
+    "packageManager"
+  ],
   "additionalProperties": false,
   "properties": {
-    "schemaVersion": { "const": "1.0" },
+    "schemaVersion": {
+      "enum": [
+        "1.0",
+        "1.1"
+      ],
+      "description": "1.1 khi run mang templateSelection/intentEnvelope (plan 34). 1.0 = run legacy, hiểu là lab/explicit theo field template."
+    },
     "brief": {
-      "type": ["string", "null"],
+      "type": [
+        "string",
+        "null"
+      ],
       "description": "Natural-language description of the Mini App. Null means neutral demo shell."
     },
     "miniAppId": {
@@ -19,41 +35,99 @@
     },
     "appIdSource": {
       "type": "string",
-      "enum": ["prompt", "existing_project"],
+      "enum": [
+        "prompt",
+        "existing_project"
+      ],
       "description": "Where miniAppId was resolved from per the §5.2 precedence."
     },
-    "appName": { "type": "string", "minLength": 1 },
+    "appName": {
+      "type": "string",
+      "minLength": 1
+    },
     "variant": {
       "type": "string",
-      "enum": ["clothing-store", "neutral"],
+      "enum": [
+        "clothing-store",
+        "neutral"
+      ],
       "description": "Template data variant selected from brief classification. Với template.source=official, giá trị bị bỏ qua (giữ cho backward compat)."
     },
     "template": {
       "type": "object",
-      "required": ["source", "id"],
+      "required": [
+        "source",
+        "id"
+      ],
       "additionalProperties": false,
       "description": "Nguồn scaffold. Vắng mặt = lab template (backward compat với run cũ).",
       "properties": {
-        "source": { "type": "string", "enum": ["lab", "official", "existing"] },
-        "id": { "type": "string", "description": "lab: 'lab-template'; official: id trong config.json officialTemplates.catalog; existing: 'existing-app' (--existing, không scaffold)" },
-        "revision": { "type": "string", "description": "Official template immutable commit SHA (or legacy ref). Omitted for lab/existing apps without pinned provenance." }
+        "source": {
+          "type": "string",
+          "enum": [
+            "lab",
+            "official",
+            "existing"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "description": "lab: 'lab-template'; official: id trong config.json officialTemplates.catalog; existing: 'existing-app' (--existing, không scaffold)"
+        },
+        "revision": {
+          "type": "string",
+          "description": "Official template immutable commit SHA (or legacy ref). Omitted for lab/existing apps without pinned provenance."
+        }
       }
     },
-    "renderProvider": { "type": "string", "enum": ["browser", "simulator"] },
+    "renderProvider": {
+      "type": "string",
+      "enum": [
+        "browser",
+        "simulator"
+      ]
+    },
     "defaultViewport": {
       "type": "object",
-      "required": ["width", "height"],
+      "required": [
+        "width",
+        "height"
+      ],
       "additionalProperties": false,
       "properties": {
-        "width": { "type": "integer", "minimum": 1 },
-        "height": { "type": "integer", "minimum": 1 }
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        }
       }
     },
-    "packageManager": { "type": "string", "enum": ["pnpm"] },
+    "packageManager": {
+      "type": "string",
+      "enum": [
+        "pnpm"
+      ]
+    },
     "invokedVia": {
       "type": "string",
-      "enum": ["slash-command", "codex-skill", "natural-language", "harness"],
+      "enum": [
+        "slash-command",
+        "codex-skill",
+        "natural-language",
+        "harness"
+      ],
       "description": "Host adapter surface that produced this invocation. Contract is identical across adapters."
+    },
+    "templateSelection": {
+      "$ref": "./template-selection.schema.json",
+      "description": "Kết quả ranker. Vắng mặt = run legacy trước plan 34."
+    },
+    "intentEnvelope": {
+      "$ref": "./intent-envelope.schema.json",
+      "description": "Envelope đã validate; giữ để truy vết vì sao chọn template."
     }
   }
 }

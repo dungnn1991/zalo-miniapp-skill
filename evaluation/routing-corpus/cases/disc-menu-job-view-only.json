@@ -1,0 +1,24 @@
+{
+  "id": "disc-menu-job-view-only",
+  "group": "job-signal",
+  "brief": "chỉ cần cho khách xem thực đơn, không giao hàng không thanh toán",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-menu"
+    ],
+    "mustNotSelect": [
+      "zaui-bistro"
+    ],
+    "requiredDomains": [
+      "fnb.menu"
+    ],
+    "requiredJobs": [
+      "menu.view"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Discovery probe cho zaui-menu; non-blocking vì template chưa release-supported (review 35 F6)."
+}

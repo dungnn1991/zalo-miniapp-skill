@@ -1,0 +1,24 @@
+{
+  "id": "disc-egov-nearmiss-clinic",
+  "group": "entity-vs-domain",
+  "brief": "app đặt lịch khám tại trạm y tế phường",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-doctor"
+    ],
+    "mustNotSelect": [
+      "zaui-egovernment"
+    ],
+    "requiredDomains": [
+      "healthcare.clinic"
+    ],
+    "requiredJobs": [
+      "appointment.booking"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Có chữ \"phường\" nhưng job là khám bệnh → healthcare, không phải dịch vụ công."
+}

@@ -1,0 +1,19 @@
+{
+  "id": "explicit-unknown-id-stop",
+  "group": "explicit-override",
+  "brief": "tạo app bán quần áo",
+  "blocking": true,
+  "templateFlag": "official:zaui-khong-ton-tai",
+  "expected": {
+    "decision": "stop",
+    "acceptedTemplateIds": [],
+    "mustNotSelect": [
+      "zaui-fashion",
+      "zaui-shop"
+    ],
+    "requiredDomains": [],
+    "requiredJobs": []
+  },
+  "source": "plan 34 §6.2 (explicit-override) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Id không có trong registry → dừng và liệt kê id hợp lệ; tuyệt đối không fallback sang fashion dù brief khớp fashion."
+}

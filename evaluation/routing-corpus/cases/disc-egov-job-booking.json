@@ -1,0 +1,24 @@
+{
+  "id": "disc-egov-job-booking",
+  "group": "job-signal",
+  "brief": "đặt lịch làm thủ tục tại sở để khỏi chờ",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-egovernment"
+    ],
+    "mustNotSelect": [
+      "zaui-doctor"
+    ],
+    "requiredDomains": [
+      "government.publicservice"
+    ],
+    "requiredJobs": [
+      "appointment.booking"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "appointment.booking dùng chung với zaui-doctor — ngữ cảnh \"thủ tục/sở\" mới phân biệt được."
+}

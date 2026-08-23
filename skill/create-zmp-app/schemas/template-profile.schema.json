@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "create-zmp-app/template-profile.schema.json",
+  "title": "Template profile — một entry trong catalog/templates.json",
+  "type": "object",
+  "required": ["schemaVersion", "id", "source", "intent", "capabilities", "constraints", "qualification"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "source": {
+      "type": "object",
+      "required": ["owner", "repository", "defaultBranch", "revision", "portalListed", "observedAt", "licenseDecision"],
+      "additionalProperties": false,
+      "properties": {
+        "owner": { "type": "string" },
+        "repository": { "type": "string" },
+        "defaultBranch": { "type": "string" },
+        "revision": { "type": ["string", "null"], "description": "SHA immutable dùng để scaffold. BẮT BUỘC non-null khi state=release-supported." },
+        "headObserved": { "type": ["string", "null"], "description": "HEAD lúc sync gần nhất; chỉ để phát hiện drift, KHÔNG dùng để scaffold." },
+        "portalListed": { "type": "boolean", "description": "Có mặt trong catalog Portal/CLI (static/static/templates/index.json)." },
+        "observedAt": { "type": "string" },
+        "licenseFile": { "type": ["string", "null"], "description": "SPDX từ GitHub API, null = không có LICENSE file." },
+        "packageJsonLicense": { "type": ["string", "null"], "description": "Trường license trong package.json upstream; UNLICENSED là tuyên bố proprietary." },
+        "licenseDecision": {
+          "type": "string",
+          "enum": ["review-required", "approved-internal", "approved-public", "blocked"],
+          "description": "Quyết định của owner (D34-8). Blocking gate cho release-supported; public visibility KHÔNG thay thế quyết định này."
+        }
+      }
+    },
+    "intent": {
+      "type": "object",
+      "required": ["domains", "jobs", "aliases"],
+      "additionalProperties": false,
+      "properties": {
+        "domains": { "type": "array", "items": { "type": "string" }, "minItems": 1, "description": "id thuộc catalog/taxonomy.json domains" },
+        "jobs": { "type": "array", "items": { "type": "string" } },
+        "audiences": { "type": "array", "items": { "type": "string" } },
+        "aliases": { "type": "array", "items": { "type": "string" }, "description": "Cụm từ tự nhiên (VN có dấu/không dấu/EN) dùng cho matcher deterministic." },
+        "negativeSignals": { "type": "array", "items": { "type": "string" }, "description": "Cụm khiến template này bị trừ điểm, vd 'đồng phục bác sĩ' với zaui-doctor." }
+      }
+    },
+    "capabilities": { "type": "array", "items": { "type": "string" }, "description": "id thuộc taxonomy.capabilities" },
+    "constraints": {
+      "type": "object",
+      "required": ["backendRequiredForPreview", "requiredInputs"],
+      "additionalProperties": false,
+      "properties": {
+        "backendRequiredForPreview": { "type": "boolean" },
+        "requiredInputs": { "type": "array", "items": { "type": "string" } },
+        "themeAdapter": { "type": ["string", "null"] },
+        "capabilityAdapters": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "qualification": {
+      "type": "object",
+      "required": ["state"],
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": ["discovered", "candidate", "build-qualified", "render-qualified", "interaction-qualified", "release-supported", "quarantined", "deprecated"]
+        },
+        "testedRevision": { "type": ["string", "null"], "description": "Phải khớp source.revision thì evidence mới còn hiệu lực." },
+        "adapterId": { "type": ["string", "null"], "description": "File trong catalog/adapters/; chỉ áp cho đúng id + đúng SHA." },
+        "evidence": { "type": ["object", "null"], "description": "Trỏ tới qualification-result.json hoặc caseId." },
+        "note": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "ambiguous-do-an-do-uong",
+  "group": "ambiguous",
+  "brief": "làm app bán đồ ăn đồ uống",
+  "blocking": true,
+  "expected": {
+    "acceptedTemplateIds": [],
+    "mustNotSelect": [
+      "zaui-fashion",
+      "zaui-market",
+      "zaui-doctor"
+    ],
+    "requiredDomains": [],
+    "requiredJobs": [],
+    "minOptions": 2,
+    "decisionWhenSupported": "choice",
+    "decisionWhenUnsupported": "lab"
+  },
+  "source": "plan 34 §6.2 (ambiguous) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "\"đồ ăn\" là alias bistro, \"đồ uống\" là alias coffee → hoà điểm thật sự, phải hỏi. Sửa 2026-08-23: theo plan §4.3, khi chưa ứng viên nào release-supported thì đi lab kèm giải thích thay vì hỏi một câu không hành động được; sẽ tự thành choice khi có template được promote."
+}

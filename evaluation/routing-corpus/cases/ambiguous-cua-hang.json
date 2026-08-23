@@ -1,0 +1,21 @@
+{
+  "id": "ambiguous-cua-hang",
+  "group": "ambiguous",
+  "brief": "làm mini app cho cửa hàng của tôi",
+  "blocking": true,
+  "expected": {
+    "acceptedTemplateIds": [],
+    "mustNotSelect": [
+      "zaui-doctor",
+      "zaui-egovernment",
+      "zaui-uni"
+    ],
+    "requiredDomains": [],
+    "requiredJobs": [],
+    "minOptions": 2,
+    "decisionWhenSupported": "choice",
+    "decisionWhenUnsupported": "lab"
+  },
+  "source": "plan 34 §6.2 (ambiguous) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "\"cửa hàng\" trùng alias zaui-shop và audience của fashion/market → không đủ để chốt ngành hàng. Câu hỏi phải phân biệt được, không phải liệt kê id trần. Sửa 2026-08-23: theo plan §4.3, khi chưa ứng viên nào release-supported thì đi lab kèm giải thích thay vì hỏi một câu không hành động được; sẽ tự thành choice khi có template được promote."
+}

@@ -1,0 +1,19 @@
+{
+  "id": "unsupported-crypto-wallet-en-lab",
+  "group": "unsupported",
+  "brief": "build a crypto wallet mini app with price alerts",
+  "blocking": true,
+  "expected": {
+    "decision": "lab",
+    "acceptedTemplateIds": [],
+    "mustNotSelect": [
+      "zaui-fashion",
+      "zaui-shop",
+      "zaui-market"
+    ],
+    "requiredDomains": [],
+    "requiredJobs": []
+  },
+  "source": "plan 34 §6.2 (unsupported) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Bản English no-match."
+}

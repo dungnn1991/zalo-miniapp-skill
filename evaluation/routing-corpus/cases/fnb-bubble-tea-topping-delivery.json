@@ -1,0 +1,27 @@
+{
+  "id": "fnb-bubble-tea-topping-delivery",
+  "group": "fnb-overlap",
+  "brief": "app bán trà sữa có chọn topping và giao hàng tận nơi",
+  "blocking": true,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-coffee"
+    ],
+    "mustNotSelect": [
+      "zaui-bistro",
+      "zaui-menu",
+      "zaui-restaurant",
+      "zaui-mmenu"
+    ],
+    "requiredDomains": [
+      "fnb.coffee"
+    ],
+    "requiredJobs": [
+      "food.order"
+    ]
+  },
+  "source": "plan 34 §6.2 (F&B overlap, ví dụ trực tiếp trong plan)",
+  "note": "trà sữa → fnb.coffee. Topping/delivery là capability, không đổi base sang bistro."
+}

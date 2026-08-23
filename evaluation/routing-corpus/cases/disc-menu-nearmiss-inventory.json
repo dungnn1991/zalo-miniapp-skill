@@ -1,0 +1,19 @@
+{
+  "id": "disc-menu-nearmiss-inventory",
+  "group": "unsupported",
+  "brief": "app quản lý kho nguyên liệu cho bếp nhà hàng",
+  "blocking": false,
+  "expected": {
+    "decision": "lab",
+    "acceptedTemplateIds": [],
+    "mustNotSelect": [
+      "zaui-menu",
+      "zaui-bistro",
+      "zaui-market"
+    ],
+    "requiredDomains": [],
+    "requiredJobs": []
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Internal tool cho bếp, không phải app cho khách → lab."
+}

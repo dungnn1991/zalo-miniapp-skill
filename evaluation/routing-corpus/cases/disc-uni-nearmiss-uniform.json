@@ -1,0 +1,26 @@
+{
+  "id": "disc-uni-nearmiss-uniform",
+  "group": "entity-vs-domain",
+  "brief": "app bán đồng phục học sinh và cặp sách",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-fashion",
+      "zaui-shop"
+    ],
+    "mustNotSelect": [
+      "zaui-uni"
+    ],
+    "requiredDomains": [
+      "commerce.fashion",
+      "commerce.general"
+    ],
+    "requiredJobs": [
+      "product.browse"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Bán đồ cho học sinh là commerce, không phải education.university."
+}

@@ -1,0 +1,25 @@
+{
+  "id": "fashion-vs-generic-shop",
+  "group": "commerce-overlap",
+  "brief": "shop bán quần jean và áo khoác nam",
+  "blocking": true,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-fashion"
+    ],
+    "mustNotSelect": [
+      "zaui-shop",
+      "zaui-market"
+    ],
+    "requiredDomains": [
+      "commerce.fashion"
+    ],
+    "requiredJobs": [
+      "product.browse"
+    ]
+  },
+  "source": "plan 34 §6.2 (commerce-overlap) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Từ \"shop\" khớp alias generic của zaui-shop; vertical (quần jean/áo khoác) phải thắng generic keyword."
+}

@@ -66,11 +66,13 @@ Một số yêu cầu thường dùng:
 ## Template
 
 [ZaUI Templates](https://miniapp.zaloplatforms.com/zaui-templates) hiện công bố chín template.
-Skill chỉ scaffold những revision đã đi qua release gate riêng để bảo đảm cài, build và render tái
-hiện được. Ở bản v0.3.2, template chính thức đang được support là `zaui-fashion`; yêu cầu chưa có
-template phù hợp sẽ dùng neutral starter để agent phát triển tiếp.
+Mọi brief đều được chấm điểm với danh sách này, user không cần nói "dùng mẫu có sẵn"; nhưng skill
+chỉ scaffold những revision đã đi qua qualification gate riêng để bảo đảm cài, build và render tái
+hiện được. Template đang đạt chuẩn nằm trong `skill/create-zmp-app/catalog/templates.json`; brief
+không có mẫu nào phù hợp sẽ dùng neutral starter, kèm báo cáo nói rõ ứng viên nào bị loại và vì sao.
 
-Chi tiết về catalog, revision và support policy nằm trong
+Cách chọn template nằm ở
+[Template routing](./skill/create-zmp-app/references/template-routing.md), cơ chế scaffold nằm ở
 [Official templates](./skill/create-zmp-app/references/official-templates.md).
 
 ## Chất lượng và an toàn
@@ -97,8 +99,8 @@ Chi tiết về catalog, revision và support policy nằm trong
 
 ## Phát triển skill
 
-Repo này chứa runtime skill và lab kiểm chứng. Release gate hiện chạy bộ 32 case cùng metadata
-validator bằng:
+Repo này chứa runtime skill và lab kiểm chứng. Release gate chạy metadata validator, routing
+corpus và bộ 32 case bằng:
 
 ```bash
 npm test

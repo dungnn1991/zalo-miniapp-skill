@@ -1,0 +1,25 @@
+{
+  "id": "disc-market-nodiacritics",
+  "group": "diacritics",
+  "brief": "app sieu thi mini cho cua hang tap hoa",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-market"
+    ],
+    "mustNotSelect": [
+      "zaui-shop",
+      "zaui-fashion"
+    ],
+    "requiredDomains": [
+      "commerce.grocery"
+    ],
+    "requiredJobs": [
+      "product.browse"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Discovery probe cho zaui-market; non-blocking vì template chưa release-supported (review 35 F6)."
+}

@@ -1,0 +1,24 @@
+{
+  "id": "disc-mmenu-nearmiss-no-backend",
+  "group": "constraint",
+  "brief": "app menu điện tử nhưng shop chưa có backend hay API nào cả",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-menu"
+    ],
+    "mustNotSelect": [
+      "zaui-mmenu"
+    ],
+    "requiredDomains": [
+      "fnb.menu"
+    ],
+    "requiredJobs": [
+      "menu.view"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Không có backend → zaui-mmenu (requiredInputs VITE_API_URL) phải bị loại, zaui-menu mới đúng."
+}

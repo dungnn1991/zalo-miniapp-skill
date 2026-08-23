@@ -18,12 +18,12 @@
 //                     already in the workspace (feature-integration / verify-existing mode).
 //   --force-scaffold  explicit user-authorized overwrite; rewrites the manifest.
 //
-// --template official:<id> (Phase 2.5, opt-in): scaffold from the platform's official
-// template catalog (lab.config.json `officialTemplates` — authoritative). Also activated
-// when the brief contains an opt-in phrase; catalog keywords then map the brief to an id
-// in declaration order (first match wins). Opt-in without a match -> exit 3 with a final
-// stdout JSON {"status":"needs_template_choice","catalog":[...]} — never guessed, never a
-// silent fallback. Without opt-in the lab template path is byte-identical to before.
+// --template auto|lab|official:<id> (plan 34; default auto): every create brief is ranked
+// against catalog/templates.json by scripts/recommend-template.mjs — no opt-in phrase needed.
+// `lab` pins the bundled shell, `official:<id>` names one. Ambiguous-but-actionable -> exit 2
+// with needsInput.reason="template_choice"; unknown/unqualified id -> exit 2 blocked, naming
+// what is usable. Any other value -> exit 3. Nothing is fetched or written before the
+// decision; see references/template-routing.md for the full contract.
 //
 // --confirm-app-id: explicit, user-confirmed choice of the PROMPT App ID after an
 // app_id_conflict. Must equal the resolved prompt App ID byte-for-byte; only then may a
@@ -41,6 +41,7 @@ import { spawnSync } from 'node:child_process';
 import { TEMPLATE_DIR, loadLabConfig, resolveWorkspace, getArg } from './lib/paths.mjs';
 import { newRunId, openRun, fingerprint } from './lib/run-context.mjs';
 import { redactText } from './lib/redact.mjs';
+import { rankTemplates, supportedIds as rankerSupportedIds, loadRegistry as loadTemplateRegistry, InvalidTemplateArg } from './recommend-template.mjs';
 
 const INVOKED_VIA = ['slash-command', 'codex-skill', 'natural-language', 'harness'];
 
@@ -130,43 +131,6 @@ function classifyVariant(brief, allowedVariants) {
     }
   }
   return allowedVariants.includes(variant) ? variant : 'neutral';
-}
-
-// --- Official templates (Phase 2.5, opt-in) ------------------------------------------
-// Catalog, opt-in phrases, keyword mapping and tarball URL pattern are LOCKED in
-// lab.config.json `officialTemplates`. Modes: lab (default) | official | ambiguous.
-function resolveTemplateSelection(argv, brief, config) {
-  const ot = config.officialTemplates;
-  const explicit = getArg(argv, 'template', null);
-  if (explicit !== null) {
-    if (!ot) die('lab.config.json has no officialTemplates section; --template unsupported');
-    const ids = ot.catalog.map((c) => c.id);
-    const supported = ot.catalog.filter((c) => c.releaseSupported === true);
-    const m = /^official:(.+)$/.exec(explicit.trim());
-    if (!m) die(`invalid --template "${explicit}" (expected official:<id>; ids: ${ids.join(', ')})`);
-    const id = m[1].trim();
-    const entry = ot.catalog.find((c) => c.id === id);
-    if (!entry) die(`unknown official template id "${id}"; valid ids: ${ids.join(', ')}`);
-    if (entry.releaseSupported !== true) return { mode: 'unsupported', entry, supported };
-    return { mode: 'official', entry };
-  }
-  if (!ot || !brief) return { mode: 'lab' };
-  // normalize hai chiều (matchNormalization): 'dung mau co san' == 'dùng mẫu có sẵn'
-  const nt = normalizeVi(brief);
-  const optIn = ot.optInPhrases.some((p) => matchNormalized(nt, p));
-  if (!optIn) return { mode: 'lab' };
-  const supported = ot.catalog.filter((c) => c.releaseSupported === true);
-  // Catalog declaration order, first keyword match wins (specific before generic). A known
-  // but unsupported match is surfaced explicitly; it is never fetched and never silently
-  // replaced with a different-domain template.
-  for (const entry of ot.catalog) {
-    if (entry.keywords.some((k) => matchNormalized(nt, k))) {
-      return entry.releaseSupported === true
-        ? { mode: 'official', entry }
-        : { mode: 'unsupported', entry, supported };
-    }
-  }
-  return { mode: 'ambiguous', supported };
 }
 
 function slugify(name) {
@@ -489,6 +453,59 @@ function scaffoldFromTemplate(appDir, appName, variant, config, ctx, { force, ma
   writeScaffoldManifest(appDir, templateInfo, writeSet);
 }
 
+
+// --- plan 34: ranker deterministic thay cho opt-in phrase + first-keyword ------------------
+// `--template auto` là MẶC ĐỊNH. Ranker đọc catalog/templates.json (registry đã pin revision)
+// và trả templateSelection đúng schema; hàm này chỉ map sang shape nội bộ mà đường scaffold
+// hiện có đang dùng ({mode:'official'|'lab'|..., entry:{id,revision,branch}}), để không phải
+// viết lại phần scaffold đã qua E2E.
+async function resolveTemplateV2(argv, brief) {
+  const requested = getArg(argv, 'template', null) ?? 'auto';
+  // rankTemplates trả đủ {selection, templateOptions, blocked}; recommend() chỉ trả selection
+  // phẳng nên dùng nó ở đây sẽ nuốt mất danh sách lựa chọn cho user.
+  let raw;
+  try {
+    raw = rankTemplates(brief ?? '', { template: requested });
+  } catch (e) {
+    if (!(e instanceof InvalidTemplateArg)) throw e;
+    die(e.message);  // config error, không phải ask-user
+  }
+  const sel = raw.selection;
+
+  if (sel.mode === 'lab') return { mode: 'lab', selection: sel };
+
+  if (sel.mode === 'choice') {
+    return { mode: 'choice', selection: sel, options: raw.templateOptions ?? [] };
+  }
+
+  // auto | explicit
+  if (!sel.selectedId || !sel.revision) {
+    // explicit tới template chưa support / id không tồn tại → dừng, KHÔNG fallback lab.
+    // Ranker chỉ set `blocked` cho id không tồn tại; trường hợp id có thật nhưng chưa đạt
+    // gate thì lý do nằm ở alternatives[].rejectedBecause — dựng lại để câu hỏi nói đúng
+    // chuyện gì đã xảy ra thay vì rơi vào câu mơ hồ chung.
+    // Dùng đúng predicate của ranker (kể cả grandfather) — tự viết lại ở đây từng làm câu
+    // thông báo nói sai rằng "chưa có template nào dùng được" trong khi fashion vẫn scaffold ok.
+    const supportedIds = rankerSupportedIds(loadTemplateRegistry());
+    const alt = (sel.alternatives ?? []).find((a) => a.id === sel.selectedId);
+    const blocked = raw.blocked ?? (sel.selectedId
+      ? {
+          id: sel.selectedId,
+          reason: `Template ${sel.selectedId} ${alt?.rejectedBecause ?? 'chưa dùng được'}`,
+          kind: 'unsupported',
+          supported: supportedIds,
+        }
+      : null);
+    return { mode: 'blocked', selection: sel, blocked };
+  }
+  const profile = loadTemplateRegistry().templates.find((t) => t.id === sel.selectedId);
+  return {
+    mode: 'official',
+    selection: sel,
+    entry: { id: sel.selectedId, revision: sel.revision, branch: profile?.source?.defaultBranch ?? 'main' },
+  };
+}
+
 // --- Main ----------------------------------------------------------------------------
 async function main() {
   const argv = process.argv.slice(2);
@@ -522,40 +539,56 @@ async function main() {
   const startedAt = new Date().toISOString();
   const provider = config.defaults.renderProvider;
 
-  // Phase 2.5: resolve template selection first (pure parse of argv/brief vs the locked
-  // catalog). Explicit invalid id die()s above (exit 3, ids listed). Opt-in without a
-  // keyword match -> ask the user to choose; no scaffold, no guessing.
-  const templateSel = useExisting ? { mode: 'existing' } : resolveTemplateSelection(argv, brief, config);
-  if (templateSel.mode === 'ambiguous' || templateSel.mode === 'unsupported') {
-    const supported = templateSel.supported
-      ?? config.officialTemplates.catalog.filter((c) => c.releaseSupported === true);
-    const ids = supported.map((c) => c.id);
+  // plan 34: resolve template selection first — pure ranking of the brief against the
+  // registry, before any fetch or mutation. Unknown/unqualified id and genuine ambiguity
+  // both stop at exit 2 (`template_choice`) so the user chooses; only a malformed
+  // --template value is exit 3.
+  const templateSel = useExisting ? { mode: 'existing' } : await resolveTemplateV2(argv, brief);
+  // plan 34 D34-7: cần user chọn template là ASK-USER, không phải lỗi môi trường.
+  // Trả exit 2 + needsInput.reason='template_choice' (schema result 1.1), KHÔNG còn exit 3.
+  if (templateSel.mode === 'choice' || templateSel.mode === 'blocked') {
+    const sel = templateSel.selection;
+    const opts = templateSel.options ?? [];
+    const blocked = templateSel.blocked ?? null;
     const ambRunId = newRunId();
     const ambCtx = openRun(workspace.runsDir, ambRunId);
     ambCtx.event('bootstrap', {
       stage: 'input',
       status: 'needs_input',
-      detail: templateSel.mode === 'unsupported'
-        ? `official template ${templateSel.entry.id} is not release-supported; no fetch or app mutation`
-        : 'official-template opt-in without a supported keyword match; user must choose a release-supported template',
+      detail: blocked
+        ? `explicit template không dùng được: ${blocked.reason}; không fetch, không mutation`
+        : 'brief khớp nhiều hướng sản phẩm khác nhau; hỏi user chốt trước khi scaffold',
     });
-    const unavailable = templateSel.mode === 'unsupported' ? templateSel.entry.id : null;
+    const question = blocked
+      ? `${blocked.reason}. Template đang dùng được: ${(blocked.supported ?? []).join(', ') || '(chưa có)'}. ` +
+        'Chọn một id trong danh sách, hoặc bỏ --template để skill tự chọn.'
+      : 'Brief có thể đi theo nhiều hướng sản phẩm khác nhau. Bạn muốn hướng nào?\n' +
+        opts.map((o) => `- ${o.id}: ${o.why}`).join('\n');
+    ambCtx.writeJson('result.json', {
+      schemaVersion: '1.1',
+      runId: ambRunId,
+      status: 'needs_input',
+      stage: 'input',
+      provider,
+      needsInput: {
+        reason: 'template_choice',
+        question,
+        templateOptions: opts.map((o) => ({ id: o.id, why: o.why, jobs: o.jobs ?? [] })),
+      },
+      appIdSource: null,
+      expectedAppId: null,
+      resolvedAppId: null,
+      appIdBound: false,
+      gates: [],
+      findingIds: [],
+      templateSelection: sel,
+      startedAt,
+      finishedAt: new Date().toISOString(),
+    });
     process.stdout.write(
-      JSON.stringify({
-        runId: ambRunId,
-        status: 'needs_template_choice',
-        question: unavailable
-          ? `Template ${unavailable} hiện chưa đạt release gate nên skill không tải hoặc scaffold. ` +
-            `Các template đang được support: ${ids.join(', ') || '(chưa có)'}. ` +
-            'Chọn một id được support, hoặc bỏ yêu cầu "mẫu có sẵn" để dùng lab template.'
-          : 'Brief yêu cầu dùng mẫu có sẵn nhưng không khớp template đã đạt release gate. ' +
-            `Các template đang được support: ${ids.join(', ') || '(chưa có)'}. ` +
-            'Chọn một id được support, hoặc bỏ yêu cầu "mẫu có sẵn" để dùng lab template.',
-        catalog: ids,
-        unavailableTemplate: unavailable,
-      }) + '\n'
+      JSON.stringify({ runId: ambRunId, status: 'needs_template_choice', question, options: opts, blocked }) + '\n'
     );
-    process.exit(3);
+    process.exit(2);
   }
 
   // §5.2 step 1: prompt value (explicit flag, else embedded in the brief text).
@@ -888,13 +921,15 @@ async function main() {
 
   // Normalized input for the rest of the pipeline (input.schema.json, additionalProperties:false).
   ctx.writeJson('input.json', {
-    schemaVersion: '1.0',
+    // 1.1 khi run mang templateSelection (plan 34); run legacy giữ 1.0.
+    schemaVersion: templateSel.selection ? '1.1' : '1.0',
     brief: brief ?? null,
     miniAppId: expectedAppId,
     appIdSource,
     appName,
     variant,
     template: templateInfo,
+    ...(templateSel.selection ? { templateSelection: templateSel.selection } : {}),
     renderProvider: provider,
     defaultViewport: config.defaults.defaultViewport,
     packageManager: config.defaults.packageManager,

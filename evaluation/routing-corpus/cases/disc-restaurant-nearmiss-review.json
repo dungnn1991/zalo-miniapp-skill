@@ -1,0 +1,19 @@
+{
+  "id": "disc-restaurant-nearmiss-review",
+  "group": "unsupported",
+  "brief": "app đánh giá và xếp hạng nhà hàng cho food blogger",
+  "blocking": false,
+  "expected": {
+    "decision": "lab",
+    "acceptedTemplateIds": [],
+    "mustNotSelect": [
+      "zaui-restaurant",
+      "zaui-bistro",
+      "zaui-menu"
+    ],
+    "requiredDomains": [],
+    "requiredJobs": []
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Review platform không phải app của một nhà hàng → lab."
+}

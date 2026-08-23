@@ -1,0 +1,25 @@
+{
+  "id": "disc-bistro-mixed",
+  "group": "mixed-intent",
+  "brief": "app quán ăn có thanh toán trong app và theme tối",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-bistro"
+    ],
+    "mustNotSelect": [
+      "zaui-shop",
+      "zaui-restaurant"
+    ],
+    "requiredDomains": [
+      "fnb.restaurant"
+    ],
+    "requiredJobs": [
+      "food.order"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "checkout là capability; theme tối là style."
+}

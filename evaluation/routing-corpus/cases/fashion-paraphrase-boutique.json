@@ -1,0 +1,25 @@
+{
+  "id": "fashion-paraphrase-boutique",
+  "group": "paraphrase",
+  "brief": "mở gian hàng online cho tiệm váy đầm của tôi",
+  "blocking": true,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-fashion"
+    ],
+    "mustNotSelect": [
+      "zaui-shop",
+      "zaui-market"
+    ],
+    "requiredDomains": [
+      "commerce.fashion"
+    ],
+    "requiredJobs": [
+      "product.browse"
+    ]
+  },
+  "source": "plan 34 §6.2 (paraphrase) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Không dùng literal \"thời trang\"; phải bắt qua alias váy/đầm."
+}

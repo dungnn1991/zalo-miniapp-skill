@@ -1,0 +1,25 @@
+{
+  "id": "disc-restaurant-nodiacritics",
+  "group": "diacritics",
+  "brief": "app nha hang dat ban truoc",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-restaurant"
+    ],
+    "mustNotSelect": [
+      "zaui-menu",
+      "zaui-bistro"
+    ],
+    "requiredDomains": [
+      "fnb.restaurant"
+    ],
+    "requiredJobs": [
+      "table.reserve"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Discovery probe cho zaui-restaurant; non-blocking vì template chưa release-supported (review 35 F6)."
+}

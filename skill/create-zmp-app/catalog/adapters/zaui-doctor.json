@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "adapterId": "zaui-doctor-upstream-fixes",
+  "templateId": "zaui-doctor",
+  "appliesTo": {
+    "revision": "d6e5997754671a47ed9d618cee7975cbc7a057e9"
+  },
+  "expiresAt": "2026-11-23",
+  "reviewNote": "Xoá adapter khi upstream khai react-router trực tiếp; đã ghi finding cho template owner.",
+  "rationale": "source import react-router ở vị trí giá trị nhưng package.json chỉ khai react-router-dom (v7 để react-router là transitive) ⇒ pnpm isolated không resolve, rollup fail. alias \"@\" trỏ \"/src\" (filesystem root) đi cùng root:\"./src\" ⇒ vite ENOENT khi load /src/...",
+  "patches": [
+    {
+      "id": "add-react-router",
+      "kind": "add-dependency",
+      "file": "package.json",
+      "dependency": {
+        "name": "react-router",
+        "version": "^7.6.1"
+      },
+      "preconditions": [
+        {
+          "type": "dependency-absent",
+          "name": "react-router"
+        },
+        {
+          "type": "source-imports",
+          "name": "react-router"
+        }
+      ]
+    },
+    {
+      "id": "alias-at-to-project-src",
+      "kind": "replace",
+      "file": "vite.config.mts",
+      "find": "\"@\": \"/src\",",
+      "replace": "\"@\": new URL(\"./src\", import.meta.url).pathname,",
+      "expectedCount": 1,
+      "preconditions": [
+        {
+          "type": "file-contains",
+          "file": "vite.config.mts",
+          "value": "\"@\": \"/src\""
+        },
+        {
+          "type": "file-contains",
+          "file": "vite.config.mts",
+          "value": "root: \"./src\""
+        }
+      ]
+    }
+  ]
+}

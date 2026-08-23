@@ -1,0 +1,25 @@
+{
+  "id": "disc-wheel-nodiacritics",
+  "group": "diacritics",
+  "brief": "app vong quay may man tich diem cho khach hang",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-lucky-wheel"
+    ],
+    "mustNotSelect": [
+      "zaui-shop"
+    ],
+    "requiredDomains": [
+      "campaign.loyalty"
+    ],
+    "requiredJobs": [
+      "reward.spin",
+      "loyalty.points"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Discovery probe cho zaui-lucky-wheel; non-blocking vì template chưa release-supported (review 35 F6)."
+}

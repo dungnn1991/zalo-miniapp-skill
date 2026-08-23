@@ -1,0 +1,24 @@
+{
+  "id": "disc-mmenu-explicit-alias",
+  "group": "clear-domain",
+  "brief": "dùng template mmenu cho chuỗi F&B của tôi",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-mmenu"
+    ],
+    "mustNotSelect": [
+      "zaui-menu"
+    ],
+    "requiredDomains": [
+      "fnb.menu"
+    ],
+    "requiredJobs": [
+      "menu.view"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Alias duy nhất của mmenu là chính tên nó."
+}

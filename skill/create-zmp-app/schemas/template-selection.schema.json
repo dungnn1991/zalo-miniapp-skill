@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "create-zmp-app/template-selection.schema.json",
+  "title": "Template selection — kết quả của ranker, ghi vào input.json và result.json",
+  "type": "object",
+  "required": ["schemaVersion", "mode", "registryVersion"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "mode": { "type": "string", "enum": ["auto", "explicit", "lab", "choice"] },
+    "selectedId": { "type": ["string", "null"], "description": "null khi mode=lab hoặc khi cần user chọn." },
+    "revision": { "type": ["string", "null"], "description": "SHA đã pin thực sự dùng để scaffold." },
+    "confidence": { "type": ["string", "null"], "enum": ["high", "medium", "low", null] },
+    "score": { "type": ["number", "null"] },
+    "margin": { "type": ["number", "null"], "description": "Khoảng cách điểm top-1 so với top-2." },
+    "reasons": { "type": "array", "items": { "type": "string" } },
+    "evidence": { "type": "array", "items": { "type": "string" }, "description": "Span trong brief dẫn tới lựa chọn." },
+    "alternatives": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "score"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "score": { "type": "number" },
+          "state": { "type": "string" },
+          "rejectedBecause": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "registryVersion": { "type": "string" },
+    "taxonomyVersion": { "type": ["string", "null"] }
+  }
+}

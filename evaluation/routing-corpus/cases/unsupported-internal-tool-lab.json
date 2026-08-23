@@ -1,0 +1,19 @@
+{
+  "id": "unsupported-internal-tool-lab",
+  "group": "unsupported",
+  "brief": "app nội bộ chấm công và duyệt đơn nghỉ phép cho nhân viên công ty",
+  "blocking": true,
+  "expected": {
+    "decision": "lab",
+    "acceptedTemplateIds": [],
+    "mustNotSelect": [
+      "zaui-egovernment",
+      "zaui-uni",
+      "zaui-doctor"
+    ],
+    "requiredDomains": [],
+    "requiredJobs": []
+  },
+  "source": "plan 34 §6.2 (unsupported) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "\"duyệt đơn\"/\"thủ tục\" dễ kéo sang government.publicservice — internal tool không phải dịch vụ công."
+}

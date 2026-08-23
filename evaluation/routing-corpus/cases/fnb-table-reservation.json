@@ -1,0 +1,25 @@
+{
+  "id": "fnb-table-reservation",
+  "group": "fnb-overlap",
+  "brief": "app đặt bàn trước cho nhà hàng của tôi",
+  "blocking": true,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-restaurant"
+    ],
+    "mustNotSelect": [
+      "zaui-menu",
+      "zaui-coffee"
+    ],
+    "requiredDomains": [
+      "fnb.restaurant"
+    ],
+    "requiredJobs": [
+      "table.reserve"
+    ]
+  },
+  "source": "plan 34 §6.2 (F&B overlap, ví dụ trực tiếp trong plan)",
+  "note": "table.reserve là job chỉ zaui-restaurant khai — job phải thắng alias chung \"nhà hàng\"."
+}

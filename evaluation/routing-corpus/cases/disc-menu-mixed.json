@@ -1,0 +1,24 @@
+{
+  "id": "disc-menu-mixed",
+  "group": "mixed-intent",
+  "brief": "menu điện tử có tìm kiếm món và theme sáng",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-menu"
+    ],
+    "mustNotSelect": [
+      "zaui-bistro"
+    ],
+    "requiredDomains": [
+      "fnb.menu"
+    ],
+    "requiredJobs": [
+      "menu.view"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "search là capability của zaui-menu."
+}

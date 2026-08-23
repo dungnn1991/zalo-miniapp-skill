@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "adapterId": "zaui-market-upstream-fixes",
+  "templateId": "zaui-market",
+  "appliesTo": {
+    "revision": "2659835c48e0eac4ef328d6aa4583a2d6bf6f4f6"
+  },
+  "expiresAt": "2026-11-23",
+  "reviewNote": "Xoá khi upstream khai react-router-dom; đã ghi finding cho template owner.",
+  "rationale": "src import react-router-dom nhưng package.json không khai ⇒ pnpm isolated không resolve, rollup fail. Ngoài ra src còn import thẳng react-router (transitive của react-router-dom v7).",
+  "patches": [
+    {
+      "id": "add-react-router-dom",
+      "kind": "add-dependency",
+      "file": "package.json",
+      "dependency": {
+        "name": "react-router-dom",
+        "version": "^7.6.1"
+      },
+      "preconditions": [
+        {
+          "type": "dependency-absent",
+          "name": "react-router-dom"
+        },
+        {
+          "type": "source-imports",
+          "name": "react-router-dom"
+        }
+      ]
+    },
+    {
+      "id": "add-react-router",
+      "kind": "add-dependency",
+      "file": "package.json",
+      "dependency": {
+        "name": "react-router",
+        "version": "^7.6.1"
+      },
+      "preconditions": [
+        {
+          "type": "dependency-absent",
+          "name": "react-router"
+        },
+        {
+          "type": "source-imports",
+          "name": "react-router"
+        }
+      ]
+    }
+  ]
+}
