@@ -112,10 +112,25 @@ async function main() {
     process.exit(3);
   }
 
-  // Phase 3 (plan 28): --provider simulator — no static server at all. The runner serves the
+  // Which environment to render in. An explicit --provider always wins; otherwise the run's own
+  // input.json decides, because bootstrap already knows whether the chosen template needs a Zalo
+  // host (registry `qualification.runtime.requiresZaloHost`, recorded by the factory).
+  //
+  // This used to read only the flag, so a template qualified under the simulator was verified in
+  // one environment and scaffolded in another: `zaui-bistro`, `zaui-market` and
+  // `zaui-lucky-wheel` all fail the no-host oracle, so a plain `run.mjs` scaffold stopped at
+  // render unless the user happened to know about --verify-sim.
+  const provider = getArg(argv, 'provider') ?? ctx.readJson('input.json')?.renderProvider ?? 'browser';
+  if (provider !== 'browser' && provider !== 'simulator') {
+    console.error(`render: unknown --provider "${provider}" (browser|simulator)`);
+    process.exit(3);
+  }
+  ctx.event('render', { stage: 'render', status: 'provider_resolved', detail: `${provider} (${getArg(argv, 'provider') ? 'flag' : 'input.json'})` });
+
+  // Phase 3 (plan 28): provider simulator — no static server at all. The runner serves the
   // app via playwright route-interception at https://h5.zdn.vn/zapps/<appId>/ (isMp needs the
   // real hostname+path) using scripts/sim/intercept.mjs and the manifest written here.
-  if (getArg(argv, 'provider') === 'simulator') {
+  if (provider === 'simulator') {
     if (!appId) {
       console.error('render: --provider simulator requires input.json miniAppId');
       process.exit(3);

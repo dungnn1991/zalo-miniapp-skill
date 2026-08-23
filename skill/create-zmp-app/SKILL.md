@@ -108,9 +108,19 @@ exit-code contract says, and prints a final JSON status line for you to read.
     overwritten slot; Testing = durable CDN version).
 - **Final report must include:** the open preview URL (`http://127.0.0.1:<port>...`), the app
   path + evidence paths (`runs/<runId>/evidence/...`, screenshots, `result.json`), any
-  `insights` the pipeline attached, the deployed URL if a deploy ran, and one or two
-  **suggested next steps** (e.g. "muốn deploy thử, nói 'deploy bản development'"; "muốn thử
-  flow xin quyền, nói 'chạy giả lập'").
+  `insights` the pipeline attached, **every entry of `warnings[]` (see below)**, the deployed URL
+  if a deploy ran, and one or two **suggested next steps** (e.g. "muốn deploy thử, nói 'deploy
+  bản development'"; "muốn thử flow xin quyền, nói 'chạy giả lập'").
+- **`warnings[]` is not optional to report.** `run.mjs` prints the array verbatim in its final
+  JSON (it is also in `result.json`). A warning means *the app was built and the preview works,
+  but one feature is not production-ready*, and it separates four things you must pass on
+  without merging them: `blockingForPreview` (can they use the preview now?),
+  `blockingForProductionFeature` + `affectedFeature` (what needs more work before launch),
+  `fallback` (what the app does today instead), and `guide` (which `references/…` file explains
+  the fix). Say all four in the user's language. Never summarise a warning as "done, no
+  issues" — today `PHONE_BACKEND_REQUIRED` on `zaui-lucky-wheel` means the phone field stays
+  empty for real users until they build the backend described in
+  `references/phone-number-backend.md`.
 
 `run.mjs` and every per-stage script accept `--workspace <dir>` to redirect the generated
 output — `app/`, `runs/`, `feedback/`. **Warning:** all stages of one run must receive the

@@ -187,6 +187,11 @@ const NEVER_RUN_NOTE = 'chưa chạy qualification factory';
 const noteLies = [];
 const constraintDrift = [];
 const adapterGaps = [];
+// A template promoted on simulator evidence must SAY so. Without `qualification.runtime`,
+// bootstrap cannot know it needs the simulator and the default scaffold flow verifies the app in
+// an environment the evidence never covered — zaui-bistro, zaui-market and zaui-lucky-wheel all
+// fail the no-host oracle, so their plain `run.mjs` stopped at render.
+const runtimeGaps = [];
 const AUTO_STATES = new Set(['render-qualified', 'interaction-qualified', 'release-supported']);
 for (const t of registry.templates ?? []) {
   const q = t.qualification ?? {};
@@ -212,6 +217,14 @@ for (const t of registry.templates ?? []) {
   // adapter, pinned to the same revision — bootstrap refuses at runtime otherwise, and the user
   // would hit it instead of us.
   const autoScaffoldable = AUTO_STATES.has(q.state) && !!t.source?.revision && q.testedRevision === t.source.revision;
+  if (autoScaffoldable) {
+    const rt = q.runtime;
+    if (!rt || typeof rt.requiresZaloHost !== 'boolean' || !rt.verifiedProvider || !rt.oracleProfile) {
+      runtimeGaps.push(`${t.id}: qualification.runtime missing/incomplete (${JSON.stringify(rt)})`);
+    } else if (ev && rt.requiresZaloHost !== ((ev.data.noHostOracle?.exitCode ?? 0) !== 0)) {
+      runtimeGaps.push(`${t.id}: runtime.requiresZaloHost=${rt.requiresZaloHost} contradicts evidence noHostOracle.exitCode=${ev.data.noHostOracle?.exitCode}`);
+    }
+  }
   if (autoScaffoldable && q.adapterId) {
     const file = path.join(SKILL_DIR, 'catalog', 'adapters', `${t.id}.json`);
     if (!fs.existsSync(file)) adapterGaps.push(`${t.id}: registry names adapter "${q.adapterId}" but catalog/adapters/${t.id}.json is missing`);
@@ -228,6 +241,8 @@ check('registry qualification notes match the evidence on disk', noteLies.length
 check('registry constraints match the evidence on disk', constraintDrift.length === 0, constraintDrift.join(' | '));
 check('every auto-scaffoldable template ships the adapter its evidence was produced with',
   adapterGaps.length === 0, adapterGaps.join(' | '));
+check('every auto-scaffoldable template records the runtime environment it was verified in',
+  runtimeGaps.length === 0, runtimeGaps.join(' | '));
 
 const diffCheck = spawnSync('git', ['diff', '--check'], { cwd: ROOT, encoding: 'utf8' });
 check('git diff --check is clean', diffCheck.status === 0, diffCheck.stdout || diffCheck.stderr);

@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "tool": "qualify-template",
   "templateId": "zaui-lucky-wheel",
-  "startedAt": "2026-08-23T07:02:44.017Z",
-  "workspace": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-lucky-wheel-f1gVS2",
-  "runId": "qualify-zaui-lucky-wheel-2026-08-23T07-02-44Z",
+  "startedAt": "2026-08-23T08:13:02.515Z",
+  "workspace": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-lucky-wheel-qG309M",
+  "runId": "qualify-zaui-lucky-wheel-2026-08-23T08-13-02Z",
   "registryPath": "/Users/dungnn/Project/DX/labs/miniapp-bootstrap-poc/skill/create-zmp-app/catalog/templates.json",
   "license": {
     "packageJsonLicense": "UNLICENSED",
@@ -17,7 +17,7 @@
   "shortRevision": "8c692b9",
   "upstreamHead": "8c692b938727b4c6c38e866e4d6683cf1bdd4ed0",
   "evidenceValidForHead": true,
-  "recordedStateEffective": "candidate",
+  "recordedStateEffective": "release-supported",
   "adapter": {
     "status": "applicable",
     "file": "/Users/dungnn/Project/DX/labs/miniapp-bootstrap-poc/skill/create-zmp-app/catalog/adapters/zaui-lucky-wheel.json",
@@ -134,7 +134,7 @@
   },
   "buildInfo": {
     "outDir": "src/www",
-    "builtAt": "2026-08-23T07:02:56.288Z"
+    "builtAt": "2026-08-23T08:13:15.107Z"
   },
   "residualIdentifiers": {
     "blocking": [],
@@ -467,7 +467,7 @@
       {
         "id": "sim_bridge_log_written",
         "status": "pass",
-        "detail": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-lucky-wheel-f1gVS2/runs/qualify-zaui-lucky-wheel-2026-08-23T07-02-44Z/evidence/bridge-log.jsonl"
+        "detail": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-lucky-wheel-qG309M/runs/qualify-zaui-lucky-wheel-2026-08-23T08-13-02Z/evidence/bridge-log.jsonl"
       }
     ]
   },
@@ -478,7 +478,7 @@
     "mobile-390x844.png",
     "wide-1280x800.png"
   ],
-  "screenshotsPath": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-lucky-wheel-f1gVS2/runs/qualify-zaui-lucky-wheel-2026-08-23T07-02-44Z/evidence",
+  "screenshotsPath": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-lucky-wheel-qG309M/runs/qualify-zaui-lucky-wheel-2026-08-23T08-13-02Z/evidence",
   "externalRequirements": [],
   "derivedState": "render-qualified",
   "quarantineReason": null,
@@ -509,7 +509,7 @@
         {
           "id": "revision_pinned",
           "status": "pass",
-          "detail": "qualifying revision=8c692b938727b4c6c38e866e4d6683cf1bdd4ed0 (source: upstream HEAD)"
+          "detail": "qualifying revision=8c692b938727b4c6c38e866e4d6683cf1bdd4ed0 (source: registry source.revision)"
         },
         {
           "id": "snapshot_immutable",
@@ -657,7 +657,7 @@
       ]
     }
   ],
-  "finishedAt": "2026-08-23T07:03:03.331Z",
-  "durationMs": 19314,
+  "finishedAt": "2026-08-23T08:13:22.082Z",
+  "durationMs": 19566,
   "exitCode": 0
 }

@@ -179,13 +179,52 @@ function applyTemplateAdapter(entry, revision, workspace, ctx) {
   if (loaded.status !== 'applicable') {
     throw new Error(`adapter for ${entry.id} not applicable (${loaded.status}): ${loaded.detail}`);
   }
-  const { applied, refused } = applyAdapter(workspace.appDir, loaded.adapter);
+  // EXACT id match. `loadAdapter` only checks templateId + revision, so a file that was renamed
+  // or replaced would still load and silently patch the tree with something other than what the
+  // evidence covers. The registry names the adapter; that name has to be the one that runs.
+  if (expectedAdapterId && loaded.adapter.adapterId !== expectedAdapterId) {
+    throw new Error(
+      `adapter id mismatch for ${entry.id}: registry evidence was produced with "${expectedAdapterId}"`
+      + ` but catalog/adapters/${entry.id}.json is "${loaded.adapter.adapterId}". Requalify before scaffolding.`,
+    );
+  }
+
+  // ATOMIC. applyAdapter walks patches in order and mutates as it goes, so a refusal on patch 5
+  // leaves patches 1–4 already written. For zaui-lucky-wheel that half-patched state is the
+  // dangerous one: the build fixes could land while the patch that removes the client-side
+  // secret is the one that refuses. Snapshot every file the adapter can touch, and restore all
+  // of them if anything refuses — the caller's throw then leaves the tree exactly as the tarball
+  // extracted it.
+  const touched = [...new Set((loaded.adapter.patches ?? []).map((patch) => patch.file || 'package.json'))];
+  const snapshot = new Map();
+  for (const rel of touched) {
+    const abs = path.join(workspace.appDir, rel);
+    snapshot.set(rel, fs.existsSync(abs) ? fs.readFileSync(abs) : null);
+  }
+  const restore = () => {
+    for (const [rel, buf] of snapshot) {
+      const abs = path.join(workspace.appDir, rel);
+      if (buf === null) fs.rmSync(abs, { force: true });
+      else fs.writeFileSync(abs, buf);
+    }
+  };
+
+  let applied;
+  let refused;
+  try {
+    ({ applied, refused } = applyAdapter(workspace.appDir, loaded.adapter));
+  } catch (err) {
+    restore();
+    throw new Error(`adapter ${loaded.adapter.adapterId} threw on ${entry.id}@${revision.slice(0, 7)}: ${err.message} — tree rolled back`);
+  }
   if (refused.length) {
+    restore();
     throw new Error(
       `adapter ${loaded.adapter.adapterId} refused ${refused.length} patch(es) on ${entry.id}@${revision.slice(0, 7)}: `
       + refused.map((r) => `${r.patchId}/${r.reason} — ${r.detail}`).join('; ')
       + '. Upstream changed under a pinned SHA, or the app tree is not what the adapter expects.'
-      + ' Requalify the template instead of scaffolding a half-patched tree.',
+      + ' Tree rolled back to the extracted tarball; requalify the template instead of scaffolding'
+      + ' a half-patched tree.',
     );
   }
   ctx.writeJson('evidence/adapter.json', {
@@ -570,6 +609,10 @@ async function resolveTemplateV2(argv, brief) {
       branch: profile?.source?.defaultBranch ?? 'main',
       // What the qualification evidence was produced with; scaffoldOfficial enforces it.
       adapterId: profile?.qualification?.adapterId ?? null,
+      // …and WHERE it was produced. A template that fails the no-host oracle only renders
+      // inside a Zalo host, so the run must verify it in the simulator — the user should never
+      // have to know a flag for that.
+      requiresZaloHost: profile?.qualification?.runtime?.requiresZaloHost === true,
     },
   };
 }
@@ -605,7 +648,7 @@ async function main() {
   }
 
   const startedAt = new Date().toISOString();
-  const provider = config.defaults.renderProvider;
+  let provider = config.defaults.renderProvider;
 
   // plan 34: resolve template selection first — pure ranking of the brief against the
   // registry, before any fetch or mutation. Unknown/unqualified id and genuine ambiguity
@@ -871,6 +914,16 @@ async function main() {
       detail: '--existing: app kept as-is, no template copy (bind + verify only)',
     });
   } else if (templateSel.mode === 'official') {
+    // Verify the app in the environment its evidence was produced in. Recorded in input.json so
+    // render.mjs and preview.mjs both inherit it without the user knowing any flag exists.
+    if (templateSel.entry.requiresZaloHost) {
+      provider = 'simulator';
+      ctx.event('bootstrap', {
+        stage: 'scaffold',
+        status: 'ok',
+        detail: `renderProvider=simulator: ${templateSel.entry.id} chỉ render được trong Zalo host (qualification.runtime.requiresZaloHost)`,
+      });
+    }
     try {
       await scaffoldOfficial(templateSel.entry, appName, config, workspace, ctx, scaffoldOpts);
     } catch (e) {

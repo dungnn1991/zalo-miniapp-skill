@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "tool": "qualify-template",
   "templateId": "zaui-bistro",
-  "startedAt": "2026-08-23T06:43:41.909Z",
-  "workspace": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-bistro-YCCOzE",
-  "runId": "qualify-zaui-bistro-2026-08-23T06-43-41Z",
+  "startedAt": "2026-08-23T08:11:55.380Z",
+  "workspace": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-bistro-dsyYDI",
+  "runId": "qualify-zaui-bistro-2026-08-23T08-11-55Z",
   "registryPath": "/Users/dungnn/Project/DX/labs/miniapp-bootstrap-poc/skill/create-zmp-app/catalog/templates.json",
   "license": {
     "packageJsonLicense": "UNLICENSED",
@@ -17,7 +17,7 @@
   "shortRevision": "5079a41",
   "upstreamHead": "5079a416c895254d6a6bf4c56e44b6a2718dc177",
   "evidenceValidForHead": true,
-  "recordedStateEffective": "candidate",
+  "recordedStateEffective": "release-supported",
   "adapter": {
     "status": "applicable",
     "file": "/Users/dungnn/Project/DX/labs/miniapp-bootstrap-poc/skill/create-zmp-app/catalog/adapters/zaui-bistro.json",
@@ -97,7 +97,7 @@
   },
   "buildInfo": {
     "outDir": "src/www",
-    "builtAt": "2026-08-23T06:43:55.462Z"
+    "builtAt": "2026-08-23T08:12:08.007Z"
   },
   "residualIdentifiers": {
     "blocking": [],
@@ -415,7 +415,7 @@
       {
         "id": "sim_bridge_log_written",
         "status": "pass",
-        "detail": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-bistro-YCCOzE/runs/qualify-zaui-bistro-2026-08-23T06-43-41Z/evidence/bridge-log.jsonl"
+        "detail": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-bistro-dsyYDI/runs/qualify-zaui-bistro-2026-08-23T08-11-55Z/evidence/bridge-log.jsonl"
       }
     ]
   },
@@ -426,7 +426,7 @@
     "mobile-390x844.png",
     "wide-1280x800.png"
   ],
-  "screenshotsPath": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-bistro-YCCOzE/runs/qualify-zaui-bistro-2026-08-23T06-43-41Z/evidence",
+  "screenshotsPath": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-bistro-dsyYDI/runs/qualify-zaui-bistro-2026-08-23T08-11-55Z/evidence",
   "externalRequirements": [
     {
       "kind": "http-client-dependency",
@@ -466,7 +466,7 @@
         {
           "id": "revision_pinned",
           "status": "pass",
-          "detail": "qualifying revision=5079a416c895254d6a6bf4c56e44b6a2718dc177 (source: upstream HEAD)"
+          "detail": "qualifying revision=5079a416c895254d6a6bf4c56e44b6a2718dc177 (source: registry source.revision)"
         },
         {
           "id": "snapshot_immutable",
@@ -614,7 +614,7 @@
       ]
     }
   ],
-  "finishedAt": "2026-08-23T06:44:04.007Z",
-  "durationMs": 22097,
+  "finishedAt": "2026-08-23T08:12:15.623Z",
+  "durationMs": 20243,
   "exitCode": 0
 }

@@ -15,9 +15,10 @@
     ],
     "requiredDomains": [],
     "requiredJobs": [],
-    "decisionWhenSupported": "auto",
-    "decisionWhenUnsupported": "lab"
+    "decisionWhenSupported": "choice",
+    "decisionWhenUnsupported": "lab",
+    "minOptions": 2
   },
   "source": "plan 34 §6.2 (ambiguous) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
-  "note": "\"đồ ăn\" là alias bistro, \"đồ uống\" là alias coffee. Lịch sử: note cũ gọi đây là \"hoà điểm thật sự, sẽ thành choice khi có template được promote\" — sai. Điểm chưa bao giờ hoà (coffee 12 vs bistro 6, chênh 6 > AUTO_SELECT_MIN_MARGIN=4), nên case này luôn chạy nhánh \"chưa ứng viên nào eligible → lab\", không phải nhánh ambiguity. Từ 2026-08-23 coffee render-qualified nên nhánh auto-select mở ra và ranker chọn coffee bằng domain evidence thật (\"đồ uống\" → fnb.coffee +10). bistro vẫn xuất hiện trong alternatives kèm rejectedBecause, không bị giấu. Giá trị còn lại của case: brief F&B tuyệt đối không được rơi vào fashion/market/doctor. Câu hỏi phân loại thật nằm ở ambiguous-app-nha-hang."
+  "note": "\"đồ ăn\" là alias bistro, \"đồ uống\" là alias coffee — brief nêu hai flow F&B với bằng chứng ngang nhau nên phải HỎI, không đoán. Hai lần sửa 2026-08-23: (1) acceptedTemplateIds trước đây rỗng nên nhánh decisionWhenSupported không bao giờ chạy được, guard trong note chưa từng được thực thi; (2) có lúc tôi đổi kỳ vọng sang auto vì scorer chấm coffee 12 / bistro 6 — owner bác, đúng: chênh lệch đó do tiebreak \"phrase dài hơn\" giữa hai domain cùng strength, là artifact của implementation chứ không phải tín hiệu. Đã sửa logic intent: hai domain ANH EM (cùng họ fnb.*) hoà strength thì cùng là primary, nên coffee và bistro hoà và ranker trả choice. Luật giới hạn trong cùng họ: \"coffee shop\" (fnb.coffee vs commerce.general) không phải hai ngành cạnh tranh."
 }

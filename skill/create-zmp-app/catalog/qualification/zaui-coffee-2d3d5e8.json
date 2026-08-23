@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "tool": "qualify-template",
   "templateId": "zaui-coffee",
-  "startedAt": "2026-08-23T06:42:14.850Z",
-  "workspace": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-coffee-FNMNhY",
-  "runId": "qualify-zaui-coffee-2026-08-23T06-42-14Z",
+  "startedAt": "2026-08-23T08:11:30.131Z",
+  "workspace": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-coffee-a58UVL",
+  "runId": "qualify-zaui-coffee-2026-08-23T08-11-30Z",
   "registryPath": "/Users/dungnn/Project/DX/labs/miniapp-bootstrap-poc/skill/create-zmp-app/catalog/templates.json",
   "license": {
     "packageJsonLicense": "UNLICENSED",
@@ -181,7 +181,7 @@
   },
   "buildInfo": {
     "outDir": "src/www",
-    "builtAt": "2026-08-23T06:42:31.510Z"
+    "builtAt": "2026-08-23T08:11:46.123Z"
   },
   "residualIdentifiers": {
     "blocking": [],
@@ -494,16 +494,16 @@
     "mobile-390x844.png",
     "wide-1280x800.png"
   ],
-  "screenshotsPath": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-coffee-FNMNhY/runs/qualify-zaui-coffee-2026-08-23T06-42-14Z/evidence",
+  "screenshotsPath": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-coffee-a58UVL/runs/qualify-zaui-coffee-2026-08-23T08-11-30Z/evidence",
   "externalRequirements": [],
   "derivedState": "render-qualified",
   "quarantineReason": null,
   "promotion": {
-    "requested": false,
+    "requested": true,
     "eligible": true,
     "blockedBy": [],
     "targetState": "release-supported",
-    "applied": false
+    "applied": true
   },
   "gates": [
     {
@@ -683,7 +683,7 @@
       ]
     }
   ],
-  "finishedAt": "2026-08-23T06:42:38.946Z",
-  "durationMs": 24095,
+  "finishedAt": "2026-08-23T08:11:53.242Z",
+  "durationMs": 23111,
   "exitCode": 0
 }

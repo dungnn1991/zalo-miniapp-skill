@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "tool": "qualify-template",
   "templateId": "zaui-doctor",
-  "startedAt": "2026-08-23T06:43:03.699Z",
-  "workspace": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-doctor-0lP3kX",
-  "runId": "qualify-zaui-doctor-2026-08-23T06-43-03Z",
+  "startedAt": "2026-08-23T08:12:40.891Z",
+  "workspace": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-doctor-ZyIinZ",
+  "runId": "qualify-zaui-doctor-2026-08-23T08-12-40Z",
   "registryPath": "/Users/dungnn/Project/DX/labs/miniapp-bootstrap-poc/skill/create-zmp-app/catalog/templates.json",
   "license": {
     "packageJsonLicense": "UNLICENSED",
@@ -103,7 +103,7 @@
   },
   "buildInfo": {
     "outDir": "src/www",
-    "builtAt": "2026-08-23T06:43:16.022Z"
+    "builtAt": "2026-08-23T08:12:53.612Z"
   },
   "residualIdentifiers": {
     "blocking": [],
@@ -422,16 +422,16 @@
     "mobile-390x844.png",
     "wide-1280x800.png"
   ],
-  "screenshotsPath": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-doctor-0lP3kX/runs/qualify-zaui-doctor-2026-08-23T06-43-03Z/evidence",
+  "screenshotsPath": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-doctor-ZyIinZ/runs/qualify-zaui-doctor-2026-08-23T08-12-40Z/evidence",
   "externalRequirements": [],
   "derivedState": "render-qualified",
   "quarantineReason": null,
   "promotion": {
-    "requested": false,
+    "requested": true,
     "eligible": true,
     "blockedBy": [],
     "targetState": "release-supported",
-    "applied": false
+    "applied": true
   },
   "gates": [
     {
@@ -606,7 +606,7 @@
       ]
     }
   ],
-  "finishedAt": "2026-08-23T06:43:23.385Z",
-  "durationMs": 19685,
+  "finishedAt": "2026-08-23T08:13:00.633Z",
+  "durationMs": 19742,
   "exitCode": 0
 }

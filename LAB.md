@@ -220,6 +220,56 @@ không được dùng trong CI. Validate skill packaging:
 
 ## Trạng thái
 
+- 2026-08-23 — **Hai P0 từ review vòng 2: "auto-scaffoldable" phải đúng với luồng người dùng
+  thật, và discovery failure nguy hiểm phải chặn release.**
+
+  **P0-1 — qualification và runtime dùng hai oracle khác nhau.** Template được promote bằng
+  simulator, nhưng `run.mjs` chỉ truyền `--provider simulator` khi có cờ `--verify-sim`.
+  `zaui-bistro`, `zaui-market`, `zaui-lucky-wheel` đều `noHostOracle.exitCode=1`, nên lệnh
+  scaffold bình thường DỪNG Ở RENDER — "6 template auto-scaffoldable" chỉ đúng trên giấy. Sửa:
+  factory ghi `qualification.runtime {verifiedProvider, oracleProfile, requiresZaloHost}` lúc
+  promote; bootstrap chốt `input.json.renderProvider` từ đó; `render.mjs` và `preview.mjs` cùng
+  kế thừa (cờ tường minh vẫn thắng). Case mới `official-template-default-flow` chạy TRỌN
+  `run.mjs` cho cả ba template, không cờ thủ công. Release check chặn template
+  auto-scaffoldable nào không khai runtime hoặc khai lệch evidence.
+
+  **P0-2 — discovery failure không chặn release.** `campaign.loyalty` biến "tích điểm"/"voucher"
+  thành domain chính, nên "app cà phê có tích điểm thành viên", "app tạp hoá … tích điểm khách
+  hàng" và "app bán voucher du lịch" đều auto-route sang `zaui-lucky-wheel` — ba lần dựng sai
+  im lặng, gate vẫn xanh. Sửa ba tầng:
+  1. `taxonomy.subordinateDomains` = `campaign.loyalty` (lớp tính năng chồng lên ngành) +
+     `commerce.general` (định nghĩa là "chưa rõ ngành hàng"). Domain subordinate không bao giờ
+     làm primaryDomain khi brief đã có domain cụ thể.
+  2. Alias lucky-wheel bỏ từ tính năng trần ("tích điểm", "voucher"), giữ cụm chỉ CHƯƠNG TRÌNH
+     ("tích điểm thành viên", "chương trình tích điểm", "đổi quà") — wheel vẫn thắng brief
+     loyalty thuần.
+  3. `run-corpus.mjs`: discovery failure nào thực sự `mode=auto` vào một template
+     auto-scaffoldable thì **chặn suite**. Gate này lập tức bắt thêm ba ca chưa ai thấy —
+     "bán máy pha cà phê" → coffee, "quản lý tồn kho siêu thị" → market, và
+     "nhà hàng fine dining … đặt chỗ online" → market (alias `chợ online` khớp `chỗ online` sau
+     khi bỏ dấu). Xử lý bằng negativeSignals trong registry.
+
+- 2026-08-23 — **Ba chỗ owner bác, đã sửa lại theo hướng owner chốt.**
+  `ambiguous-do-an-do-uong` giữ `choice`: chênh lệch coffee 12 / bistro 6 là artifact của
+  tiebreak "phrase dài hơn" giữa hai domain cùng strength, không phải tín hiệu — nay hai domain
+  ANH EM (cùng họ `fnb.*`) hoà strength thì cùng primary. Luật giới hạn trong cùng họ vì
+  "coffee shop" (fnb.coffee vs commerce.general) không phải hai ngành cạnh tranh.
+  `constraint-mmenu-no-api-url` giữ `choice`: nhánh mới `3b-bis` phát hiện brief gọi ĐÍCH DANH
+  một template (tên riêng + use-cue) mà template đó không dựng được → hỏi, nêu lý do, đề xuất
+  cái dựng được; không đổi thầm.
+  Kèm hai P1: `run.mjs` trả `warnings[]` nguyên văn ở JSON cuối (trước chỉ có số `insights` nên
+  `PHONE_BACKEND_REQUIRED` chết ở hop cuối) và SKILL.md bắt buộc báo đủ bốn semantics; adapter
+  trong bootstrap exact-match `adapterId` với registry và apply ATOMIC (snapshot + rollback) —
+  trước đó patch sau refuse có thể để lại cây đã vá một nửa, đúng trạng thái nguy hiểm nhất với
+  lucky-wheel.
+
+  **Chưa làm, ghi rõ:** span-level dedupe (một đoạn brief hiện vẫn được tính cho cả domain + job
+  + capability + alias) là fix đúng cho gốc vấn đề, nhưng đo thử cho thấy nó kéo blocking xuống
+  41/46 và discovery xuống 41/80 vì `AUTO_SELECT_MIN_SCORE`/`MIN_MARGIN` được calibrate theo
+  scorer cũ. Đó là một slice calibration riêng, không gộp vào đây — xem backlog.
+  Verify: 37 release checks 37 pass · corpus blocking 46/46 top-1 35/35 (100%) · discovery 65/80
+  top-1 88.2%, unsafe auto-route 0 · 36 cases 36 pass 0 blocked 0 fail.
+
 - 2026-08-23 — **zaui-lucky-wheel: compatibility adapter phía DX, không miễn trừ gate nào**
   (mandate 42 §3.4–3.6). Upstream `8c692b9` làm server-side decode ngay trong client: nhúng
   literal App Secret và gọi Graph endpoint từ browser; kèm theo form đăng ký catch mọi lỗi, hiện

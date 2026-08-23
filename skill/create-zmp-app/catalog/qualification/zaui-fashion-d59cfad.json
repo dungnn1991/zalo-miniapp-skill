@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "tool": "qualify-template",
   "templateId": "zaui-fashion",
-  "startedAt": "2026-08-23T06:42:41.166Z",
-  "workspace": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-fashion-ZIGaSU",
-  "runId": "qualify-zaui-fashion-2026-08-23T06-42-41Z",
+  "startedAt": "2026-08-23T08:11:05.190Z",
+  "workspace": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-fashion-k0SZw9",
+  "runId": "qualify-zaui-fashion-2026-08-23T08-11-05Z",
   "registryPath": "/Users/dungnn/Project/DX/labs/miniapp-bootstrap-poc/skill/create-zmp-app/catalog/templates.json",
   "license": {
     "packageJsonLicense": "UNLICENSED",
@@ -106,7 +106,7 @@
   },
   "buildInfo": {
     "outDir": "src/www",
-    "builtAt": "2026-08-23T06:42:54.807Z"
+    "builtAt": "2026-08-23T08:11:21.141Z"
   },
   "residualIdentifiers": {
     "blocking": [],
@@ -419,16 +419,16 @@
     "mobile-390x844.png",
     "wide-1280x800.png"
   ],
-  "screenshotsPath": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-fashion-ZIGaSU/runs/qualify-zaui-fashion-2026-08-23T06-42-41Z/evidence",
+  "screenshotsPath": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-fashion-k0SZw9/runs/qualify-zaui-fashion-2026-08-23T08-11-05Z/evidence",
   "externalRequirements": [],
   "derivedState": "render-qualified",
   "quarantineReason": null,
   "promotion": {
-    "requested": false,
+    "requested": true,
     "eligible": true,
     "blockedBy": [],
     "targetState": "release-supported",
-    "applied": false
+    "applied": true
   },
   "gates": [
     {
@@ -603,7 +603,7 @@
       ]
     }
   ],
-  "finishedAt": "2026-08-23T06:43:01.721Z",
-  "durationMs": 20554,
+  "finishedAt": "2026-08-23T08:11:28.198Z",
+  "durationMs": 23007,
   "exitCode": 0
 }

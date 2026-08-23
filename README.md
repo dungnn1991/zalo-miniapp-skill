@@ -104,7 +104,7 @@ the scaffold mechanics.
 ## Skill development
 
 This repository contains the skill runtime and its verification lab. The release gate runs
-metadata validation, the routing corpus, and a 35-case suite:
+metadata validation, the routing corpus, and a 36-case suite:
 
 ```bash
 npm test

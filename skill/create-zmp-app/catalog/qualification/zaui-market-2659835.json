@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "tool": "qualify-template",
   "templateId": "zaui-market",
-  "startedAt": "2026-08-23T06:44:06.053Z",
-  "workspace": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-market-ax4grc",
-  "runId": "qualify-zaui-market-2026-08-23T06-44-06Z",
+  "startedAt": "2026-08-23T08:12:17.663Z",
+  "workspace": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-market-TMz0sX",
+  "runId": "qualify-zaui-market-2026-08-23T08-12-17Z",
   "registryPath": "/Users/dungnn/Project/DX/labs/miniapp-bootstrap-poc/skill/create-zmp-app/catalog/templates.json",
   "license": {
     "packageJsonLicense": "UNLICENSED",
@@ -17,7 +17,7 @@
   "shortRevision": "2659835",
   "upstreamHead": "2659835c48e0eac4ef328d6aa4583a2d6bf6f4f6",
   "evidenceValidForHead": true,
-  "recordedStateEffective": "candidate",
+  "recordedStateEffective": "release-supported",
   "adapter": {
     "status": "applicable",
     "file": "/Users/dungnn/Project/DX/labs/miniapp-bootstrap-poc/skill/create-zmp-app/catalog/adapters/zaui-market.json",
@@ -127,7 +127,7 @@
   },
   "buildInfo": {
     "outDir": "src/www",
-    "builtAt": "2026-08-23T06:44:20.400Z"
+    "builtAt": "2026-08-23T08:12:31.952Z"
   },
   "residualIdentifiers": {
     "blocking": [],
@@ -467,7 +467,7 @@
       {
         "id": "sim_bridge_log_written",
         "status": "pass",
-        "detail": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-market-ax4grc/runs/qualify-zaui-market-2026-08-23T06-44-06Z/evidence/bridge-log.jsonl"
+        "detail": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-market-TMz0sX/runs/qualify-zaui-market-2026-08-23T08-12-17Z/evidence/bridge-log.jsonl"
       }
     ]
   },
@@ -478,7 +478,7 @@
     "mobile-390x844.png",
     "wide-1280x800.png"
   ],
-  "screenshotsPath": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-market-ax4grc/runs/qualify-zaui-market-2026-08-23T06-44-06Z/evidence",
+  "screenshotsPath": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-market-TMz0sX/runs/qualify-zaui-market-2026-08-23T08-12-17Z/evidence",
   "externalRequirements": [],
   "derivedState": "render-qualified",
   "quarantineReason": null,
@@ -509,7 +509,7 @@
         {
           "id": "revision_pinned",
           "status": "pass",
-          "detail": "qualifying revision=2659835c48e0eac4ef328d6aa4583a2d6bf6f4f6 (source: upstream HEAD)"
+          "detail": "qualifying revision=2659835c48e0eac4ef328d6aa4583a2d6bf6f4f6 (source: registry source.revision)"
         },
         {
           "id": "snapshot_immutable",
@@ -667,7 +667,7 @@
       ]
     }
   ],
-  "finishedAt": "2026-08-23T06:44:27.582Z",
-  "durationMs": 21528,
+  "finishedAt": "2026-08-23T08:12:38.863Z",
+  "durationMs": 21199,
   "exitCode": 0
 }

@@ -14,6 +14,11 @@
     "government.publicservice": "Dịch vụ công, thủ tục hành chính",
     "campaign.loyalty": "Minigame, tích điểm, quay thưởng, voucher"
   },
+  "subordinateDomains": [
+    "campaign.loyalty",
+    "commerce.general"
+  ],
+  "subordinateNote": "Domain subordinate không bao giờ được làm primaryDomain khi brief đã có một domain CỤ THỂ hơn; nó chấm theo domainSecondary. Hai lý do khác nhau: campaign.loyalty là lớp tính năng (tích điểm/voucher/minigame) chồng lên một ngành, không phải một ngành; commerce.general theo đúng định nghĩa là 'chưa rõ ngành hàng' nên không thể ngang hàng với commerce.fashion hay commerce.grocery. Đo 2026-08-23: thiếu luật này, 'app cà phê có tích điểm thành viên' chấm zaui-lucky-wheel > zaui-coffee, và 'bán đồng phục bác sĩ' hoà zaui-shop với zaui-fashion rồi rơi về lab.",
   "jobs": {
     "product.browse": "Xem danh mục và sản phẩm",
     "product.search": "Tìm kiếm sản phẩm",

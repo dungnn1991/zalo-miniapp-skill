@@ -532,7 +532,7 @@ export function evaluatePromotion({ profile, gates, revision, upstreamHead }) {
   return { eligible: blockedBy.length === 0, blockedBy };
 }
 
-function writePromotion(registryPath, templateId, { revision, state, adapterId, evidenceRef }) {
+function writePromotion(registryPath, templateId, { revision, state, adapterId, evidenceRef, runtime }) {
   const raw = fs.readFileSync(registryPath, 'utf8');
   const registry = JSON.parse(raw);
   const profile = registry.templates.find((t) => t.id === templateId);
@@ -541,6 +541,11 @@ function writePromotion(registryPath, templateId, { revision, state, adapterId, 
   profile.qualification.testedRevision = revision;
   profile.qualification.adapterId = adapterId;
   profile.qualification.evidence = evidenceRef;
+  // WHICH ENVIRONMENT the evidence was produced in. Without this the registry says "this
+  // template renders clean" while hiding that it only does so inside a Zalo host, and the
+  // default scaffold flow — which serves plain static files — stops at render. bootstrap reads
+  // `requiresZaloHost` and pins input.json renderProvider accordingly.
+  profile.qualification.runtime = runtime;
   // Report 41 §6.4: the seeded "chưa chạy qualification factory" note survived zaui-doctor's
   // promotion, so the registry claimed nobody had ever run the factory on a template that had
   // full evidence. Promotion owns the note from now on.
@@ -849,7 +854,7 @@ async function main() {
   if (!buildOk) {
     check(g5, 'browser_oracle', 'fail', 'skipped — no build output to serve');
   } else {
-    const noHost = runStage('render.mjs', ['--workspace', workspace, '--run-id', runId], { workspace, storeDir });
+    const noHost = runStage('render.mjs', ['--workspace', workspace, '--run-id', runId, '--provider', 'browser'], { workspace, storeDir });
     const noHostGates = fs.existsSync(path.join(evidenceDir, 'gates.json'))
       ? JSON.parse(fs.readFileSync(path.join(evidenceDir, 'gates.json'), 'utf8'))
       : null;
@@ -977,6 +982,14 @@ async function main() {
       state: 'release-supported',
       adapterId: adapterInfo.adapterId ?? null,
       evidenceRef: { qualificationResult: `catalog/qualification/${templateId}-${result.shortRevision}.json`, runId },
+      runtime: {
+        verifiedProvider: 'simulator',
+        oracleProfile: result.oracleProfile ?? 'simulator-official',
+        // The no-host oracle is recorded, not blocking — but its verdict is exactly the question
+        // "does this app need a Zalo host to render at all?", and the answer has to travel with
+        // the promotion or the default scaffold flow will pick the wrong environment.
+        requiresZaloHost: (result.noHostOracle?.exitCode ?? 0) !== 0,
+      },
     });
     result.promotion.applied = true;
   }

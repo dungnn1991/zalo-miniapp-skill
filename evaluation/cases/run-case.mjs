@@ -58,6 +58,7 @@ const CASE_DEPS = {
   'sim-unmocked': ['bootstrap', 'template'],
   'sim-runtime-marker': ['bootstrap', 'portal-fetch', 'template'],
   'lucky-wheel-phone-fail-closed': ['bootstrap'],
+  'official-template-default-flow': ['bootstrap', 'portal-fetch'],
   'sim-permission-persist': ['bootstrap', 'template'],
   'doctor-autoinstall': [],
   // v0.3.1 — P0 regressions: safe rerun, workspace=cwd, installer host targeting.
@@ -809,6 +810,57 @@ process.exit(9);
   },
 
   // ---- Phase 3 simulator cases (plan 28) ----
+
+  // The default scaffold flow must be green for every template the ranker can auto-select.
+  // Qualification runs under the simulator; run.mjs used to reach it only via --verify-sim, so a
+  // template that needs a Zalo host was verified in one environment and built in another and the
+  // user's plain scaffold stopped at render. Runs the WHOLE pipeline, no simulator flag.
+  async 'official-template-default-flow'({ ws, check, note }) {
+    const registry = readJsonIfExists(path.join(LAB_ROOT, 'skill', 'create-zmp-app', 'catalog', 'templates.json'));
+    const AUTO_STATES = new Set(['render-qualified', 'interaction-qualified', 'release-supported']);
+    const autoScaffoldable = (t) => AUTO_STATES.has(t.qualification?.state)
+      && !!t.source?.revision && t.qualification?.testedRevision === t.source.revision;
+    // Only the host-requiring ones: they are the templates the old flow silently broke, and each
+    // adds ~60s of install+build. The others are covered by official-template-golden.
+    const targets = (registry?.templates ?? [])
+      .filter((t) => autoScaffoldable(t) && t.qualification?.runtime?.requiresZaloHost === true);
+    if (!targets.length) return 'blocked: no auto-scaffoldable template declares requiresZaloHost';
+
+    for (const t of targets) {
+      const caseWs = path.join(ws, t.id);
+      fs.mkdirSync(caseWs, { recursive: true });
+      // Exactly what a user gets: run.mjs, explicit template id, NO simulator flag.
+      const res = spawnSync(process.execPath, [
+        path.join(SKILL_SCRIPTS, 'run.mjs'), '--workspace', caseWs,
+        '--brief', `tạo app từ ${t.id}`, '--app-id', TEST_APP_ID, '--template', `official:${t.id}`,
+      ], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+      const lastJson = (() => {
+        const lines = (res.stdout || '').split('\n').filter(Boolean);
+        for (let i = lines.length - 1; i >= 0; i--) {
+          try { return JSON.parse(lines[i]); } catch { /* not json */ }
+        }
+        return null;
+      })();
+      check(`${t.id}: default run.mjs exits 0 with no simulator flag`, res.status === 0,
+        `exit ${res.status}: ${JSON.stringify(lastJson)} ${(res.stderr || '').slice(-300)}`);
+      if (res.status !== 0) continue;
+
+      const runId = lastJson?.runId;
+      const input = readJsonIfExists(path.join(caseWs, 'runs', runId ?? 'x', 'input.json'));
+      check(`${t.id}: renderProvider pinned to simulator from the registry, not from a flag`,
+        input?.renderProvider === 'simulator', JSON.stringify(input?.renderProvider));
+      const result = readJsonIfExists(path.join(caseWs, 'runs', runId ?? 'x', 'result.json'));
+      check(`${t.id}: result passes and records the simulator provider`,
+        result?.status === 'pass' && result?.provider === 'simulator',
+        JSON.stringify({ status: result?.status, provider: result?.provider }));
+      const gates = readJsonIfExists(path.join(caseWs, 'runs', runId ?? 'x', 'evidence', 'gates.json'))?.gates ?? [];
+      check(`${t.id}: rendered under sim serving (runtime marker gate present and passing)`,
+        gates.some((g) => g.id === 'sim_runtime_marker') && gates.filter((g) => g.id === 'sim_runtime_marker').every((g) => g.status === 'pass'),
+        JSON.stringify(gates.filter((g) => g.id.startsWith('sim_')).map((g) => [g.id, g.status])));
+      fs.rmSync(caseWs, { recursive: true, force: true });   // each template is ~200MB installed
+    }
+    note(`default-flow verified for: ${targets.map((t) => t.id).join(', ')}`);
+  },
 
   // Mandate 42 §3.4: zaui-lucky-wheel@8c692b9 embedded an App Secret and called the Zalo Graph
   // endpoint from the browser, and its register form caught every error, showed a "success"
