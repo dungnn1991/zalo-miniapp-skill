@@ -946,8 +946,6 @@ process.exit(9);
 
   // v0.3.1 P0 regression — safe rerun must never clobber user-edited app code.
   'preserve-user-code'({ ws, check, note }) {
-    // Pin lab: case này kiểm tra việc giữ code user trong LAB template. Từ plan 34,
-    // brief "bán quần áo" tự route sang zaui-fashion nên không pin sẽ test nhầm đối tượng.
     // Toàn bộ case này kiểm tra hành vi giữ code user trên LAB template. Từ plan 34, brief
     // "bán quần áo" tự route sang zaui-fashion, nên mọi lần gọi phải pin lab; riêng --existing
     // không được đi kèm --template (bootstrap từ chối tổ hợp đó).

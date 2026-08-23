@@ -1,0 +1,15 @@
+{
+  "id": "safety-jobs-only-two-flows",
+  "group": "safety",
+  "brief": "app có giỏ hàng và đặt lịch",
+  "blocking": true,
+  "expected": {
+    "decision": "lab",
+    "acceptedTemplateIds": [],
+    "mustNotSelect": [],
+    "requiredDomains": [],
+    "requiredJobs": []
+  },
+  "source": "review 40 F1 — biến thể N1 ở nhánh choice, reviewer độc lập 2026-08-23",
+  "note": "Hai job thuộc hai product flow khác nhau (cart + booking) nhưng brief không nêu ngành. Trước fix, nhánh choice vẫn hỏi \"doctor hay fashion?\" — hỏi giữa hai phỏng đoán chứ không phải làm rõ ý định, đúng loại bug N1 ở dạng nhẹ. Kỳ vọng vô điều kiện là lab; mustNotSelect rỗng vì các ứng viên vẫn phải nằm trong alternatives, điều cấm là chọn/hỏi và đã được decision=lab bảo đảm."
+}

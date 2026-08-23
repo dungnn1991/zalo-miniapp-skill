@@ -73,7 +73,7 @@
     "variantTargetFile": "src/data/catalog.ts"
   },
   "officialTemplates": {
-    "note": "Opt-in, không bắt buộc — chỉ entry releaseSupported=true được public route/scaffold. verified ghi bằng chứng đã chạy; releaseSupported là quyết định support riêng. Nguồn catalog: github.com/Zalo-MiniApp (observed 2026-08-22). Template public pin commit SHA để release tái hiện được; không dùng branch mutable hoặc `zmp init` interactive.",
+    "note": "Routing KHÔNG còn đọc khối này — authoritative là catalog/templates.json + scripts/recommend-template.mjs (contract: references/template-routing.md). Còn dùng: tarballUrlPattern và optInPhrases (chỉ là tín hiệu ý định). Các field khác giữ cho tương thích, xem deprecatedSince ở cuối khối. Nguồn catalog: github.com/Zalo-MiniApp (observed 2026-08-22). Template public pin commit SHA để release tái hiện được; không dùng branch mutable hoặc `zmp init` interactive.",
     "tarballUrlPattern": "https://codeload.github.com/Zalo-MiniApp/{repo}/tar.gz/{revision}",
     "optInPhrases": [
       "mẫu có sẵn",

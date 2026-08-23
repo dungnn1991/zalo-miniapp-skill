@@ -172,28 +172,26 @@ node $S/verify.mjs --run-id <runId>
    (Live debugging with `zDebug=true`, device mode, roles/version semantics, review policy).
 4. Nothing matches → report honestly with the log evidence. **Do not guess.**
 
-## Official templates (opt-in)
+## Official templates
 
-**Never mandatory** — the default is always the bundled starter (a deterministic neutral shell,
-not an arbitrary-domain UI generator); the user can ask the agent to integrate features on
-that shell. Activate official routing only when the user
-explicitly asks for a ready-made template ("dùng mẫu có sẵn", "template chính thức", "tạo
-nhanh từ template chính thức") or passes `--template official:<id>`. Catalog, opt-in phrases
-and keyword mapping are locked in `config.json` `officialTemplates`. Only entries with
-`releaseSupported=true` are exposed; `verified` is evidence, not the support decision.
+A create brief ends up on one of two paths: an official template that genuinely fits it, or the
+bundled starter (a deterministic neutral shell, not an arbitrary-domain UI generator) that the
+agent then extends feature by feature. The registry `catalog/templates.json` is the single source
+of truth for which templates exist, how far each one is qualified, and which revision is pinned;
+the `officialTemplates` block in `config.json` is legacy apart from the tarball URL pattern.
 
-- **`--template auto` is the default.** Every create brief is ranked against the registry in
-  `catalog/templates.json`; the user no longer has to say "dùng mẫu có sẵn". `--template lab`
-  forces the lab template, `--template official:<id>` names one explicitly.
+- **`--template auto` is the default.** Every brief is ranked against the registry; the user no
+  longer has to say "dùng mẫu có sẵn". `--template lab` forces the lab template,
+  `--template official:<id>` names one explicitly, and any other value is exit `3`.
 - Ranking is deterministic and explainable: a hard filter runs *before* scoring (state, pinned
   revision, license, required inputs), then domain → jobs → capabilities → aliases, minus
-  negative signals. `input.json` carries the resulting `templateSelection` with `reasons`,
-  `evidence` and `alternatives`. **Domain evidence is required to auto-scaffold** — a brief that
-  only matches jobs or capabilities goes to the lab shell, because the same job appears in
-  several industries.
-- Ambiguous brief where at least one close option is scaffoldable → exit `2` with
-  `needsInput.reason="template_choice"` and 2–3 options. Nothing is fetched or written before
-  the choice is settled.
+  negative signals. `input.json` and `result.json` carry the resulting `templateSelection` with
+  `reasons`, `evidence` and `alternatives`. **Domain evidence is required** — a brief that only
+  matches jobs or capabilities goes to the lab shell rather than being scaffolded or turned into
+  a question, because the same job appears in several industries.
+- Ambiguous brief that *does* name an industry, where at least one close option is scaffoldable
+  → exit `2` with `needsInput.reason="template_choice"` and 2–3 options. Nothing is fetched or
+  written before the choice is settled.
 - Best candidate exists but is not qualified yet → lab shell, and the report must say which
   candidate was skipped and why. If the user explicitly asked for an official template, ask
   instead of quietly using the lab one.
@@ -301,7 +299,8 @@ testing với mô tả "bản kiểm thử sprint 3"`), pass it as `--desc "<tex
 
 **Template đổi giữa hai lần chạy.** Từ khi `--template auto` là mặc định, một app cũ được dựng
 bằng lab template mà chạy lại cùng brief có thể được ranker chấm sang template official. Bootstrap
-dừng ở exit `2` với `template_changed` thay vì ghi đè — code của user không mất. Hỏi user muốn giữ
+dừng ở exit `2` (`needsInput.reason="existing_app"`, câu hỏi nêu rõ `template_changed`) thay vì
+ghi đè — code của user không mất. Hỏi user muốn giữ
 app hiện tại (`--existing`), hay dựng lại theo template mới (`--force-scaffold`), hay ghim template
 cũ (`--template lab`).
 

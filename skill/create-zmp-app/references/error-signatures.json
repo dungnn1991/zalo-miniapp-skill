@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "crawledAt": "2026-08-23",
-  "note": "Curated từ FAQ công khai của Hồng Phát (Supporter) — miniapp.zaloplatforms.com/community, crawl 2026-08-21 (DX/community-faq-best-practice/). Matcher do harness sở hữu; file này chỉ là dữ liệu. Pattern là JS regex string, compile bằng new RegExp(pattern, flags). Log không khớp signature nào → không đoán.",
+  "note": "Curated từ FAQ công khai của Hồng Phát (Supporter) — miniapp.zaloplatforms.com/community, crawl 2026-08-21 (DX/community-faq-best-practice/); bổ sung 2026-08-23 từ qualification factory (không phải crawl), crawledAt là lần cập nhật file gần nhất. Matcher do harness sở hữu; file này chỉ là dữ liệu. Pattern là JS regex string, compile bằng new RegExp(pattern, flags). Log không khớp signature nào → không đoán.",
   "signatures": [
     {
       "id": "minified-react-error",

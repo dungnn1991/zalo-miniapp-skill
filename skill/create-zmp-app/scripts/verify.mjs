@@ -240,7 +240,8 @@ function findingForGate(g, aux) {
 export function validateResult(r) {
   const errs = [];
   const allowedKeys = new Set(['schemaVersion', 'runId', 'status', 'stage', 'provider', 'needsInput',
-    'appIdSource', 'expectedAppId', 'resolvedAppId', 'appIdBound', 'gates', 'findingIds', 'insights', 'startedAt', 'finishedAt']);
+    'appIdSource', 'expectedAppId', 'resolvedAppId', 'appIdBound', 'gates', 'findingIds', 'insights',
+    'templateSelection', 'startedAt', 'finishedAt']);
   for (const k of Object.keys(r)) if (!allowedKeys.has(k)) errs.push(`unexpected key ${k}`);
   if (!['1.0', '1.1'].includes(r.schemaVersion)) errs.push(`schemaVersion must be "1.0" or "1.1", got ${r.schemaVersion}`);
   if (!/^run-[0-9TZ-]+-[a-z0-9]{4}$/.test(r.runId || '')) errs.push(`runId pattern mismatch: ${r.runId}`);
@@ -301,7 +302,8 @@ async function main() {
   const runnerGates = ctx.readJson('evidence/gates.json');
 
   // Phase 2/3 detection. hasDeploy drives the four deploy gates; a simulator bridge-log only
-  // adds its own gate. Either flips schemaVersion to 1.1; plain runs stay 1.0 bit-for-bit.
+  // adds its own gate. Either flips schemaVersion to 1.1, and so does carrying a
+  // templateSelection (plan 34) — result.schema.json documents all three triggers.
   const bridgeLogPath = path.join(runDir, 'evidence', 'bridge-log.jsonl');
   const hasBridgeLog = fs.existsSync(bridgeLogPath);
   const hasDeploy = fs.existsSync(path.join(runDir, 'evidence', 'deploy.log'))
@@ -461,8 +463,11 @@ async function main() {
 
   const failed = gates.filter((g) => g.status === 'fail');
   const status = failed.length === 0 ? 'pass' : 'fail';
+  // plan 34: quyết định template phải đọc được ở artifact cuối, không chỉ ở input.json —
+  // result.json là thứ agent/report đọc để biết run này dựng từ template nào và vì sao.
+  const templateSelection = input?.templateSelection ?? null;
   const result = {
-    schemaVersion: isPhase2 ? '1.1' : '1.0',
+    schemaVersion: isPhase2 || templateSelection ? '1.1' : '1.0',
     runId,
     status,
     stage: status === 'pass' ? 'done' : STAGE_ORDER[firstFailStageIdx],
@@ -474,6 +479,7 @@ async function main() {
     gates,
     findingIds: [...findingIds],
     ...(insightsOut.length ? { insights: insightsOut } : {}),
+    ...(templateSelection ? { templateSelection } : {}),
     startedAt: events[0]?.at ?? new Date().toISOString(),
     finishedAt: new Date().toISOString(),
   };

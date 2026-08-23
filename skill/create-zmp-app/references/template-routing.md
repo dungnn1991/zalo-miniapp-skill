@@ -76,11 +76,13 @@ theo job là đoán ngành. Trường hợp đó đi lab, ứng viên điểm ca
 | Tình huống | Kết quả |
 |---|---|
 | Top-1 qua hard-filter, đủ score và margin, có domain evidence | `auto` — scaffold ngay ở revision đã pin |
-| Hai hướng sản phẩm khác nhau, điểm gần nhau, **ít nhất một cái scaffold được** | `choice` — exit `2`, hỏi đúng một câu với 2–3 lựa chọn |
+| Hai hướng sản phẩm khác nhau, điểm gần nhau, **có domain evidence** và ít nhất một cái scaffold được | `choice` — exit `2`, hỏi đúng một câu với 2–3 lựa chọn |
+| Brief chỉ khớp job/capability (không có domain evidence) | `lab` — kể cả khi có hai hướng sản phẩm: hỏi "phòng khám hay thời trang?" khi brief không nói ngành là bắt user chọn giữa hai phỏng đoán |
 | Ứng viên tốt nhất chưa qualify, user **không** yêu cầu mẫu có sẵn | `lab` + báo rõ đã bỏ qua ứng viên nào và vì sao |
 | Ứng viên tốt nhất chưa qualify, user **có** nói "dùng mẫu có sẵn" | `choice` — không im lặng rơi về lab khi user đã nêu ý định |
 | Không khớp domain nào | `lab` |
-| `official:<id>` không tồn tại hoặc chưa qualify | Dừng trước mọi fetch/mutation, nêu lý do và liệt kê thứ dùng được |
+| `official:<id>` không tồn tại hoặc chưa qualify | Dừng trước mọi fetch/mutation (exit `2`), nêu lý do và liệt kê thứ dùng được |
+| `--template` mang giá trị ngoài `auto` / `lab` / `official:<id>` | exit `3` — lỗi cấu hình, không phải câu hỏi cho user; im lặng coi như `auto` sẽ khiến user tưởng đã ghim template |
 
 `optInPhrases` trong `config.json` **không còn là cổng chặn** (D34-1). Nó chỉ còn là tín hiệu ý
 định, dùng đúng ở dòng thứ tư của bảng trên.

@@ -440,6 +440,15 @@ function alternativesOf(candidates, limit = 5) {
   }));
 }
 
+/** `--template <giá trị lạ>`: caller map sang exit 3 (config error), không phải needs_input. */
+export class InvalidTemplateArg extends Error {
+  constructor(value, ids) {
+    super(`invalid --template "${value}" — hợp lệ: auto | lab | official:<id> (ids: ${ids.join(', ')})`);
+    this.name = 'InvalidTemplateArg';
+    this.value = value;
+  }
+}
+
 /**
  * Full ranker output. `selection` alone is the schema-valid part written to input.json.
  */
@@ -450,6 +459,11 @@ export function rankTemplates(brief, opts = {}) {
   const providedInputs = opts.providedInputs ?? [];
   const rawBrief = brief == null ? '' : String(brief);
   const requested = (opts.template ?? 'auto').trim();
+  // Giá trị lạ phải dừng, không được im lặng thành auto: `--template coffee` (thiếu prefix)
+  // mà chạy như auto thì user tưởng đã ghim template trong khi ranker tự chọn cái khác.
+  if (requested !== 'auto' && requested !== 'lab' && !/^official:.+$/.test(requested)) {
+    throw new InvalidTemplateArg(requested, (registry.templates ?? []).map((t) => t.id));
+  }
 
   const intent = extractIntent(rawBrief, { registry, taxonomy });
   const selection = baseSelection(registry, intent);
@@ -548,8 +562,11 @@ export function rankTemplates(brief, opts = {}) {
   selection.alternatives = alternativesOf(scored.filter((c) => c.matched));
 
   // 3a. Genuine ambiguity: near-tie between two different product flows → one question.
+  // Cùng điều kiện domain evidence như 3c: hỏi "phòng khám hay thời trang?" khi brief không hề
+  // nói ngành là đẩy user chọn giữa hai phỏng đoán, không phải làm rõ ý định. Brief chỉ khớp
+  // job/capability đi thẳng 3d (lab + alternatives) để agent nói rõ còn thiếu gì.
   const tierSelectable = [top, ...rivals].some((c) => c.eligible);
-  if (rivals.length && tierSelectable) {
+  if (intent.primaryDomain && rivals.length && tierSelectable) {
     const tier = [top, ...rivals].slice(0, 3);
     selection.mode = 'choice';
     selection.selectedId = null;
@@ -654,7 +671,14 @@ if (isMain()) {
   const taxonomyFile = getArg(argv, 'taxonomy', null);
   if (registryFile) opts.registry = loadRegistry(registryFile);
   if (taxonomyFile) opts.taxonomy = loadTaxonomy(taxonomyFile);
-  const out = rankTemplates(brief, opts);
+  let out;
+  try {
+    out = rankTemplates(brief, opts);
+  } catch (e) {
+    if (!(e instanceof InvalidTemplateArg)) throw e;
+    process.stderr.write(`recommend-template: ${e.message}\n`);
+    process.exit(3);
+  }
   const payload = argv.includes('--verbose')
     ? {
         selection: out.selection,

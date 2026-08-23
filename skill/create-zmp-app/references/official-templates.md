@@ -1,29 +1,27 @@
-# Official templates — scaffold từ mẫu chính thức của platform (Phase 2.5, opt-in)
+# Official templates — scaffold từ mẫu chính thức của platform
 
-Reference cho đường scaffold official-template của `bootstrap.mjs`. **`config.json` mục
-`catalog/templates.json` là authoritative** cho catalog (số lượng và trạng thái đọc từ registry, không hardcode ở đây), tập
-`releaseSupported`, keywords, immutable revision, tarball URL pattern và match order — file
-này chỉ giải thích cơ chế; khi lệch nhau thì `config.json` thắng. Nguồn catalog:
-`github.com/Zalo-MiniApp` (observed 2026-08-22; gallery
-`miniapp.zaloplatforms.com/zaui-templates` là SPA nên org GitHub là ground truth).
+File này giải thích **cơ chế** scaffold official-template của `bootstrap.mjs`: fetch, rebrand,
+những gì khác lab template, và khác biệt build/render/deploy. Nguồn catalog:
+`github.com/Zalo-MiniApp` (gallery `miniapp.zaloplatforms.com/zaui-templates` là SPA nên org
+GitHub là ground truth).
 
-## 1. Khi nào kích hoạt
+## 1. Chọn template — xem `template-routing.md`
 
-- **Không bao giờ bắt buộc.** Default luôn là lab template (demo shell
-  `clothing-store` hoặc `neutral`, không phải generator UI domain tuỳ ý); user có thể yêu
-  cầu agent tích hợp tiếp tính năng trên shell.
-- Kích hoạt khi: brief chứa một opt-in phrase (`optInPhrases` — "mẫu có sẵn", "template chính
-  thức", "dùng mẫu", ...) **hoặc** explicit `--template official:<id>`.
-- Routing khi opt-in bằng phrase: duyệt `catalog` **theo thứ tự khai báo**, template đầu tiên
-  có keyword khớp brief thắng. Chỉ entry `releaseSupported=true` được scaffold; cờ `verified`
-  chỉ ghi bằng chứng test và không tự mở public support. Explicit flag không bypass rule này.
-- Opt-in không match template supported, hoặc match một entry experimental → exit `3` trước
-  fetch/app mutation, dòng stdout JSON cuối
-  `{"runId":..., "status":"needs_template_choice", "question":..., "catalog":[<ids>]}` —
-  agent dừng, hỏi user chọn id supported hoặc bỏ opt-in để dùng lab template. **Không đoán,
-  không âm thầm fallback.** (Dùng exit 3 + JSON này thay vì thêm
-  reason mới vào `needsInput` enum của result.schema.)
-- `--template official:<id-không-tồn-tại>` → exit `3`, stderr liệt kê toàn bộ ids hợp lệ.
+**Toàn bộ phần quyết định *chọn template nào* nằm ở
+[`template-routing.md`](./template-routing.md)**, không nằm ở đây. Tóm tắt để khỏi phải mở file
+kia khi chỉ cần cơ chế:
+
+- Registry `catalog/templates.json` là **authoritative** cho danh sách template, bậc
+  qualification, revision đã pin, license và required inputs. Khối `officialTemplates` trong
+  `config.json` chỉ còn `tarballUrlPattern` + `optInPhrases`; các field routing cũ ở đó đã
+  deprecated (xem `deprecatedSince`).
+- `--template auto` là **mặc định**: mọi brief đều được ranker chấm điểm, user không cần nói
+  "dùng mẫu có sẵn". `lab` ép dùng shell đi kèm, `official:<id>` chỉ đích danh. Giá trị khác
+  → exit `3`.
+- Tự scaffold cần **domain evidence** và bậc ≥ `render-qualified`. Mơ hồ mà có ít nhất một
+  lựa chọn dựng được → exit `2` + `needsInput.reason="template_choice"`. Id không tồn tại
+  hoặc chưa qualify → exit `2` blocked, nêu rõ cái nào dùng được. Không đoán, không âm thầm
+  fallback, không fetch/mutate trước khi chốt.
 
 ## 2. Cơ chế scaffold
 
