@@ -87,7 +87,7 @@
         "owner": "Zalo-MiniApp",
         "repository": "zaui-coffee",
         "defaultBranch": "main",
-        "revision": null,
+        "revision": "2d3d5e85c283b6079aa16b51591ccf11a11e693b",
         "headObserved": "2d3d5e85c283b6079aa16b51591ccf11a11e693b",
         "portalListed": true,
         "observedAt": "2026-08-22",
@@ -133,11 +133,14 @@
         "capabilityAdapters": []
       },
       "qualification": {
-        "state": "candidate",
-        "testedRevision": null,
-        "adapterId": null,
-        "evidence": null,
-        "note": "chưa chạy qualification factory"
+        "state": "release-supported",
+        "testedRevision": "2d3d5e85c283b6079aa16b51591ccf11a11e693b",
+        "adapterId": "zaui-coffee-react-router-direct-dep",
+        "evidence": {
+          "qualificationResult": "catalog/qualification/zaui-coffee-2d3d5e8.json",
+          "runId": "qualify-zaui-coffee-2026-08-23T06-14-03Z"
+        },
+        "note": "qualification factory pass đủ 7 blocking gate tại 2d3d5e8 — evidence catalog/qualification/zaui-coffee-2d3d5e8.json"
       }
     },
     {

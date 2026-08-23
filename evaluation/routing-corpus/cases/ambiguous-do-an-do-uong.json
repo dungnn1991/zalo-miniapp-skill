@@ -4,7 +4,10 @@
   "brief": "làm app bán đồ ăn đồ uống",
   "blocking": true,
   "expected": {
-    "acceptedTemplateIds": [],
+    "acceptedTemplateIds": [
+      "zaui-coffee",
+      "zaui-bistro"
+    ],
     "mustNotSelect": [
       "zaui-fashion",
       "zaui-market",
@@ -12,10 +15,9 @@
     ],
     "requiredDomains": [],
     "requiredJobs": [],
-    "minOptions": 2,
-    "decisionWhenSupported": "choice",
+    "decisionWhenSupported": "auto",
     "decisionWhenUnsupported": "lab"
   },
   "source": "plan 34 §6.2 (ambiguous) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
-  "note": "\"đồ ăn\" là alias bistro, \"đồ uống\" là alias coffee → hoà điểm thật sự, phải hỏi. Sửa 2026-08-23: theo plan §4.3, khi chưa ứng viên nào release-supported thì đi lab kèm giải thích thay vì hỏi một câu không hành động được; sẽ tự thành choice khi có template được promote."
+  "note": "\"đồ ăn\" là alias bistro, \"đồ uống\" là alias coffee. Lịch sử: note cũ gọi đây là \"hoà điểm thật sự, sẽ thành choice khi có template được promote\" — sai. Điểm chưa bao giờ hoà (coffee 12 vs bistro 6, chênh 6 > AUTO_SELECT_MIN_MARGIN=4), nên case này luôn chạy nhánh \"chưa ứng viên nào eligible → lab\", không phải nhánh ambiguity. Từ 2026-08-23 coffee render-qualified nên nhánh auto-select mở ra và ranker chọn coffee bằng domain evidence thật (\"đồ uống\" → fnb.coffee +10). bistro vẫn xuất hiện trong alternatives kèm rejectedBecause, không bị giấu. Giá trị còn lại của case: brief F&B tuyệt đối không được rơi vào fashion/market/doctor. Câu hỏi phân loại thật nằm ở ambiguous-app-nha-hang."
 }

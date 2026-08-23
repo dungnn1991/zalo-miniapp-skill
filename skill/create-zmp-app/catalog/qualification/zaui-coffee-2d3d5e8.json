@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "tool": "qualify-template",
   "templateId": "zaui-coffee",
-  "startedAt": "2026-08-22T18:10:32.889Z",
-  "workspace": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-coffee-SbGTcA",
-  "runId": "qualify-zaui-coffee-2026-08-22T18-10-32Z",
+  "startedAt": "2026-08-23T06:14:03.270Z",
+  "workspace": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-coffee-EuXVqk",
+  "runId": "qualify-zaui-coffee-2026-08-23T06-14-03Z",
   "registryPath": "/Users/dungnn/Project/DX/labs/miniapp-bootstrap-poc/skill/create-zmp-app/catalog/templates.json",
   "license": {
     "packageJsonLicense": "UNLICENSED",
@@ -22,7 +22,7 @@
     "status": "applicable",
     "file": "/Users/dungnn/Project/DX/labs/miniapp-bootstrap-poc/skill/create-zmp-app/catalog/adapters/zaui-coffee.json",
     "adapterId": "zaui-coffee-react-router-direct-dep",
-    "sha256": "d50ee6ef68728351368862276725bd081f94a71d2096083443b3d2029945d995",
+    "sha256": "7ecc0ca82aa34e8a8f9b28aa216afe3bcdea810c7295bff1ad64673940802c99",
     "applied": [
       {
         "patchId": "add-react-router",
@@ -30,7 +30,7 @@
         "kind": "add-dependency",
         "dependency": {
           "name": "react-router",
-          "version": "^7.6.1"
+          "version": "^6.8.2"
         }
       }
     ],
@@ -38,7 +38,7 @@
     "expired": false
   },
   "postScaffoldDigest": {
-    "digest": "1faca529fed4f5843cd70f61ff77babfcb3dd9a3f6e310eeb7937dfeb7992b50",
+    "digest": "b92af0bcf63a65ff3899d0e666fe12beda51106fb67abd8fb49e2fc44566c26f",
     "fileCount": 114
   },
   "dependencyScan": {
@@ -181,7 +181,7 @@
   },
   "buildInfo": {
     "outDir": "src/www",
-    "builtAt": "2026-08-22T18:10:49.460Z"
+    "builtAt": "2026-08-23T06:14:19.749Z"
   },
   "residualIdentifiers": {
     "blocking": [],
@@ -204,8 +204,8 @@
       },
       {
         "id": "mount_not_empty",
-        "status": "fail",
-        "detail": "children=0 textLen=0",
+        "status": "pass",
+        "detail": "children=1 textLen=483",
         "viewport": "mobile-390x844"
       },
       {
@@ -234,8 +234,8 @@
       },
       {
         "id": "no_fatal_console_error",
-        "status": "fail",
-        "detail": "4 error/pageerror event(s)",
+        "status": "pass",
+        "detail": "0 error/pageerror event(s)",
         "viewport": "mobile-390x844"
       },
       {
@@ -246,8 +246,8 @@
       },
       {
         "id": "mount_not_empty",
-        "status": "fail",
-        "detail": "children=0 textLen=0",
+        "status": "pass",
+        "detail": "children=1 textLen=483",
         "viewport": "mobile-360x800"
       },
       {
@@ -270,8 +270,8 @@
       },
       {
         "id": "no_fatal_console_error",
-        "status": "fail",
-        "detail": "4 error/pageerror event(s)",
+        "status": "pass",
+        "detail": "0 error/pageerror event(s)",
         "viewport": "mobile-360x800"
       },
       {
@@ -282,8 +282,8 @@
       },
       {
         "id": "mount_not_empty",
-        "status": "fail",
-        "detail": "children=0 textLen=0",
+        "status": "pass",
+        "detail": "children=1 textLen=483",
         "viewport": "wide-1280x800"
       },
       {
@@ -312,29 +312,28 @@
       },
       {
         "id": "no_fatal_console_error",
-        "status": "fail",
-        "detail": "4 error/pageerror event(s)",
+        "status": "pass",
+        "detail": "0 error/pageerror event(s)",
         "viewport": "wide-1280x800"
       }
     ]
   },
+  "consoleExcerpt": null,
   "screenshots": [
     "mobile-360x800.png",
     "mobile-390x844.png",
     "wide-1280x800.png"
   ],
-  "screenshotsPath": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-coffee-SbGTcA/runs/qualify-zaui-coffee-2026-08-22T18-10-32Z/evidence",
+  "screenshotsPath": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-coffee-EuXVqk/runs/qualify-zaui-coffee-2026-08-23T06-14-03Z/evidence",
   "externalRequirements": [],
-  "derivedState": "build-qualified",
+  "derivedState": "render-qualified",
   "quarantineReason": null,
   "promotion": {
     "requested": true,
-    "eligible": false,
-    "blockedBy": [
-      "blocking gate \"runtime\" is fail: browser_oracle: mount_not_empty@mobile-390x844: children=0 textLen=0 | no_fatal_console_error@mobile-390x844: 4 error/pageerror event(s) | mount_not_empty@mobile-360x800: children=0 textLen=0 | no_fatal_console_error@mobile-360x800: 4 error/pageerror event(s) | mount_not_empty@wide-1280x800: children=0 textLen=0 | no_fatal_console_error@wide-1280x800: 4 error/pageerror event(s)"
-    ],
+    "eligible": true,
+    "blockedBy": [],
     "targetState": "release-supported",
-    "applied": false
+    "applied": true
   },
   "gates": [
     {
@@ -457,13 +456,13 @@
     {
       "id": "runtime",
       "blocking": true,
-      "status": "fail",
-      "detail": "browser_oracle: mount_not_empty@mobile-390x844: children=0 textLen=0 | no_fatal_console_error@mobile-390x844: 4 error/pageerror event(s) | mount_not_empty@mobile-360x800: children=0 textLen=0 | no_fatal_console_error@mobile-360x800: 4 error/pageerror event(s) | mount_not_empty@wide-1280x800: children=0 textLen=0 | no_fatal_console_error@wide-1280x800: 4 error/pageerror event(s)",
+      "status": "pass",
+      "detail": "react mount + non-empty content + no horizontal overflow + no fatal console error on 3 viewports",
       "checks": [
         {
           "id": "browser_oracle",
-          "status": "fail",
-          "detail": "mount_not_empty@mobile-390x844: children=0 textLen=0 | no_fatal_console_error@mobile-390x844: 4 error/pageerror event(s) | mount_not_empty@mobile-360x800: children=0 textLen=0 | no_fatal_console_error@mobile-360x800: 4 error/pageerror event(s) | mount_not_empty@wide-1280x800: children=0 textLen=0 | no_fatal_console_error@wide-1280x800: 4 error/pageerror event(s)"
+          "status": "pass",
+          "detail": "15 oracle gate(s) passed across 3 viewports (profile official-template)"
         },
         {
           "id": "oracle_coverage",
@@ -482,6 +481,11 @@
           "id": "first_preview_self_contained",
           "status": "pass",
           "detail": "no backend/API/env input required for the first preview"
+        },
+        {
+          "id": "no_failed_remote_calls_at_runtime",
+          "status": "pass",
+          "detail": "no failing remote request observed in the browser run"
         }
       ]
     },
@@ -494,7 +498,7 @@
         {
           "id": "pipeline_deterministic",
           "status": "pass",
-          "detail": "same id+revision+appId produced tree digest 1faca529fed4f584 vs 1faca529fed4f584 (114 files)"
+          "detail": "same id+revision+appId produced tree digest b92af0bcf63a65ff vs b92af0bcf63a65ff (114 files)"
         },
         {
           "id": "adapter_refuses_double_apply",
@@ -504,7 +508,7 @@
       ]
     }
   ],
-  "finishedAt": "2026-08-22T18:10:52.710Z",
-  "durationMs": 19820,
-  "exitCode": 4
+  "finishedAt": "2026-08-23T06:14:23.700Z",
+  "durationMs": 20428,
+  "exitCode": 0
 }

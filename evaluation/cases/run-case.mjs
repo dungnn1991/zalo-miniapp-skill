@@ -1290,29 +1290,48 @@ process.exit(9);
     check('zaui-fashion is the only v0.3.1 release-supported template',
       supported.length === 1 && supported[0].id === 'zaui-fashion', JSON.stringify(supported.map((e) => e.id)));
 
-    const args = ['--brief', 'tạo app cà phê dùng mẫu có sẵn', '--app-id', TEST_APP_ID];
-    const byBrief = runScript(ws, 'bootstrap', args);
+    // The case is about the SUPPORT GATE, not about any one template: it must keep working as
+    // templates get qualified. Pick the probe id from the registry at run time — the first
+    // still-unqualified template whose brief is known to route to it. Hard-coding zaui-coffee
+    // silently turned this case green-then-wrong the day coffee reached render-qualified.
+    const registry = readJsonIfExists(path.join(LAB_ROOT, 'skill', 'create-zmp-app', 'catalog', 'templates.json'));
+    const AUTO_STATES = new Set(['render-qualified', 'interaction-qualified', 'release-supported']);
+    const autoScaffoldable = (id) => {
+      const t = (registry?.templates ?? []).find((x) => x.id === id);
+      return !!t && AUTO_STATES.has(t.qualification?.state)
+        && !!t.source?.revision && t.qualification?.testedRevision === t.source.revision;
+    };
+    // brief → the template it routes to; every entry needs a corpus case proving the routing.
+    const PROBES = [
+      { id: 'zaui-uni', brief: 'tạo app cho trường đại học' },
+      { id: 'zaui-market', brief: 'tạo app siêu thị tạp hoá' },
+      { id: 'zaui-menu', brief: 'tạo app menu quét mã tại bàn' },
+    ];
+    const probe = PROBES.find((p) => !autoScaffoldable(p.id));
+    if (!probe) return 'blocked: every probe template in this case is now auto-scaffoldable — add a still-unqualified probe';
+
+    const byBrief = runScript(ws, 'bootstrap', ['--brief', `${probe.brief} dùng mẫu có sẵn`, '--app-id', TEST_APP_ID]);
     // plan 34 D34-7: cần user chọn template là ASK-USER → exit 2, không còn exit 3.
     check('unsupported keyword route exits 2 before scaffold', byBrief.code === 2,
       `exit ${byBrief.code}: ${byBrief.stderr.slice(-300)}`);
     check('unsupported route returns actionable options',
       byBrief.lastJson?.status === 'needs_template_choice'
         && Array.isArray(byBrief.lastJson?.options)
-        && byBrief.lastJson.options.some((o) => o.id === 'zaui-coffee' && typeof o.why === 'string'),
+        && byBrief.lastJson.options.some((o) => o.id === probe.id && typeof o.why === 'string'),
       JSON.stringify(byBrief.lastJson));
     check('unsupported route creates no app and no fetch temp dir',
       !fs.existsSync(path.join(ws, 'app'))
         && !fs.readdirSync(ws).some((name) => name.startsWith('.official-tpl-')), '');
 
     const explicit = runScript(ws, 'bootstrap', [
-      '--brief', 'tạo app cà phê', '--app-id', TEST_APP_ID, '--template', 'official:zaui-coffee',
+      '--brief', probe.brief, '--app-id', TEST_APP_ID, '--template', `official:${probe.id}`,
     ]);
     check('explicit unsupported id is also blocked before fetch',
-      explicit.code === 2 && explicit.lastJson?.blocked?.id === 'zaui-coffee'
+      explicit.code === 2 && explicit.lastJson?.blocked?.id === probe.id
         && (explicit.lastJson?.blocked?.supported ?? []).includes('zaui-fashion')
         && !fs.existsSync(path.join(ws, 'app')),
       `exit ${explicit.code}: ${JSON.stringify(explicit.lastJson)}`);
-    note('public official catalog: zaui-fashion only; unsupported ids never fetch or mutate app/');
+    note(`public official catalog: zaui-fashion only; unsupported probe "${probe.id}" never fetches or mutates app/`);
   },
 
   'golden'({ ws, check }) {

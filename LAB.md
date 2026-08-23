@@ -220,6 +220,21 @@ không được dùng trong CI. Validate skill packaging:
 
 ## Trạng thái
 
+- 2026-08-23 — **zaui-coffee đạt render-qualified và được promote** (report 41 N1, mandate 42
+  R41-3). Adapter copy nguyên `react-router@^7.6.1` từ zaui-doctor trong khi coffee khai
+  `react-router-dom@^6.8.2`, nên cây pnpm có cả 6.30.6 lẫn 7.18.2: build pass, runtime trắng
+  trang. Fix tối thiểu là pin `^6.8.2` + thêm precondition `file-contains` khoá đúng range của
+  `react-router-dom` để adapter refuse nếu upstream đổi major (không làm cơ chế suy version
+  tổng quát khi chưa có regression riêng cho nó).
+  Verify: full factory pass đủ 7 blocking gate ở 3 viewport, safe rerun + adapter refusal pass,
+  `--promote` áp vào registry. Auto-scaffoldable hôm nay: fashion, coffee, doctor.
+  **Hệ quả phải xử lý cùng lúc** (không phải template nào cũng miễn phí khi được promote):
+  `official-template-support` từng hardcode zaui-coffee làm "template chưa support" nên xanh-mà-sai
+  ngay khi coffee được promote — case giờ chọn probe từ registry lúc chạy. Hai case corpus
+  blocking (`ambiguous-do-an-do-uong`, `constraint-mmenu-no-api-url`) đổi kỳ vọng sang `auto`;
+  lý do ghi trong `note` của từng case, guard cho đường ra lệnh vẫn nằm ở
+  `constraint-mmenu-explicit-no-api-url` (decision=stop).
+
 - 2026-08-23 — **Locked-file change: uncaught-payload capture trong browser runner**
   (report 41 §6.1–6.3, mandate 42 §4.2). Đo thật: playwright làm phẳng một `throw {…}` thành
   `Error("Object")` trước khi tới node, nên `name/message/stack` và `JSON.stringify(err)` đều
