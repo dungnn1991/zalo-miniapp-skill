@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "tool": "qualify-template",
   "templateId": "zaui-lucky-wheel",
-  "startedAt": "2026-08-22T18:14:39.735Z",
-  "workspace": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-lucky-wheel-M0fUBS",
-  "runId": "qualify-zaui-lucky-wheel-2026-08-22T18-14-39Z",
+  "startedAt": "2026-08-23T07:02:44.017Z",
+  "workspace": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-lucky-wheel-f1gVS2",
+  "runId": "qualify-zaui-lucky-wheel-2026-08-23T07-02-44Z",
   "registryPath": "/Users/dungnn/Project/DX/labs/miniapp-bootstrap-poc/skill/create-zmp-app/catalog/templates.json",
   "license": {
     "packageJsonLicense": "UNLICENSED",
@@ -19,15 +19,61 @@
   "evidenceValidForHead": true,
   "recordedStateEffective": "candidate",
   "adapter": {
-    "status": "none",
-    "file": null,
-    "adapterId": null,
-    "sha256": null,
-    "applied": [],
-    "refused": []
+    "status": "applicable",
+    "file": "/Users/dungnn/Project/DX/labs/miniapp-bootstrap-poc/skill/create-zmp-app/catalog/adapters/zaui-lucky-wheel.json",
+    "adapterId": "zaui-lucky-wheel-client-side-graph-removal",
+    "sha256": "0ca31e90db4ca171ec98a30428b1d16c07b3faafdbd8adcca51600169723b41b",
+    "applied": [
+      {
+        "patchId": "alias-at-to-project-src",
+        "file": "vite.config.mts",
+        "kind": "replace"
+      },
+      {
+        "patchId": "add-clsx",
+        "file": "package.json",
+        "kind": "add-dependency",
+        "dependency": {
+          "name": "clsx",
+          "version": "^2.1.1"
+        }
+      },
+      {
+        "patchId": "user-services-remove-client-side-graph-call",
+        "file": "src/services/user.services.ts",
+        "kind": "replace"
+      },
+      {
+        "patchId": "user-services-drop-unused-sdk-imports",
+        "file": "src/services/user.services.ts",
+        "kind": "replace"
+      },
+      {
+        "patchId": "register-form-import-usestate",
+        "file": "src/components/register-form.tsx",
+        "kind": "replace"
+      },
+      {
+        "patchId": "register-form-phone-source-state",
+        "file": "src/components/register-form.tsx",
+        "kind": "replace"
+      },
+      {
+        "patchId": "register-form-no-fake-phone-outside-simulator",
+        "file": "src/components/register-form.tsx",
+        "kind": "replace"
+      },
+      {
+        "patchId": "register-form-phone-source-notice",
+        "file": "src/components/register-form.tsx",
+        "kind": "replace"
+      }
+    ],
+    "refused": [],
+    "expired": false
   },
   "postScaffoldDigest": {
-    "digest": "2bcbc4438d7b83ef23fe9e7f13b420ddaf21962e4cdf73c784af89b4f28f539b",
+    "digest": "0ad3ef1eaa24be27b59b9d1dd5363c9cceaa8ba7accb61545489ed20f804a4a9",
     "fileCount": 48
   },
   "dependencyScan": {
@@ -48,6 +94,7 @@
       "@types/react-dom",
       "@vitejs/plugin-react",
       "autoprefixer",
+      "clsx",
       "cross-env",
       "postcss",
       "postcss-cli",
@@ -64,15 +111,7 @@
       "zmp-vite-plugin",
       "zustand"
     ],
-    "missingRuntime": [
-      {
-        "name": "clsx",
-        "typeOnly": false,
-        "sites": [
-          "src/utils/cn.ts:1"
-        ]
-      }
-    ],
+    "missingRuntime": [],
     "missingTypeOnly": []
   },
   "toolchain": {
@@ -93,33 +132,362 @@
       "typescript": null
     }
   },
-  "buildInfo": null,
+  "buildInfo": {
+    "outDir": "src/www",
+    "builtAt": "2026-08-23T07:02:56.288Z"
+  },
   "residualIdentifiers": {
     "blocking": [],
     "informational": []
   },
-  "externalRequirements": [
-    {
-      "kind": "remote-api",
-      "name": "https://graph.zalo.me",
-      "neededForFirstPreview": true,
-      "sites": [
-        "src/services/user.services.ts:15"
+  "noHostOracle": {
+    "exitCode": 1,
+    "gates": {
+      "gates": [
+        {
+          "id": "react_mount",
+          "status": "pass",
+          "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "mount_not_empty",
+          "status": "pass",
+          "detail": "children=1 textLen=149",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "no_sim_runtime_marker",
+          "status": "pass",
+          "detail": "no window.__ZMP_DX_RUNTIME__ outside the simulator",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "no_horizontal_overflow",
+          "status": "pass",
+          "detail": "scrollWidth=390 innerWidth=390",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "cta_not_clipped",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "screenshot",
+          "status": "pass",
+          "detail": "mobile-390x844.png",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "interaction_add_to_cart",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "no_fatal_console_error",
+          "status": "fail",
+          "detail": "1 error/pageerror event(s)",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "react_mount",
+          "status": "pass",
+          "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "mount_not_empty",
+          "status": "pass",
+          "detail": "children=1 textLen=149",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "no_sim_runtime_marker",
+          "status": "pass",
+          "detail": "no window.__ZMP_DX_RUNTIME__ outside the simulator",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "no_horizontal_overflow",
+          "status": "pass",
+          "detail": "scrollWidth=360 innerWidth=360",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "cta_not_clipped",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "screenshot",
+          "status": "pass",
+          "detail": "mobile-360x800.png",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "no_fatal_console_error",
+          "status": "fail",
+          "detail": "1 error/pageerror event(s)",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "react_mount",
+          "status": "pass",
+          "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "mount_not_empty",
+          "status": "pass",
+          "detail": "children=1 textLen=149",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "no_sim_runtime_marker",
+          "status": "pass",
+          "detail": "no window.__ZMP_DX_RUNTIME__ outside the simulator",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "no_horizontal_overflow",
+          "status": "pass",
+          "detail": "scrollWidth=1280 innerWidth=1280",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "cta_not_clipped",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "screenshot",
+          "status": "pass",
+          "detail": "wide-1280x800.png",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "interaction_add_to_cart",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "no_fatal_console_error",
+          "status": "fail",
+          "detail": "1 error/pageerror event(s)",
+          "viewport": "wide-1280x800"
+        }
+      ]
+    },
+    "consoleExcerpt": {
+      "totalErrorEvents": 6,
+      "truncated": false,
+      "events": [
+        {
+          "viewport": "mobile-390x844",
+          "kind": "error-detail",
+          "source": "unhandledrejection",
+          "text": "{\"code\":-2000,\"message\":\"Unknown error. Please try again later.\",\"api\":\"login\",\"detail\":\"[undefined]\"}"
+        },
+        {
+          "viewport": "mobile-390x844",
+          "kind": "pageerror",
+          "text": "Object"
+        },
+        {
+          "viewport": "mobile-360x800",
+          "kind": "error-detail",
+          "source": "unhandledrejection",
+          "text": "{\"code\":-2000,\"message\":\"Unknown error. Please try again later.\",\"api\":\"login\",\"detail\":\"[undefined]\"}"
+        },
+        {
+          "viewport": "mobile-360x800",
+          "kind": "pageerror",
+          "text": "Object"
+        },
+        {
+          "viewport": "wide-1280x800",
+          "kind": "error-detail",
+          "source": "unhandledrejection",
+          "text": "{\"code\":-2000,\"message\":\"Unknown error. Please try again later.\",\"api\":\"login\",\"detail\":\"[undefined]\"}"
+        },
+        {
+          "viewport": "wide-1280x800",
+          "kind": "pageerror",
+          "text": "Object"
+        }
       ]
     }
+  },
+  "oracleGates": {
+    "gates": [
+      {
+        "id": "react_mount",
+        "status": "pass",
+        "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "mount_not_empty",
+        "status": "pass",
+        "detail": "children=1 textLen=270",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "sim_runtime_marker",
+        "status": "pass",
+        "detail": "window.__ZMP_DX_RUNTIME__ schemaVersion=1 mode=simulator",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "no_horizontal_overflow",
+        "status": "pass",
+        "detail": "scrollWidth=390 innerWidth=390",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "cta_not_clipped",
+        "status": "skipped",
+        "detail": "profile simulator-official: no lab markers",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "screenshot",
+        "status": "pass",
+        "detail": "mobile-390x844.png",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "interaction_add_to_cart",
+        "status": "skipped",
+        "detail": "profile simulator-official: no lab markers",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "no_fatal_console_error",
+        "status": "pass",
+        "detail": "0 error/pageerror event(s)",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "react_mount",
+        "status": "pass",
+        "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "mount_not_empty",
+        "status": "pass",
+        "detail": "children=1 textLen=270",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "sim_runtime_marker",
+        "status": "pass",
+        "detail": "window.__ZMP_DX_RUNTIME__ schemaVersion=1 mode=simulator",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "no_horizontal_overflow",
+        "status": "pass",
+        "detail": "scrollWidth=360 innerWidth=360",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "cta_not_clipped",
+        "status": "skipped",
+        "detail": "profile simulator-official: no lab markers",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "screenshot",
+        "status": "pass",
+        "detail": "mobile-360x800.png",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "no_fatal_console_error",
+        "status": "pass",
+        "detail": "0 error/pageerror event(s)",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "react_mount",
+        "status": "pass",
+        "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "mount_not_empty",
+        "status": "pass",
+        "detail": "children=1 textLen=270",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "sim_runtime_marker",
+        "status": "pass",
+        "detail": "window.__ZMP_DX_RUNTIME__ schemaVersion=1 mode=simulator",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "no_horizontal_overflow",
+        "status": "pass",
+        "detail": "scrollWidth=1280 innerWidth=1280",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "cta_not_clipped",
+        "status": "skipped",
+        "detail": "profile simulator-official: no lab markers",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "screenshot",
+        "status": "pass",
+        "detail": "wide-1280x800.png",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "interaction_add_to_cart",
+        "status": "skipped",
+        "detail": "profile simulator-official: no lab markers",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "no_fatal_console_error",
+        "status": "pass",
+        "detail": "0 error/pageerror event(s)",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "sim_bridge_log_written",
+        "status": "pass",
+        "detail": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-lucky-wheel-f1gVS2/runs/qualify-zaui-lucky-wheel-2026-08-23T07-02-44Z/evidence/bridge-log.jsonl"
+      }
+    ]
+  },
+  "oracleProfile": "simulator-official",
+  "consoleExcerpt": null,
+  "screenshots": [
+    "mobile-360x800.png",
+    "mobile-390x844.png",
+    "wide-1280x800.png"
   ],
-  "derivedState": "quarantined",
-  "quarantineReason": "build: vite_build: build.mjs exit 1; no build output detected. tail:  ;; runtime: browser_oracle: skipped — no build output to serve ;; external_dependency: first_preview_self_contained: first preview needs the user to supply: https://graph.zalo.me (remote-api, src/services/user.services.ts:15)",
+  "screenshotsPath": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-lucky-wheel-f1gVS2/runs/qualify-zaui-lucky-wheel-2026-08-23T07-02-44Z/evidence",
+  "externalRequirements": [],
+  "derivedState": "render-qualified",
+  "quarantineReason": null,
   "promotion": {
     "requested": true,
-    "eligible": false,
-    "blockedBy": [
-      "blocking gate \"build\" is fail: vite_build: build.mjs exit 1; no build output detected. tail: ",
-      "blocking gate \"runtime\" is fail: browser_oracle: skipped — no build output to serve",
-      "blocking gate \"external_dependency\" is fail: first_preview_self_contained: first preview needs the user to supply: https://graph.zalo.me (remote-api, src/services/user.services.ts:15)"
-    ],
+    "eligible": true,
+    "blockedBy": [],
     "targetState": "release-supported",
-    "applied": false
+    "applied": true
   },
   "gates": [
     {
@@ -173,8 +541,8 @@
       "checks": [
         {
           "id": "direct_dependency_completeness",
-          "status": "warn",
-          "detail": "imported but not declared: clsx (src/utils/cn.ts:1) — pnpm isolated node_modules chỉ resolve được nếu package được khai trực tiếp; build/runtime gate là nơi quyết định pass/fail"
+          "status": "pass",
+          "detail": "9 imported package(s), all declared directly"
         },
         {
           "id": "pnpm_install",
@@ -186,13 +554,18 @@
     {
       "id": "build",
       "blocking": true,
-      "status": "fail",
-      "detail": "vite_build: build.mjs exit 1; no build output detected. tail: ",
+      "status": "pass",
+      "detail": "built into src/www",
       "checks": [
         {
           "id": "vite_build",
-          "status": "fail",
-          "detail": "build.mjs exit 1; no build output detected. tail: "
+          "status": "pass",
+          "detail": "build.mjs exit 0, outDir=src/www (OUT_DIR_CANDIDATES detection reused from build.mjs)"
+        },
+        {
+          "id": "generic_vite_preparation",
+          "status": "pass",
+          "detail": "prepareViteSrcEntry() generated src/index.html from the root index.html (shipped harness preparation, review 35 F3)"
         }
       ]
     },
@@ -213,6 +586,11 @@
           "detail": "app/.env APP_ID=1000000000000000001 (expected 1000000000000000001)"
         },
         {
+          "id": "app_id_resolved_by_build",
+          "status": "pass",
+          "detail": "vite loadEnv() inside the app resolved APP_ID=1000000000000000001"
+        },
+        {
           "id": "no_foreign_app_id",
           "status": "pass",
           "detail": "no appId-keyed identifier other than the bound App ID"
@@ -222,26 +600,41 @@
     {
       "id": "runtime",
       "blocking": true,
-      "status": "fail",
-      "detail": "browser_oracle: skipped — no build output to serve",
+      "status": "pass",
+      "detail": "react mount + non-empty content + no horizontal overflow + no fatal console error on 3 viewports",
       "checks": [
         {
+          "id": "browser_oracle_no_host",
+          "status": "warn",
+          "detail": "served without a Zalo host: no_fatal_console_error@mobile-390x844: 1 error/pageerror event(s) | no_fatal_console_error@mobile-360x800: 1 error/pageerror event(s) | no_fatal_console_error@wide-1280x800: 1 error/pageerror event(s) — recorded, not blocking: see evidence/no-host-console.jsonl for what the app actually said"
+        },
+        {
           "id": "browser_oracle",
-          "status": "fail",
-          "detail": "skipped — no build output to serve"
+          "status": "pass",
+          "detail": "19 oracle gate(s) passed across 3 viewports (profile simulator-official)"
+        },
+        {
+          "id": "oracle_coverage",
+          "status": "warn",
+          "detail": "profile simulator-official skipped: cta_not_clipped, interaction_add_to_cart — no interaction evidence, so the highest evidence-backed rung is render-qualified"
         }
       ]
     },
     {
       "id": "external_dependency",
       "blocking": true,
-      "status": "fail",
-      "detail": "first_preview_self_contained: first preview needs the user to supply: https://graph.zalo.me (remote-api, src/services/user.services.ts:15)",
+      "status": "pass",
+      "detail": "first preview runs on bundled/mock data only",
       "checks": [
         {
           "id": "first_preview_self_contained",
-          "status": "fail",
-          "detail": "first preview needs the user to supply: https://graph.zalo.me (remote-api, src/services/user.services.ts:15)"
+          "status": "pass",
+          "detail": "no backend/API/env input required for the first preview"
+        },
+        {
+          "id": "no_failed_remote_calls_at_runtime",
+          "status": "pass",
+          "detail": "no failing remote request observed in the browser run"
         }
       ]
     },
@@ -254,12 +647,17 @@
         {
           "id": "pipeline_deterministic",
           "status": "pass",
-          "detail": "same id+revision+appId produced tree digest 2bcbc4438d7b83ef vs 2bcbc4438d7b83ef (48 files)"
+          "detail": "same id+revision+appId produced tree digest 0ad3ef1eaa24be27 vs 0ad3ef1eaa24be27 (48 files)"
+        },
+        {
+          "id": "adapter_refuses_double_apply",
+          "status": "pass",
+          "detail": "second application: applied=0 refused=8 (alias-at-to-project-src/precondition_mismatch, add-clsx/precondition_mismatch, user-services-remove-client-side-graph-call/precondition_mismatch, user-services-drop-unused-sdk-imports/precondition_mismatch, register-form-import-usestate/precondition_mismatch, register-form-phone-source-state/precondition_mismatch, register-form-no-fake-phone-outside-simulator/precondition_mismatch, register-form-phone-source-notice/precondition_mismatch), tree unchanged=true"
         }
       ]
     }
   ],
-  "finishedAt": "2026-08-22T18:14:46.668Z",
-  "durationMs": 6932,
-  "exitCode": 4
+  "finishedAt": "2026-08-23T07:03:03.331Z",
+  "durationMs": 19314,
+  "exitCode": 0
 }

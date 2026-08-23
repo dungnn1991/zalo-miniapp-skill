@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 1,
+  "adapterId": "zaui-lucky-wheel-client-side-graph-removal",
+  "templateId": "zaui-lucky-wheel",
+  "appliesTo": {
+    "revision": "8c692b938727b4c6c38e866e4d6683cf1bdd4ed0"
+  },
+  "expiresAt": "2026-11-23",
+  "reviewNote": "Adapter compatibility phía DX, KHÔNG phải bản vá upstream. Gỡ ngay khi Zalo-MiniApp/zaui-lucky-wheel có revision mới không còn gọi Graph/nhúng secret trong client: (1) drift detector thấy SHA mới nên adapter tự refuse, (2) đọc source mới để xác nhận sạch, (3) chạy qualification KHÔNG adapter, (4) chỉ xoá adapter sau khi evidence mới pass. Không được gỡ trước khi có evidence mới.",
+  "rationale": "src/services/user.services.ts ở SHA này làm server-side decode ngay trong client: nhúng literal App Secret và gọi Graph endpoint từ browser. Preflight server_side_api_scan chặn ĐÚNG THEO THIẾT KẾ — adapter này không miễn trừ gate, nó gỡ chính đoạn code vi phạm. Kèm theo, src/components/register-form.tsx catch mọi lỗi rồi hiện snackbar type=\"success\" và điền số giả 0311111111, nên người dùng có thể submit một số điện thoại bịa mà không hề biết. Sau adapter: trong simulator lấy mock từ window.__ZMP_DX_RUNTIME__ và hiển thị nhãn dữ liệu giả lập; mọi môi trường khác fail-closed sang backend-required, ô nhập để trống và vẫn nhập tay được. Backend thật thuộc phase sau (references/phone-number-backend.md). Ngoài ra template mang đúng hai defect build đã gặp ở zaui-doctor/zaui-bistro: alias \"@\" trỏ \"/src\" (root filesystem) đi cùng root:\"./src\" ⇒ vite ENOENT khi load /src/css/tailwind.scss; và src/utils/cn.ts import clsx trong khi package.json không khai ⇒ pnpm isolated không resolve.",
+  "resultWarnings": [
+    {
+      "code": "PHONE_BACKEND_REQUIRED",
+      "blockingForPreview": false,
+      "blockingForProductionFeature": true,
+      "affectedFeature": "phone-number-autofill",
+      "fallback": "manual-input",
+      "guide": "references/phone-number-backend.md",
+      "message": "Preview dùng được bình thường. Riêng tính năng tự động điền số điện thoại chưa production-ready: Mini App chỉ nhận được token, đổi token sang số thật cần App Secret và phải chạy trên backend của bạn. Hiện tại ngoài simulator ô số điện thoại để trống và người dùng nhập tay."
+    }
+  ],
+  "patches": [
+    {
+      "id": "alias-at-to-project-src",
+      "kind": "replace",
+      "file": "vite.config.mts",
+      "find": "\"@\": \"/src\",",
+      "replace": "\"@\": new URL(\"./src\", import.meta.url).pathname,",
+      "expectedCount": 1,
+      "preconditions": [
+        {
+          "type": "file-contains",
+          "file": "vite.config.mts",
+          "value": "\"@\": \"/src\""
+        },
+        {
+          "type": "file-contains",
+          "file": "vite.config.mts",
+          "value": "root: \"./src\""
+        }
+      ]
+    },
+    {
+      "id": "add-clsx",
+      "kind": "add-dependency",
+      "file": "package.json",
+      "dependency": {
+        "name": "clsx",
+        "version": "^2.1.1"
+      },
+      "preconditions": [
+        {
+          "type": "dependency-absent",
+          "name": "clsx"
+        },
+        {
+          "type": "source-imports",
+          "name": "clsx"
+        }
+      ]
+    },
+    {
+      "id": "user-services-remove-client-side-graph-call",
+      "kind": "replace",
+      "file": "src/services/user.services.ts",
+      "find": "  // Zalo Mini App – Get Phone Number\n  // Docs: https://miniapp.zaloplatforms.com/documents/api/getPhoneNumber/\n  async getPhoneNumber() {\n    const access_token = await getAccessToken();\n    const code = await getPhoneNumber();\n    const secret_key = \"your zalo app secret key\";\n\n    const response = await fetch(\"https://graph.zalo.me/v2.0/me/info\", {\n      headers: {\n        access_token,\n        code: code.token!,\n        secret_key,\n      },\n    });\n    const data = await response.json();\n    return data.data.number;\n  },",
+      "replace": "  // Zalo Mini App – Get Phone Number\n  // Docs: https://miniapp.zaloplatforms.com/documents/api/getPhoneNumber/\n  //\n  // DX compatibility adapter, pinned to upstream 8c692b9.\n  // Upstream performed the server-side decode INSIDE the client: it embedded an App Secret\n  // literal and called the Zalo Graph endpoint straight from the browser. Everything in client\n  // code ends up in the bundle, so that hands the secret to every user — it can never ship.\n  // The SDK only ever returns a short-lived TOKEN; exchanging that token for a number needs the\n  // App Secret and MUST happen on your own backend.\n  // Guide: create-zmp-app references/phone-number-backend.md\n  async getPhoneNumber(): Promise<\n    { source: \"simulator\"; number: string } | { source: \"backend-required\" }\n  > {\n    type DxRuntime = {\n      schemaVersion?: number;\n      mode?: string;\n      mockData?: { phoneNumber?: string };\n    };\n    const dx = (window as unknown as { __ZMP_DX_RUNTIME__?: DxRuntime }).__ZMP_DX_RUNTIME__;\n    // Fail closed. Only the explicit DX simulator marker unlocks mock data: the simulator\n    // serves from the real Zalo hostname and path on purpose, so URL, host and user-agent\n    // prove nothing about which environment this is.\n    if (dx?.schemaVersion === 1 && dx.mode === \"simulator\" && dx.mockData?.phoneNumber) {\n      return { source: \"simulator\", number: String(dx.mockData.phoneNumber) };\n    }\n    return { source: \"backend-required\" };\n  },",
+      "expectedCount": 1,
+      "preconditions": [
+        {
+          "type": "file-contains",
+          "file": "src/services/user.services.ts",
+          "value": "graph.zalo.me"
+        },
+        {
+          "type": "file-contains",
+          "file": "src/services/user.services.ts",
+          "value": "const secret_key ="
+        }
+      ]
+    },
+    {
+      "id": "user-services-drop-unused-sdk-imports",
+      "kind": "replace",
+      "file": "src/services/user.services.ts",
+      "find": "import { getAccessToken, getPhoneNumber, getUserInfo } from \"zmp-sdk/apis\";",
+      "replace": "import { getUserInfo } from \"zmp-sdk/apis\";",
+      "expectedCount": 1,
+      "preconditions": [
+        {
+          "type": "file-contains",
+          "file": "src/services/user.services.ts",
+          "value": "import { getAccessToken, getPhoneNumber, getUserInfo }"
+        },
+        {
+          "type": "file-not-contains",
+          "file": "src/services/user.services.ts",
+          "value": "graph.zalo.me"
+        }
+      ]
+    },
+    {
+      "id": "register-form-import-usestate",
+      "kind": "replace",
+      "file": "src/components/register-form.tsx",
+      "find": "import { useEffect } from \"react\";",
+      "replace": "import { useEffect, useState } from \"react\";",
+      "expectedCount": 1,
+      "preconditions": [
+        {
+          "type": "file-contains",
+          "file": "src/components/register-form.tsx",
+          "value": "import { useEffect } from \"react\";"
+        }
+      ]
+    },
+    {
+      "id": "register-form-phone-source-state",
+      "kind": "replace",
+      "file": "src/components/register-form.tsx",
+      "find": "  const { openSnackbar } = useSnackbar();\n",
+      "replace": "  const { openSnackbar } = useSnackbar();\n  const [phoneSource, setPhoneSource] = useState<\n    \"unknown\" | \"simulator\" | \"backend-required\"\n  >(\"unknown\");\n",
+      "expectedCount": 1,
+      "preconditions": [
+        {
+          "type": "file-not-contains",
+          "file": "src/components/register-form.tsx",
+          "value": "phoneSource"
+        }
+      ]
+    },
+    {
+      "id": "register-form-no-fake-phone-outside-simulator",
+      "kind": "replace",
+      "file": "src/components/register-form.tsx",
+      "find": "    (async () => {\n      try {\n        const phone = await userService.getPhoneNumber();\n        form.setFieldValue(\"phone\", phone);\n      } catch (error) {\n        openSnackbar({\n          icon: true,\n          type: \"success\",\n          text: \"Nhà phát triển tự cài đặt tính năng tự động điền số điện thoại tại userService\",\n          duration: 5000,\n        });\n        form.setFieldValue(\"phone\", \"0311111111\");\n      }\n    })();",
+      "replace": "    (async () => {\n      const result = await userService.getPhoneNumber();\n      if (result.source === \"simulator\") {\n        form.setFieldValue(\"phone\", result.number);\n        setPhoneSource(\"simulator\");\n        return;\n      }\n      // Outside the simulator we never invent a number: the field stays empty and the UI says\n      // what is missing. Upstream caught every error, showed a \"success\" snackbar and filled\n      // a hardcoded fake number the user could submit without noticing.\n      setPhoneSource(\"backend-required\");\n    })();",
+      "expectedCount": 1,
+      "preconditions": [
+        {
+          "type": "file-contains",
+          "file": "src/components/register-form.tsx",
+          "value": "\"0311111111\""
+        }
+      ]
+    },
+    {
+      "id": "register-form-phone-source-notice",
+      "kind": "replace",
+      "file": "src/components/register-form.tsx",
+      "find": "                  label={renderRequiredLabel(\"Số điện thoại\")}\n                  onClick={() => {\n                    handleAutoFillRequest();\n                  }}\n                />\n                {renderError(field.state.meta.errors)}",
+      "replace": "                  label={renderRequiredLabel(\"Số điện thoại\")}\n                  onClick={() => {\n                    handleAutoFillRequest();\n                  }}\n                />\n                {phoneSource === \"simulator\" && (\n                  <p className=\"text-small\" data-testid=\"phone-sim-badge\">\n                    DỮ LIỆU GIẢ LẬP — số điện thoại này là dữ liệu mẫu, không phải dữ liệu của\n                    tài khoản Zalo.\n                  </p>\n                )}\n                {phoneSource === \"backend-required\" && (\n                  <p className=\"text-small\" data-testid=\"phone-backend-required\">\n                    Tự động điền số điện thoại chưa được cấu hình. Tính năng này cần backend để\n                    giải mã token an toàn; bạn vẫn có thể nhập số điện thoại thủ công.\n                  </p>\n                )}\n                {renderError(field.state.meta.errors)}",
+      "expectedCount": 1,
+      "preconditions": [
+        {
+          "type": "file-not-contains",
+          "file": "src/components/register-form.tsx",
+          "value": "phone-sim-badge"
+        }
+      ]
+    }
+  ]
+}

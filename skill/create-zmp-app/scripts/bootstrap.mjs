@@ -42,6 +42,10 @@ import { TEMPLATE_DIR, loadLabConfig, resolveWorkspace, getArg } from './lib/pat
 import { newRunId, openRun, fingerprint } from './lib/run-context.mjs';
 import { redactText } from './lib/redact.mjs';
 import { rankTemplates, supportedIds as rankerSupportedIds, loadRegistry as loadTemplateRegistry, InvalidTemplateArg } from './recommend-template.mjs';
+// Same adapter loader the qualification factory uses — deliberately the SAME code, not a copy:
+// an app scaffolded at runtime must be byte-identical to the tree the evidence was produced
+// from, or the evidence describes something the user never gets.
+import { loadAdapter, applyAdapter } from './qualify-template.mjs';
 
 const INVOKED_VIA = ['slash-command', 'codex-skill', 'natural-language', 'harness'];
 
@@ -144,6 +148,63 @@ function slugify(name) {
   return s || 'zmp-app';
 }
 
+/**
+ * Apply the pinned adapter to a freshly scaffolded official template.
+ *
+ * The qualification factory has always applied adapters; bootstrap never did. So evidence said
+ * "zaui-coffee renders clean" for a tree with the missing `react-router` declared, while the
+ * user's scaffold got the raw upstream tree and a build failure. Four of the five templates
+ * auto-scaffoldable on 2026-08-23 carry an adapter, and one of them (`zaui-lucky-wheel`, once
+ * qualified) is only SAFE because its adapter strips a server-side call and an App Secret out
+ * of the client — shipping that tree unpatched is a security defect, not a build defect.
+ *
+ * So: whatever the evidence was produced from is what the user gets, or the run stops.
+ *   - registry records an adapterId → an applicable adapter MUST load and apply cleanly;
+ *   - any refusal, revision mismatch or invalid file → throw, before the user builds anything.
+ * Writes `evidence/adapter.json`; verify.mjs turns its `resultWarnings` into result.warnings.
+ */
+function applyTemplateAdapter(entry, revision, workspace, ctx) {
+  const expectedAdapterId = entry.adapterId ?? null;
+  const loaded = loadAdapter(entry.id, revision);
+  if (loaded.status === 'none') {
+    if (expectedAdapterId) {
+      throw new Error(
+        `catalog/adapters/${entry.id}.json missing, but the registry says qualification evidence`
+        + ` for ${entry.id}@${revision.slice(0, 7)} was produced with adapter "${expectedAdapterId}".`
+        + ' Refusing to scaffold a tree the evidence does not cover.',
+      );
+    }
+    return null;
+  }
+  if (loaded.status !== 'applicable') {
+    throw new Error(`adapter for ${entry.id} not applicable (${loaded.status}): ${loaded.detail}`);
+  }
+  const { applied, refused } = applyAdapter(workspace.appDir, loaded.adapter);
+  if (refused.length) {
+    throw new Error(
+      `adapter ${loaded.adapter.adapterId} refused ${refused.length} patch(es) on ${entry.id}@${revision.slice(0, 7)}: `
+      + refused.map((r) => `${r.patchId}/${r.reason} — ${r.detail}`).join('; ')
+      + '. Upstream changed under a pinned SHA, or the app tree is not what the adapter expects.'
+      + ' Requalify the template instead of scaffolding a half-patched tree.',
+    );
+  }
+  ctx.writeJson('evidence/adapter.json', {
+    adapterId: loaded.adapter.adapterId,
+    templateId: entry.id,
+    upstreamRevision: revision,
+    adapterSha256: loaded.sha256,
+    appliedAt: new Date().toISOString(),
+    patches: applied.map((a) => a.patchId),
+    resultWarnings: loaded.adapter.resultWarnings ?? [],
+  });
+  ctx.event('bootstrap', {
+    stage: 'scaffold',
+    status: 'ok',
+    detail: `adapter ${loaded.adapter.adapterId} applied: ${applied.map((a) => a.patchId).join(', ')}`,
+  });
+  return loaded.adapter;
+}
+
 // Scaffold from an official template: codeload tarball (never `zmp init` — interactive,
 // hangs non-tty; never git clone), extract via system tar, strip the top-level dir, copy
 // into app/. Rebrand only what already exists: package.json/zmp-cli.json `name` and the
@@ -206,6 +267,7 @@ async function scaffoldOfficial(entry, appName, config, workspace, ctx, { force,
         status: 'ok',
         detail: `official template ${entry.id} scaffolded (name=${slug}, title=${appName})`,
       });
+      applyTemplateAdapter(entry, revision, workspace, ctx);
     } finally {
       writeScaffoldManifest(workspace.appDir, templateInfo, writeSet);
     }
@@ -502,7 +564,13 @@ async function resolveTemplateV2(argv, brief) {
   return {
     mode: 'official',
     selection: sel,
-    entry: { id: sel.selectedId, revision: sel.revision, branch: profile?.source?.defaultBranch ?? 'main' },
+    entry: {
+      id: sel.selectedId,
+      revision: sel.revision,
+      branch: profile?.source?.defaultBranch ?? 'main',
+      // What the qualification evidence was produced with; scaffoldOfficial enforces it.
+      adapterId: profile?.qualification?.adapterId ?? null,
+    },
   };
 }
 

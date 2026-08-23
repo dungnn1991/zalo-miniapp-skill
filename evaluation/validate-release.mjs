@@ -168,6 +168,67 @@ check('release suite treats blocked as failure by default',
     && suiteExitCode([{ status: 'fail' }], { allowBlocked: true }) === 1,
   'suite exit policy does not distinguish strict release and exploratory modes');
 
+// --- registry must not contradict its own evidence (report 41 §6.4, review 42 R41-2) --------
+// The seeded note "chưa chạy qualification factory" survived zaui-doctor's promotion, so for a
+// month the registry claimed nobody had ever run the factory on a template with full evidence,
+// on 11 of 12 profiles. And three profiles declared `requiredInputs: []` while their evidence
+// said the first preview needs a backend env. Both are the registry lying about work that was
+// actually done; a reader cannot tell which fields to trust after that.
+const registry = json('skill/create-zmp-app/catalog/templates.json');
+const QUAL_DIR = path.join(SKILL_DIR, 'catalog', 'qualification');
+const evidenceByTemplate = new Map();
+if (fs.existsSync(QUAL_DIR)) {
+  for (const f of fs.readdirSync(QUAL_DIR).filter((n) => n.endsWith('.json'))) {
+    const d = JSON.parse(fs.readFileSync(path.join(QUAL_DIR, f), 'utf8'));
+    evidenceByTemplate.set(d.templateId, { file: `catalog/qualification/${f}`, data: d });
+  }
+}
+const NEVER_RUN_NOTE = 'chưa chạy qualification factory';
+const noteLies = [];
+const constraintDrift = [];
+const adapterGaps = [];
+const AUTO_STATES = new Set(['render-qualified', 'interaction-qualified', 'release-supported']);
+for (const t of registry.templates ?? []) {
+  const q = t.qualification ?? {};
+  const c = t.constraints ?? {};
+  const ev = evidenceByTemplate.get(t.id);
+  if (ev || q.testedRevision) {
+    if ((q.note ?? '').includes(NEVER_RUN_NOTE)) noteLies.push(`${t.id}: has evidence but note says "${NEVER_RUN_NOTE}"`);
+    if (ev && !(q.note ?? '').includes(ev.file)) noteLies.push(`${t.id}: note does not cite ${ev.file}`);
+  } else if (!(q.note ?? '').includes(NEVER_RUN_NOTE)) {
+    noteLies.push(`${t.id}: no evidence on disk, but note claims otherwise: "${q.note}"`);
+  }
+  if (ev) {
+    const needed = (ev.data.externalRequirements ?? []).filter((r) => r.neededForFirstPreview).map((r) => r.name).sort();
+    const declared = [...(c.requiredInputs ?? [])].sort();
+    if (JSON.stringify(needed) !== JSON.stringify(declared)) {
+      constraintDrift.push(`${t.id}: evidence needs [${needed.join(', ')}] but requiredInputs=[${declared.join(', ')}]`);
+    }
+    if (c.backendRequiredForPreview !== (needed.length > 0)) {
+      constraintDrift.push(`${t.id}: backendRequiredForPreview=${c.backendRequiredForPreview} vs ${needed.length} first-preview requirement(s)`);
+    }
+  }
+  // An auto-scaffoldable template whose evidence was produced with an adapter MUST ship that
+  // adapter, pinned to the same revision — bootstrap refuses at runtime otherwise, and the user
+  // would hit it instead of us.
+  const autoScaffoldable = AUTO_STATES.has(q.state) && !!t.source?.revision && q.testedRevision === t.source.revision;
+  if (autoScaffoldable && q.adapterId) {
+    const file = path.join(SKILL_DIR, 'catalog', 'adapters', `${t.id}.json`);
+    if (!fs.existsSync(file)) adapterGaps.push(`${t.id}: registry names adapter "${q.adapterId}" but catalog/adapters/${t.id}.json is missing`);
+    else {
+      const ad = JSON.parse(fs.readFileSync(file, 'utf8'));
+      if (ad.adapterId !== q.adapterId) adapterGaps.push(`${t.id}: adapter file is "${ad.adapterId}", registry says "${q.adapterId}"`);
+      if (ad.appliesTo?.revision !== t.source.revision) {
+        adapterGaps.push(`${t.id}: adapter pinned to ${ad.appliesTo?.revision} but template pinned to ${t.source.revision}`);
+      }
+    }
+  }
+}
+check('registry qualification notes match the evidence on disk', noteLies.length === 0, noteLies.join(' | '));
+check('registry constraints match the evidence on disk', constraintDrift.length === 0, constraintDrift.join(' | '));
+check('every auto-scaffoldable template ships the adapter its evidence was produced with',
+  adapterGaps.length === 0, adapterGaps.join(' | '));
+
 const diffCheck = spawnSync('git', ['diff', '--check'], { cwd: ROOT, encoding: 'utf8' });
 check('git diff --check is clean', diffCheck.status === 0, diffCheck.stdout || diffCheck.stderr);
 

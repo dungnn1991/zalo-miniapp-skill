@@ -57,6 +57,7 @@ const CASE_DEPS = {
   'sim-manual-sheet': ['bootstrap', 'portal-fetch', 'template'],
   'sim-unmocked': ['bootstrap', 'template'],
   'sim-runtime-marker': ['bootstrap', 'portal-fetch', 'template'],
+  'lucky-wheel-phone-fail-closed': ['bootstrap'],
   'sim-permission-persist': ['bootstrap', 'template'],
   'doctor-autoinstall': [],
   // v0.3.1 — P0 regressions: safe rerun, workspace=cwd, installer host targeting.
@@ -808,6 +809,141 @@ process.exit(9);
   },
 
   // ---- Phase 3 simulator cases (plan 28) ----
+
+  // Mandate 42 §3.4: zaui-lucky-wheel@8c692b9 embedded an App Secret and called the Zalo Graph
+  // endpoint from the browser, and its register form caught every error, showed a "success"
+  // snackbar and filled a hardcoded fake phone number. The pinned adapter must remove the
+  // server-side call, mock ONLY under the DX simulator marker (labelled), and fail closed
+  // everywhere else — including inside a real Zalo host, which is indistinguishable from the
+  // simulator by URL, hostname or user-agent. Both directions are run for real, on one build.
+  async 'lucky-wheel-phone-fail-closed'({ ws, check, note }) {
+    const TEMPLATE_ID = 'zaui-lucky-wheel';
+    const registry = readJsonIfExists(path.join(LAB_ROOT, 'skill', 'create-zmp-app', 'catalog', 'templates.json'));
+    const profile = (registry?.templates ?? []).find((t) => t.id === TEMPLATE_ID);
+    if (!profile?.qualification?.adapterId) {
+      return `blocked: ${TEMPLATE_ID} has no adapterId in the registry — qualify it first`;
+    }
+
+    const boot = runScript(ws, 'bootstrap', [
+      '--brief', 'tạo app vòng quay may mắn', '--app-id', TEST_APP_ID, '--template', `official:${TEMPLATE_ID}`,
+    ]);
+    check('bootstrap scaffolds the template', boot.code === 0, `exit ${boot.code}: ${(boot.stderr || boot.stdout).slice(-400)}`);
+    const runId = boot.lastJson?.runId;
+    if (!runId) return;
+
+    const adapterEvidence = readJsonIfExists(path.join(ws, 'runs', runId, 'evidence', 'adapter.json'));
+    check('bootstrap applied the pinned adapter and recorded it',
+      adapterEvidence?.adapterId === profile.qualification.adapterId
+        && adapterEvidence?.upstreamRevision === profile.source.revision
+        && (adapterEvidence?.patches ?? []).length > 0,
+      JSON.stringify(adapterEvidence));
+
+    // The security property, checked on the tree the user actually gets.
+    const srcFiles = [];
+    const stack = [path.join(ws, 'app', 'src')];
+    while (stack.length) {
+      const dir = stack.pop();
+      for (const e of fs.existsSync(dir) ? fs.readdirSync(dir, { withFileTypes: true }) : []) {
+        const full = path.join(dir, e.name);
+        if (e.isDirectory()) { if (!['www', 'dist', 'node_modules'].includes(e.name)) stack.push(full); }
+        else if (/\.(ts|tsx|js|jsx)$/.test(e.name)) srcFiles.push(full);
+      }
+    }
+    const offenders = srcFiles.filter((f) => /graph\.zalo\.me|secret_key\s*[:=]|app_secret\s*[:=]|private_key\s*[:=]/i
+      .test(fs.readFileSync(f, 'utf8')));
+    check('client source carries no server-side endpoint and no secret literal', offenders.length === 0,
+      JSON.stringify(offenders.map((f) => path.relative(ws, f))));
+
+    for (const step of ['install', 'build']) {
+      const r = runScript(ws, step, ['--run-id', runId]);
+      check(`${step} exits 0`, r.code === 0, `exit ${r.code}: ${(r.stderr || r.stdout).slice(-400)}`);
+      if (r.code !== 0) return;
+    }
+
+    // Drive the built app twice through the SHIPPED sim serving code (not a copy of it).
+    const { chromium } = await import('playwright-core');
+    const { openRun } = await import(pathToFileURL(path.join(SKILL_SCRIPTS, 'lib', 'run-context.mjs')).href);
+    const { resolveWorkspace } = await import(pathToFileURL(path.join(SKILL_SCRIPTS, 'lib', 'paths.mjs')).href);
+    const { buildSimManifest, setupSimContext, simUrl } = await import(pathToFileURL(path.join(SKILL_SCRIPTS, 'sim', 'intercept.mjs')).href);
+    const wsObj = resolveWorkspace(['--workspace', ws]);
+    const manifest = buildSimManifest(openRun(path.join(ws, 'runs'), runId), wsObj, { decision: 'accept' });
+    const SIM_UA = 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36 Zalo android/24112050';
+
+    // `suppressMarker` reproduces a REAL Zalo host: same hostname, same path, same shim, same
+    // working SDK — only the DX marker is absent. That is the exact situation a mock must never
+    // leak into, and no URL/UA check could tell it apart.
+    const drive = async ({ suppressMarker }) => {
+      const browser = await chromium.launch({ channel: 'chrome', headless: true });
+      const graphRequests = [];
+      try {
+        const context = await browser.newContext({
+          viewport: { width: 390, height: 844 }, userAgent: SIM_UA, ignoreHTTPSErrors: true,
+        });
+        await setupSimContext(context, manifest);
+        if (suppressMarker) {
+          // Accessor with no setter: the injected inline script is a classic (sloppy-mode)
+          // script, so its assignment is a silent no-op and the marker stays undefined.
+          await context.addInitScript(() => {
+            Object.defineProperty(window, '__ZMP_DX_RUNTIME__', { get: () => undefined, configurable: false });
+          });
+        }
+        const page = await context.newPage();
+        page.on('request', (r) => { if (/graph\.zalo\.me/.test(r.url())) graphRequests.push(r.url()); });
+        await page.goto(simUrl(manifest.appId), { waitUntil: 'load', timeout: 30000 });
+        await page.waitForSelector('#app', { state: 'attached', timeout: 15000 });
+        const markerSeen = await page.evaluate(() => window.__ZMP_DX_RUNTIME__?.mode ?? null);
+        const phoneInput = page.locator('input[type="tel"]').first();
+        await phoneInput.click({ timeout: 10000 });          // triggers the autofill request
+        await page.waitForTimeout(1500);
+        const out = {
+          markerSeen,
+          phoneValue: await phoneInput.inputValue(),
+          simBadge: await page.locator('[data-testid="phone-sim-badge"]').count(),
+          backendRequired: await page.locator('[data-testid="phone-backend-required"]').count(),
+          bodyText: (await page.locator('body').innerText()).slice(0, 4000),
+        };
+        await phoneInput.fill('0912345678');                  // manual input must stay usable
+        out.manualValue = await phoneInput.inputValue();
+        out.graphRequests = graphRequests;
+        await context.close();
+        return out;
+      } finally {
+        await browser.close();
+      }
+    };
+
+    const sim = await drive({ suppressMarker: false });
+    const expectedMock = manifest.simConfig?.persona?.phoneNumber ?? '0000000000';
+    check('simulator: marker visible to the app', sim.markerSeen === 'simulator', JSON.stringify(sim.markerSeen));
+    check('simulator: phone filled with the mock number', sim.phoneValue === expectedMock,
+      JSON.stringify({ got: sim.phoneValue, expected: expectedMock }));
+    check('simulator: "dữ liệu giả lập" badge is shown', sim.simBadge === 1 && /GIẢ LẬP/.test(sim.bodyText),
+      JSON.stringify({ badge: sim.simBadge }));
+    check('simulator: no real Graph request', sim.graphRequests.length === 0, JSON.stringify(sim.graphRequests));
+
+    const prod = await drive({ suppressMarker: true });
+    check('production-like: marker really is absent', prod.markerSeen === null, JSON.stringify(prod.markerSeen));
+    check('production-like: phone field left EMPTY — no mock, no invented number',
+      prod.phoneValue === '' && !prod.bodyText.includes(expectedMock),
+      JSON.stringify({ value: prod.phoneValue }));
+    check('production-like: backend-required notice shown, simulator badge not shown',
+      prod.backendRequired === 1 && prod.simBadge === 0 && /nhập số điện thoại thủ công/.test(prod.bodyText),
+      JSON.stringify({ backendRequired: prod.backendRequired, simBadge: prod.simBadge }));
+    check('production-like: manual input still usable', prod.manualValue === '0912345678', JSON.stringify(prod.manualValue));
+    check('production-like: no real Graph request', prod.graphRequests.length === 0, JSON.stringify(prod.graphRequests));
+
+    const verify = runScript(ws, 'verify', ['--run-id', runId]);
+    const result = readJsonIfExists(path.join(ws, 'runs', runId, 'result.json'));
+    const warn = (result?.warnings ?? []).find((w) => w.code === 'PHONE_BACKEND_REQUIRED');
+    check('verify wrote a structured warning separating preview from production feature',
+      !!warn && warn.blockingForPreview === false && warn.blockingForProductionFeature === true
+        && warn.affectedFeature === 'phone-number-autofill' && warn.fallback === 'manual-input'
+        && typeof warn.guide === 'string' && warn.source === adapterEvidence.adapterId,
+      `verify exit ${verify.code}: ${JSON.stringify(result?.warnings)}`);
+    check('the guide the warning points at exists',
+      !!warn && fs.existsSync(path.join(LAB_ROOT, 'skill', 'create-zmp-app', warn.guide)), warn?.guide);
+    note(`adapter ${adapterEvidence?.adapterId} · patches ${(adapterEvidence?.patches ?? []).join(', ')}`);
+  },
 
   // Mandate 42 §3.2: the DX runtime marker is the ONLY thing separating simulator from
   // production, because the simulator deliberately serves from the real hostname and path.

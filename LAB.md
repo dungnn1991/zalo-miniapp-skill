@@ -220,6 +220,38 @@ không được dùng trong CI. Validate skill packaging:
 
 ## Trạng thái
 
+- 2026-08-23 — **zaui-lucky-wheel: compatibility adapter phía DX, không miễn trừ gate nào**
+  (mandate 42 §3.4–3.6). Upstream `8c692b9` làm server-side decode ngay trong client: nhúng
+  literal App Secret và gọi Graph endpoint từ browser; kèm theo form đăng ký catch mọi lỗi, hiện
+  snackbar `type="success"` rồi điền một số điện thoại hardcode. Preflight
+  `server_side_api_scan` chặn ĐÚNG THEO THIẾT KẾ — adapter không nới gate, nó gỡ chính đoạn code
+  vi phạm. Trong simulator lấy số mẫu từ `__ZMP_DX_RUNTIME__` kèm nhãn "DỮ LIỆU GIẢ LẬP"; mọi
+  môi trường khác fail-closed sang `backend-required`, ô để trống, nhập tay vẫn dùng được.
+  Case `lucky-wheel-phone-fail-closed` chạy thật hai lượt trên cùng một bản build — lượt hai
+  chặn marker để mô phỏng host Zalo thật, thứ không phân biệt được bằng URL/hostname/UA — và
+  kiểm cả "không có request Graph nào". lucky-wheel giờ render-qualified và đã promote; ba
+  finding upstream đã route kèm file + SHA. Backend thật, decode số thật và UAT trên Zalo thật
+  vẫn thuộc phase sau (`references/phone-number-backend.md`).
+
+- 2026-08-23 — **P0 phát hiện khi làm việc trên: bootstrap chưa bao giờ áp adapter.**
+  Qualification factory luôn áp adapter, `bootstrap.mjs` thì không. Nghĩa là evidence nói
+  "zaui-coffee render sạch" cho một cây đã khai `react-router`, còn user scaffold ra cây upstream
+  thô và build gãy. Bốn trong năm template auto-scaffoldable hôm nay có adapter, và với
+  lucky-wheel thì cây chưa vá còn là lỗ hổng bảo mật chứ không chỉ lỗi build. Sửa: bootstrap
+  dùng CHÍNH `loadAdapter`/`applyAdapter` của factory (không copy), ghi
+  `evidence/adapter.json`, và **dừng hẳn** nếu adapter refuse / lệch revision / registry khai
+  `adapterId` mà file không có. Release validator chặn luôn ở tầng metadata.
+
+- 2026-08-23 — **Catalog metadata nói đúng sự thật + `warnings[]` có cấu trúc trong result.**
+  Note `"chưa chạy qualification factory"` từng còn nguyên trên 11/12 profile kể cả template đã
+  promote đủ evidence; `requiredInputs`/`backendRequiredForPreview` của egovernment/menu/uni mâu
+  thuẫn với chính evidence của chúng. Cả hai giờ sinh từ evidence trên đĩa và có ba release check
+  chặn regress. `result.json` thêm `warnings[]` (schema 1.1) tách rõ bốn ý: preview có dùng được
+  không · feature nào cần backend trước production · fallback hiện tại · đọc hướng dẫn ở đâu.
+  Verify: 36 release checks 36 pass · corpus blocking 46/46 top-1 35/35 (100%) · 35 cases
+  35 pass 0 blocked 0 fail. Auto-scaffoldable: **6** (fashion, coffee, bistro, market, doctor,
+  lucky-wheel).
+
 - 2026-08-23 — **Official template chạy được dưới sim serving; tách khỏi lab demo-flow**
   (mandate 42 §3.2–3.3). `render.mjs --provider simulator` trước đây từ chối thẳng mọi app
   official vì "sim serving" và "sim demo-flow" bị gộp làm một; giờ là hai trục riêng và official

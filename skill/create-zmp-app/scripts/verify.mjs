@@ -241,7 +241,7 @@ export function validateResult(r) {
   const errs = [];
   const allowedKeys = new Set(['schemaVersion', 'runId', 'status', 'stage', 'provider', 'needsInput',
     'appIdSource', 'expectedAppId', 'resolvedAppId', 'appIdBound', 'gates', 'findingIds', 'insights',
-    'templateSelection', 'startedAt', 'finishedAt']);
+    'warnings', 'templateSelection', 'startedAt', 'finishedAt']);
   for (const k of Object.keys(r)) if (!allowedKeys.has(k)) errs.push(`unexpected key ${k}`);
   if (!['1.0', '1.1'].includes(r.schemaVersion)) errs.push(`schemaVersion must be "1.0" or "1.1", got ${r.schemaVersion}`);
   if (!/^run-[0-9TZ-]+-[a-z0-9]{4}$/.test(r.runId || '')) errs.push(`runId pattern mismatch: ${r.runId}`);
@@ -264,6 +264,21 @@ export function validateResult(r) {
       if (typeof ins.id !== 'string' || !['gate', 'signature'].includes(ins.kind)
         || typeof ins.diagnosis !== 'string' || typeof ins.fix !== 'string') errs.push(`bad insight ${JSON.stringify(ins).slice(0, 100)}`);
       for (const k of Object.keys(ins)) if (!['id', 'kind', 'diagnosis', 'fix', 'source'].includes(k)) errs.push(`insight ${ins.id}: unexpected key ${k}`);
+    }
+  }
+  if (r.warnings !== undefined) {
+    // mandate 42 §3.5: the four semantics must stay SEPARATE — "preview still works" is not the
+    // same claim as "this feature is production-ready", and a warning without a fallback and a
+    // guide is just noise.
+    const WKEYS = ['code', 'blockingForPreview', 'blockingForProductionFeature', 'affectedFeature', 'fallback', 'guide', 'message', 'source'];
+    if (!Array.isArray(r.warnings)) errs.push('warnings must be array');
+    else for (const w of r.warnings) {
+      if (typeof w.code !== 'string' || typeof w.affectedFeature !== 'string'
+        || typeof w.fallback !== 'string' || typeof w.guide !== 'string' || typeof w.message !== 'string'
+        || typeof w.blockingForPreview !== 'boolean' || typeof w.blockingForProductionFeature !== 'boolean') {
+        errs.push(`bad warning ${JSON.stringify(w).slice(0, 120)}`);
+      }
+      for (const k of Object.keys(w)) if (!WKEYS.includes(k)) errs.push(`warning ${w.code}: unexpected key ${k}`);
     }
   }
   for (const k of ['startedAt', 'finishedAt']) {
@@ -466,8 +481,17 @@ async function main() {
   // plan 34: quyết định template phải đọc được ở artifact cuối, không chỉ ở input.json —
   // result.json là thứ agent/report đọc để biết run này dựng từ template nào và vì sao.
   const templateSelection = input?.templateSelection ?? null;
+  // Structured adapter warnings (mandate 42 §3.5). bootstrap wrote evidence/adapter.json when it
+  // patched an official template; the warnings ride to result.json so the report can say "the
+  // preview works, but THIS feature needs a backend before production" instead of a sentence
+  // nobody can act on programmatically.
+  const adapterEvidence = ctx.readJson('evidence/adapter.json');
+  const warnings = (adapterEvidence?.resultWarnings ?? []).map((w) => ({
+    ...w,
+    source: w.source ?? adapterEvidence.adapterId ?? null,
+  }));
   const result = {
-    schemaVersion: isPhase2 || templateSelection ? '1.1' : '1.0',
+    schemaVersion: isPhase2 || templateSelection || warnings.length ? '1.1' : '1.0',
     runId,
     status,
     stage: status === 'pass' ? 'done' : STAGE_ORDER[firstFailStageIdx],
@@ -479,6 +503,7 @@ async function main() {
     gates,
     findingIds: [...findingIds],
     ...(insightsOut.length ? { insights: insightsOut } : {}),
+    ...(warnings.length ? { warnings } : {}),
     ...(templateSelection ? { templateSelection } : {}),
     startedAt: events[0]?.at ?? new Date().toISOString(),
     finishedAt: new Date().toISOString(),

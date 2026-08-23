@@ -370,5 +370,9 @@ slash-command|codex-skill|natural-language|harness`.
   Chrome deviation, simDecision modes, honest limits (mock vs real Zalo).
 - `references/sim-mock-data.json` — mock persona + per-API success/deny data for the sim
   shim, curated from live Portal docs (docSource per API).
+- `references/phone-number-backend.md` — why a Mini App can never turn a phone-number token
+  into a number on its own: the token/App Secret split, the client↔backend contract, and what
+  the skill does while no backend exists (labelled mock in the simulator, `backend-required`
+  plus manual input everywhere else). Cited by the `PHONE_BACKEND_REQUIRED` result warning.
 - `config.json` — authoritative markers, viewports, variants, official-template catalog,
   dependency policy, zmp-cli facts, exit codes.
