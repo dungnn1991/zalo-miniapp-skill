@@ -126,6 +126,14 @@ async function main() {
     process.exit(3);
   }
   ctx.event('render', { stage: 'render', status: 'provider_resolved', detail: `${provider} (${getArg(argv, 'provider') ? 'flag' : 'input.json'})` });
+  // What the run ACTUALLY rendered in. `--verify-sim` (and any explicit --provider) overrides
+  // input.json, so reading input.json afterwards would report `browser` for a run that really
+  // used the simulator. verify.mjs reads this file first.
+  ctx.writeJson('evidence/render-info.json', {
+    provider,
+    source: getArg(argv, 'provider') ? 'flag' : 'input.json',
+    resolvedAt: new Date().toISOString(),
+  });
 
   // Phase 3 (plan 28): provider simulator — no static server at all. The runner serves the
   // app via playwright route-interception at https://h5.zdn.vn/zapps/<appId>/ (isMp needs the

@@ -59,6 +59,7 @@ const CASE_DEPS = {
   'sim-runtime-marker': ['bootstrap', 'portal-fetch', 'template'],
   'lucky-wheel-phone-fail-closed': ['bootstrap'],
   'official-template-default-flow': ['bootstrap', 'portal-fetch'],
+  'adapter-contract': ['bootstrap'],
   'sim-permission-persist': ['bootstrap', 'template'],
   'doctor-autoinstall': [],
   // v0.3.1 — P0 regressions: safe rerun, workspace=cwd, installer host targeting.
@@ -810,6 +811,80 @@ process.exit(9);
   },
 
   // ---- Phase 3 simulator cases (plan 28) ----
+
+  // The tree a user gets must equal the tree the evidence was produced from. Both directions of
+  // the registry↔adapter agreement, and all-or-nothing application.
+  async 'adapter-contract'({ ws, check, note }) {
+    const boot = await import(pathToFileURL(path.join(SKILL_SCRIPTS, 'bootstrap.mjs')).href);
+    const { assertAdapterMatchesRegistry, applyAdapterAtomic } = boot;
+    if (typeof assertAdapterMatchesRegistry !== 'function' || typeof applyAdapterAtomic !== 'function') {
+      return 'blocked: bootstrap.mjs does not export assertAdapterMatchesRegistry/applyAdapterAtomic';
+    }
+    const REV = 'a'.repeat(40);
+    const threw = (fn) => { try { fn(); return null; } catch (e) { return e.message; } };
+
+    // --- direction 1: registry names an adapter, disk disagrees -----------------------------
+    const loadedWrongId = { status: 'applicable', adapter: { adapterId: 'other-id', patches: [] } };
+    check('registry adapterId vs a different adapter file → fail',
+      /adapter id mismatch/.test(threw(() => assertAdapterMatchesRegistry('zaui-x', REV, 'expected-id', loadedWrongId)) ?? ''),
+      String(threw(() => assertAdapterMatchesRegistry('zaui-x', REV, 'expected-id', loadedWrongId))));
+    check('registry names an adapter but no file → fail',
+      /Refusing to scaffold a tree the evidence does not cover/
+        .test(threw(() => assertAdapterMatchesRegistry('zaui-x', REV, 'expected-id', { status: 'none' })) ?? ''),
+      String(threw(() => assertAdapterMatchesRegistry('zaui-x', REV, 'expected-id', { status: 'none' }))));
+
+    // --- direction 2: registry expects NOTHING, disk has an applicable adapter --------------
+    const loadedUnexpected = { status: 'applicable', adapter: { adapterId: 'surprise', patches: [] } };
+    const msg = threw(() => assertAdapterMatchesRegistry('zaui-x', REV, null, loadedUnexpected));
+    check('registry adapterId=null but an applicable adapter file exists → fail',
+      /records no adapterId/.test(msg ?? ''), String(msg));
+    check('no adapter expected and none present → no-op, no throw',
+      assertAdapterMatchesRegistry('zaui-x', REV, null, { status: 'none' }) === false, '');
+    check('expected adapter that matches exactly → proceeds',
+      assertAdapterMatchesRegistry('zaui-x', REV, 'ok-id',
+        { status: 'applicable', adapter: { adapterId: 'ok-id', patches: [] } }) === true, '');
+
+    // --- all-or-nothing: patch 1 applies, patch 2 refuses, tree must be untouched -----------
+    const appDir = path.join(ws, 'app');
+    fs.mkdirSync(appDir, { recursive: true });
+    const files = {
+      'package.json': JSON.stringify({ name: 'x', dependencies: {} }, null, 2) + '\n',
+      'src/a.ts': 'const KEEP = "original-a";\n',
+      'src/b.ts': 'const KEEP = "original-b";\n',
+    };
+    for (const [rel, body] of Object.entries(files)) {
+      fs.mkdirSync(path.dirname(path.join(appDir, rel)), { recursive: true });
+      fs.writeFileSync(path.join(appDir, rel), body);
+    }
+    const partialAdapter = {
+      adapterId: 'partial-test', templateId: 'zaui-x', appliesTo: { revision: REV },
+      patches: [
+        // applies cleanly…
+        { id: 'p1', kind: 'replace', file: 'src/a.ts', find: 'original-a', replace: 'patched-a', expectedCount: 1, preconditions: [] },
+        // …and this one cannot: the anchor is not in the file.
+        { id: 'p2', kind: 'replace', file: 'src/b.ts', find: 'ANCHOR-THAT-IS-NOT-THERE', replace: 'x', expectedCount: 1, preconditions: [] },
+      ],
+    };
+    const atomicErr = threw(() => applyAdapterAtomic(appDir, partialAdapter));
+    check('a refusal anywhere makes the whole apply throw', /refused 1 patch/.test(atomicErr ?? ''), String(atomicErr));
+    check('the error names rollback so the operator is not left guessing', /rolled back/.test(atomicErr ?? ''), String(atomicErr));
+    const after = Object.fromEntries(Object.keys(files).map((rel) => [rel, fs.readFileSync(path.join(appDir, rel), 'utf8')]));
+    check('file written by the FIRST patch is rolled back byte-for-byte',
+      after['src/a.ts'] === files['src/a.ts'], JSON.stringify(after['src/a.ts']));
+    check('untouched files stay untouched',
+      after['src/b.ts'] === files['src/b.ts'] && after['package.json'] === files['package.json'], '');
+
+    // A clean adapter still applies (the rollback path must not break the happy path).
+    const okAdapter = {
+      adapterId: 'ok-test', templateId: 'zaui-x', appliesTo: { revision: REV },
+      patches: [{ id: 'p1', kind: 'replace', file: 'src/a.ts', find: 'original-a', replace: 'patched-a', expectedCount: 1, preconditions: [] }],
+    };
+    const applied = applyAdapterAtomic(appDir, okAdapter);
+    check('a clean adapter applies and reports its patches',
+      applied.length === 1 && fs.readFileSync(path.join(appDir, 'src/a.ts'), 'utf8').includes('patched-a'),
+      JSON.stringify(applied));
+    note('registry↔adapter agreement checked in both directions; apply is all-or-nothing');
+  },
 
   // The default scaffold flow must be green for every template the ranker can auto-select.
   // Qualification runs under the simulator; run.mjs used to reach it only via --verify-sim, so a

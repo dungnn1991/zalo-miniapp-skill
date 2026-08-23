@@ -1,0 +1,24 @@
+{
+  "id": "explicit-name-false-positive-menu",
+  "group": "explicit-override",
+  "brief": "sử dụng app cho quán cà phê có menu",
+  "blocking": true,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-coffee"
+    ],
+    "mustNotSelect": [
+      "zaui-menu"
+    ],
+    "requiredDomains": [
+      "fnb.coffee"
+    ],
+    "requiredJobs": [
+      "menu.view"
+    ]
+  },
+  "source": "review vòng 3 (P1) — probe do owner đo",
+  "note": "Mặt trái của guard explicit-name: matcher bản đầu chỉ cần một use-cue Ở ĐÂU ĐÓ và tên template Ở ĐÂU ĐÓ, nên \"sử dụng … có menu\" bị đọc là yêu cầu zaui-menu và trả `choice` thay vì dựng coffee. Nay cue phải LIỀN KỀ tên, và tên nào cũng là từ vựng thường (\"menu\" là job phrase) thì bắt buộc có marker \"template\"/\"mẫu\" hoặc id \"zaui-menu\"."
+}

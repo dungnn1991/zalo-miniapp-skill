@@ -281,18 +281,55 @@ export function extractIntent(brief, { registry, taxonomy }) {
 // template…"). Without one, a bare name is just a word: "menu", "shop" and "restaurant" are all
 // template names AND ordinary vocabulary, and treating every mention as a command would make the
 // ranker ask a question on almost every brief.
-const USE_CUES = Object.freeze(['dùng', 'sử dụng', 'xài', 'use', 'set up', 'template', 'mẫu']);
+const USE_CUES = Object.freeze(['dung', 'su dung', 'xai', 'use', 'set up']);
+// Words that mark the following token as a TEMPLATE name rather than a feature.
+const TEMPLATE_MARKERS = Object.freeze(['template', 'mau']);
 
 /**
- * Does the brief name THIS template as a product, with an instruction cue?
- * The name is the registry id minus the `zaui-` prefix (separators normalized), which is exactly
- * the string a user types: "mmenu", "lucky wheel", "egovernment".
+ * Does the brief name THIS template as a product, with an instruction cue ATTACHED to the name?
+ *
+ * The name is the registry id minus the `zaui-` prefix (separators normalized) — exactly the
+ * string a user types: "mmenu", "lucky wheel", "egovernment".
+ *
+ * Adjacency is the whole point. An earlier version accepted a cue anywhere in the brief plus the
+ * name anywhere else, and read "sử dụng app cho quán cà phê có menu" as a request for zaui-menu
+ * and "dùng app cho shop quần áo" as a request for zaui-shop — both then answered with a question
+ * instead of building the obvious template. Accepted shapes:
+ *
+ *   dùng mmenu…            dùng/sử dụng/xài/use/set up  [the] [template|mẫu]  <name>
+ *   dùng template mmenu…   same, with the marker spelled out
+ *   mẫu mmenu / template mmenu
+ *   mmenu template
+ *   zaui-mmenu             the exact registry id, which needs no cue at all
+ *
+ * Extra guard for names that are also ordinary product vocabulary ("menu" is a job phrase):
+ * those need the explicit template marker or the `zaui-` id. "dùng menu QR cho quán" is a user
+ * describing a feature, not naming a template.
  */
 export function briefNamesTemplate(intent, profile) {
-  const bare = String(profile.id).replace(/^zaui-/, '').replace(/[-_]+/g, ' ').trim();
+  const bare = normalizeVi(String(profile.id).replace(/^zaui-/, '').replace(/[-_]+/g, ' ').trim());
   if (bare.length < 4) return false;                       // too short to be distinctive
-  if (!matchNormalized(intent.normalized, bare)) return false;
-  return USE_CUES.some((cue) => matchNormalized(intent.normalized, cue));
+  const text = intent.normalized;
+  const esc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const NAME = esc(bare);
+  const B = '(?:^|[^a-z0-9])';
+  const E = '(?:$|[^a-z0-9])';
+
+  // The exact registry id is unambiguous on its own.
+  if (new RegExp(`${B}zaui[ -]${NAME}${E}`).test(text)) return true;
+
+  const markers = TEMPLATE_MARKERS.map(esc).join('|');
+  const markerThenName = new RegExp(`${B}(?:${markers})\\s+${NAME}${E}`).test(text)
+    || new RegExp(`${B}${NAME}\\s+(?:${markers})${E}`).test(text);
+  if (markerThenName) return true;
+
+  // A name that doubles as ordinary vocabulary needs the marker above; nothing else counts.
+  const generic = Object.values(JOB_PHRASES).some((phrases) => phrases.some((ph) => normalizeVi(ph) === bare))
+    || Object.values(CAPABILITY_PHRASES).some((phrases) => phrases.some((ph) => normalizeVi(ph) === bare));
+  if (generic) return false;
+
+  const cues = USE_CUES.map(esc).join('|');
+  return new RegExp(`${B}(?:${cues})\\s+(?:the\\s+)?(?:(?:${markers})\\s+)?${NAME}${E}`).test(text);
 }
 
 // --- Hard filter (runs BEFORE scoring is allowed to decide anything) -------------------
@@ -643,6 +680,41 @@ export function rankTemplates(brief, opts = {}) {
     return { selection, templateOptions: buildOptions(tier, taxonomy), blocked: null, candidates: scored, intent };
   }
 
+  // 3b-bis. The brief NAMES a template that cannot be built today.
+  //
+  // MUST run before 3b. When the named template is also the top semantic candidate — which is
+  // the normal case, since naming it scores it — 3b's "best match is blocked → lab" fired first
+  // and swallowed the whole branch: "dùng mmenu làm app gọi món" answered `lab` and never
+  // mentioned mmenu. Explicit intent is more specific than the generic fallback, so it decides
+  // first.
+  //
+  // `--template official:<id>` is the command channel and already stops before any mutation. But
+  // a user can also name a product in prose — "dùng mmenu làm app gọi món cho chuỗi trà sữa" —
+  // and silently scaffolding zaui-coffee instead answers a question they did not ask. Say what
+  // is wrong with the one they named, and offer the buildable alternative as a choice.
+  //
+  // Deliberately narrow, because a bare product name is a common word ("shop", "menu",
+  // "restaurant"): the brief must contain the template's OWN name AND a use-cue.
+  const namedBlocked = scored.filter((c) => !c.eligible && briefNamesTemplate(intent, c.profile));
+  if (namedBlocked.length) {
+    // The alternative to offer: the best candidate that can actually be built today. There may
+    // be none, and that is still a choice worth showing — the named template plus "or lab".
+    const fallback = tierAll.find((c) => c.eligible) ?? null;
+    const tier = [...namedBlocked, ...(fallback ? [fallback] : [])].slice(0, 3);
+    selection.mode = 'choice';
+    selection.selectedId = null;
+    selection.confidence = 'medium';
+    selection.alternatives = alternativesOf(scored.filter((c) => c.matched));
+    selection.reasons = [
+      ...namedBlocked.map((c) => `brief gọi đích danh "${c.id}" nhưng ${c.rejectedBecause}`),
+      'user đã nêu tên template cụ thể — đổi thầm sang template khác là trả lời một câu hỏi khác',
+      fallback
+        ? `${fallback.id} dựng được ngay và có thể là lựa chọn thay thế — hỏi một câu để user chốt`
+        : 'chưa có template nào dựng được cho brief này — hỏi để user chọn lab shell hay chờ template',
+    ];
+    return { selection, templateOptions: buildOptions(tier, taxonomy), blocked: null, candidates: scored, intent };
+  }
+
   // 3b. The best semantic match itself cannot be built today. Never silently substitute a
   // lower-scoring template that happens to be qualified — say which one fits and why it is
   // blocked, then fall back to the lab shell (or ask, when the user explicitly wanted a
@@ -674,29 +746,6 @@ export function rankTemplates(brief, opts = {}) {
       'không thay bằng template khác domain; dùng lab shell và báo rõ lý do',
     ];
     return { selection, templateOptions: [], blocked: null, candidates: scored, intent };
-  }
-
-  // 3b-bis. The brief NAMES a template that cannot be built today.
-  //
-  // `--template official:<id>` is the command channel and already stops before any mutation. But
-  // a user can also name a product in prose — "dùng mmenu làm app gọi món cho chuỗi trà sữa" —
-  // and silently scaffolding zaui-coffee instead answers a question they did not ask. Say what
-  // is wrong with the one they named, and offer the buildable alternative as a choice.
-  //
-  // Deliberately narrow, because a bare product name is a common word ("shop", "menu",
-  // "restaurant"): the brief must contain the template's OWN name AND a use-cue.
-  const namedBlocked = scored.filter((c) => !c.eligible && briefNamesTemplate(intent, c.profile));
-  if (namedBlocked.length && !namedBlocked.some((c) => c.id === top.id)) {
-    const tier = [...namedBlocked, top].slice(0, 3);
-    selection.mode = 'choice';
-    selection.selectedId = null;
-    selection.confidence = 'medium';
-    selection.reasons = [
-      ...namedBlocked.map((c) => `brief gọi đích danh "${c.id}" nhưng ${c.rejectedBecause}`),
-      `không tự đổi sang ${top.id}: user đã nêu tên template cụ thể, đổi thầm là trả lời một câu hỏi khác`,
-      `${top.id} dựng được ngay và có thể là lựa chọn thay thế — hỏi một câu để user chốt`,
-    ];
-    return { selection, templateOptions: buildOptions(tier, taxonomy), blocked: null, candidates: scored, intent };
   }
 
   // 3c. Auto-select. Bắt buộc có domain evidence: điểm gom từ job/capability không đủ để tự

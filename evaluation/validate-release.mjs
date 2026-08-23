@@ -219,10 +219,34 @@ for (const t of registry.templates ?? []) {
   const autoScaffoldable = AUTO_STATES.has(q.state) && !!t.source?.revision && q.testedRevision === t.source.revision;
   if (autoScaffoldable) {
     const rt = q.runtime;
+    // Every field is cross-checked against the evidence, not merely present: "verifiedProvider":
+    // "banana" used to pass this gate, and the claim "a runtime that contradicts the evidence is
+    // blocked" was only ever true for requiresZaloHost.
+    const PROVIDERS = new Set(['browser', 'simulator']);
+    const oracleProfiles = Object.keys(cfg.oracleProfiles ?? {});
     if (!rt || typeof rt.requiresZaloHost !== 'boolean' || !rt.verifiedProvider || !rt.oracleProfile) {
       runtimeGaps.push(`${t.id}: qualification.runtime missing/incomplete (${JSON.stringify(rt)})`);
-    } else if (ev && rt.requiresZaloHost !== ((ev.data.noHostOracle?.exitCode ?? 0) !== 0)) {
-      runtimeGaps.push(`${t.id}: runtime.requiresZaloHost=${rt.requiresZaloHost} contradicts evidence noHostOracle.exitCode=${ev.data.noHostOracle?.exitCode}`);
+    } else {
+      if (!PROVIDERS.has(rt.verifiedProvider)) {
+        runtimeGaps.push(`${t.id}: runtime.verifiedProvider="${rt.verifiedProvider}" is not one of ${[...PROVIDERS].join('|')}`);
+      }
+      if (!oracleProfiles.includes(rt.oracleProfile)) {
+        runtimeGaps.push(`${t.id}: runtime.oracleProfile="${rt.oracleProfile}" is not in config.json oracleProfiles (${oracleProfiles.join(', ')})`);
+      }
+      if (ev) {
+        if (rt.requiresZaloHost !== ((ev.data.noHostOracle?.exitCode ?? 0) !== 0)) {
+          runtimeGaps.push(`${t.id}: runtime.requiresZaloHost=${rt.requiresZaloHost} contradicts evidence noHostOracle.exitCode=${ev.data.noHostOracle?.exitCode}`);
+        }
+        if (ev.data.oracleProfile && rt.oracleProfile !== ev.data.oracleProfile) {
+          runtimeGaps.push(`${t.id}: runtime.oracleProfile="${rt.oracleProfile}" but the evidence was produced under "${ev.data.oracleProfile}"`);
+        }
+        // The blocking verdict in the factory is the simulator run; a profile whose name starts
+        // with "simulator" is exactly what "verifiedProvider: simulator" claims.
+        const evidenceProvider = String(ev.data.oracleProfile ?? '').startsWith('simulator') ? 'simulator' : 'browser';
+        if (rt.verifiedProvider !== evidenceProvider) {
+          runtimeGaps.push(`${t.id}: runtime.verifiedProvider="${rt.verifiedProvider}" but the evidence oracleProfile "${ev.data.oracleProfile}" means "${evidenceProvider}"`);
+        }
+      }
     }
   }
   if (autoScaffoldable && q.adapterId) {
@@ -243,6 +267,32 @@ check('every auto-scaffoldable template ships the adapter its evidence was produ
   adapterGaps.length === 0, adapterGaps.join(' | '));
 check('every auto-scaffoldable template records the runtime environment it was verified in',
   runtimeGaps.length === 0, runtimeGaps.join(' | '));
+
+// Orphans, the other direction of the same rule bootstrap enforces at runtime: an adapter file
+// nobody declared will still load and patch the tree. `adapterId: null` in the registry plus a
+// file on disk is exactly as wrong as running the wrong adapter.
+const orphanAdapters = [];
+const ADAPTERS_DIR = path.join(SKILL_DIR, 'catalog', 'adapters');
+if (fs.existsSync(ADAPTERS_DIR)) {
+  for (const f of fs.readdirSync(ADAPTERS_DIR).filter((n) => n.endsWith('.json'))) {
+    const ad = JSON.parse(fs.readFileSync(path.join(ADAPTERS_DIR, f), 'utf8'));
+    const t = (registry.templates ?? []).find((x) => x.id === ad.templateId);
+    if (!t) { orphanAdapters.push(`${f}: templateId "${ad.templateId}" is not in the registry`); continue; }
+    if (ad.templateId !== path.basename(f, '.json')) {
+      orphanAdapters.push(`${f}: templateId "${ad.templateId}" does not match the filename`);
+    }
+    const declared = t.qualification?.adapterId ?? null;
+    // Only enforced for templates the ranker can actually pick: an adapter being prepared for a
+    // template nobody can scaffold yet is work in progress, not a live risk.
+    const live = AUTO_STATES.has(t.qualification?.state) && !!t.source?.revision
+      && t.qualification?.testedRevision === t.source.revision;
+    if (live && declared !== ad.adapterId) {
+      orphanAdapters.push(`${f}: adapter "${ad.adapterId}" is not declared by ${t.id} (registry adapterId=${JSON.stringify(declared)})`);
+    }
+  }
+}
+check('no adapter file is undeclared by the registry it would patch against',
+  orphanAdapters.length === 0, orphanAdapters.join(' | '));
 
 const diffCheck = spawnSync('git', ['diff', '--check'], { cwd: ROOT, encoding: 'utf8' });
 check('git diff --check is clean', diffCheck.status === 0, diffCheck.stdout || diffCheck.stderr);

@@ -220,6 +220,36 @@ không được dùng trong CI. Validate skill packaging:
 
 ## Trạng thái
 
+- 2026-08-23 — **Vòng 3: khép hai P1 về explicit-name và adapter contract.**
+
+  **Nhánh "gọi đích danh template" vừa thiếu vừa nhận nhầm.** Hai nguyên nhân độc lập, cả hai
+  đo được: (a) nhánh 3b `!top.eligible → lab` chạy TRƯỚC 3b-bis và nuốt mất nó — mà template
+  được gọi tên gần như luôn là top candidate, nên `dùng mmenu làm app gọi món` trả `lab` và
+  không hề nhắc mmenu; (b) `briefNamesTemplate()` chỉ cần một use-cue ở đâu đó và tên ở đâu đó,
+  nên `sử dụng app cho quán cà phê có menu` bị đọc là yêu cầu `zaui-menu` và
+  `dùng app cho shop quần áo` là `zaui-shop`. Sửa: 3b-bis quyết trước generic fallback (explicit
+  intent cụ thể hơn), và cue phải LIỀN KỀ tên — chấp nhận `dùng/sử dụng/use/set up [the]
+  [template|mẫu] <tên>`, `template <tên>`, `<tên> template`, `mẫu <tên>`, hoặc id chính xác
+  `zaui-<tên>`. Tên nào cũng là từ vựng thường (`menu` là job phrase) thì bắt buộc có marker.
+  Bốn probe của owner thành blocking case (`explicit-name-*`).
+
+  **Adapter exact-match mới kín một chiều.** Điều kiện cũ chỉ chạy khi `expectedAdapterId`
+  truthy, nên registry ghi `adapterId: null` mà catalog có file applicable thì bootstrap vẫn áp
+  adapter ngoài evidence. Nay `assertAdapterMatchesRegistry()` chặn cả bốn tổ hợp; release
+  validator thêm gate chặn adapter file không được registry khai (chiều orphan); và
+  `applyAdapterAtomic()` được tách ra export để case `adapter-contract` kiểm rollback thật —
+  patch 1 apply, patch 2 refuse, mọi file phải byte-identical. `bootstrap.mjs` nay có main-guard
+  như mọi stage script khác (import nó trước đây chạy luôn một run thật).
+
+  **Hai chỉnh nhỏ cùng vòng.** Release validator trước chỉ kiểm `verifiedProvider`/`oracleProfile`
+  là truthy — `"banana"` vẫn pass; nay validate enum + đối chiếu với `oracleProfile` trong
+  evidence. Và `verify.mjs` ghi provider render THỰC TẾ (`evidence/render-info.json`) thay vì
+  provider dự kiến trong `input.json`, nên `run.mjs --verify-sim` không còn báo `browser` cho một
+  run chạy simulator.
+
+  Verify: 38 release checks 38 pass · corpus blocking **50/50** top-1 39/39 (100%) · discovery
+  63/80 top-1 88.2%, unsafe auto-route 0 · **37 cases** 37 pass 0 blocked 0 fail.
+
 - 2026-08-23 — **Hai P0 từ review vòng 2: "auto-scaffoldable" phải đúng với luồng người dùng
   thật, và discovery failure nguy hiểm phải chặn release.**
 

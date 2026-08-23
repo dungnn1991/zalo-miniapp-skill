@@ -495,7 +495,10 @@ async function main() {
     runId,
     status,
     stage: status === 'pass' ? 'done' : STAGE_ORDER[firstFailStageIdx],
-    provider: input?.renderProvider ?? 'browser',
+    // The provider the render stage actually used, not the one bootstrap planned: `--verify-sim`
+    // and an explicit `--provider` both override input.json, and reporting the plan made a
+    // simulator run claim `browser`.
+    provider: ctx.readJson('evidence/render-info.json')?.provider ?? input?.renderProvider ?? 'browser',
     appIdSource: input?.appIdSource ?? binding?.sourceType ?? null,
     expectedAppId: binding?.expectedAppId ?? null,
     resolvedAppId: binding?.persistedAppId ?? null,

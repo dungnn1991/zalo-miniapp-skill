@@ -38,6 +38,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 import { TEMPLATE_DIR, loadLabConfig, resolveWorkspace, getArg } from './lib/paths.mjs';
 import { newRunId, openRun, fingerprint } from './lib/run-context.mjs';
 import { redactText } from './lib/redact.mjs';
@@ -163,70 +164,98 @@ function slugify(name) {
  *   - any refusal, revision mismatch or invalid file → throw, before the user builds anything.
  * Writes `evidence/adapter.json`; verify.mjs turns its `resultWarnings` into result.warnings.
  */
-function applyTemplateAdapter(entry, revision, workspace, ctx) {
-  const expectedAdapterId = entry.adapterId ?? null;
-  const loaded = loadAdapter(entry.id, revision);
+/**
+ * The registry is the authority on WHICH adapter (if any) the evidence was produced with, and the
+ * check has to close BOTH directions. An earlier version only compared ids when the registry
+ * named one, so `adapterId: null` plus an applicable file on disk meant bootstrap happily patched
+ * the tree with something no evidence covers — the same class of defect as running the wrong
+ * adapter, just from the other side.
+ *
+ * Returns null when there is nothing to apply; throws with the reason otherwise.
+ * Exported for the regression case (`adapter-contract`).
+ */
+export function assertAdapterMatchesRegistry(templateId, revision, expectedAdapterId, loaded) {
+  const at = `${templateId}@${String(revision).slice(0, 7)}`;
   if (loaded.status === 'none') {
     if (expectedAdapterId) {
       throw new Error(
-        `catalog/adapters/${entry.id}.json missing, but the registry says qualification evidence`
-        + ` for ${entry.id}@${revision.slice(0, 7)} was produced with adapter "${expectedAdapterId}".`
+        `catalog/adapters/${templateId}.json missing, but the registry says qualification evidence`
+        + ` for ${at} was produced with adapter "${expectedAdapterId}".`
         + ' Refusing to scaffold a tree the evidence does not cover.',
       );
     }
-    return null;
+    return false;
   }
   if (loaded.status !== 'applicable') {
-    throw new Error(`adapter for ${entry.id} not applicable (${loaded.status}): ${loaded.detail}`);
+    // A file pinned to a different revision is not "no adapter": if the registry expected one,
+    // the mismatch is the whole story, and if it did not, an unexpected file is still a surprise.
+    throw new Error(`adapter for ${templateId} not applicable (${loaded.status}): ${loaded.detail}`);
   }
-  // EXACT id match. `loadAdapter` only checks templateId + revision, so a file that was renamed
-  // or replaced would still load and silently patch the tree with something other than what the
-  // evidence covers. The registry names the adapter; that name has to be the one that runs.
-  if (expectedAdapterId && loaded.adapter.adapterId !== expectedAdapterId) {
+  if (!expectedAdapterId) {
     throw new Error(
-      `adapter id mismatch for ${entry.id}: registry evidence was produced with "${expectedAdapterId}"`
-      + ` but catalog/adapters/${entry.id}.json is "${loaded.adapter.adapterId}". Requalify before scaffolding.`,
+      `catalog/adapters/${templateId}.json declares "${loaded.adapter.adapterId}" and applies to ${at},`
+      + ' but the registry records no adapterId for this template — the qualification evidence was'
+      + ' produced WITHOUT an adapter. Refusing to patch a tree the evidence does not cover;'
+      + ' requalify with the adapter, or remove the file.',
     );
   }
+  if (loaded.adapter.adapterId !== expectedAdapterId) {
+    throw new Error(
+      `adapter id mismatch for ${templateId}: registry evidence was produced with "${expectedAdapterId}"`
+      + ` but catalog/adapters/${templateId}.json is "${loaded.adapter.adapterId}". Requalify before scaffolding.`,
+    );
+  }
+  return true;
+}
 
-  // ATOMIC. applyAdapter walks patches in order and mutates as it goes, so a refusal on patch 5
-  // leaves patches 1–4 already written. For zaui-lucky-wheel that half-patched state is the
-  // dangerous one: the build fixes could land while the patch that removes the client-side
-  // secret is the one that refuses. Snapshot every file the adapter can touch, and restore all
-  // of them if anything refuses — the caller's throw then leaves the tree exactly as the tarball
-  // extracted it.
-  const touched = [...new Set((loaded.adapter.patches ?? []).map((patch) => patch.file || 'package.json'))];
+/**
+ * Apply an adapter as ONE unit. `applyAdapter` walks patches in order and mutates as it goes, so
+ * a refusal on patch 5 leaves patches 1–4 written. For zaui-lucky-wheel that half-patched state is
+ * the dangerous one: the build fixes can land while the patch that removes the client-side secret
+ * is the one that refuses. Snapshot every file the adapter can touch, restore all of them on any
+ * refusal or throw, so the caller's error leaves the tree exactly as the tarball extracted it.
+ * Exported for the regression case (`adapter-contract`).
+ */
+export function applyAdapterAtomic(appDir, adapter) {
+  const touched = [...new Set((adapter.patches ?? []).map((patch) => patch.file || 'package.json'))];
   const snapshot = new Map();
   for (const rel of touched) {
-    const abs = path.join(workspace.appDir, rel);
+    const abs = path.join(appDir, rel);
     snapshot.set(rel, fs.existsSync(abs) ? fs.readFileSync(abs) : null);
   }
   const restore = () => {
     for (const [rel, buf] of snapshot) {
-      const abs = path.join(workspace.appDir, rel);
+      const abs = path.join(appDir, rel);
       if (buf === null) fs.rmSync(abs, { force: true });
       else fs.writeFileSync(abs, buf);
     }
   };
-
-  let applied;
-  let refused;
+  let result;
   try {
-    ({ applied, refused } = applyAdapter(workspace.appDir, loaded.adapter));
+    result = applyAdapter(appDir, adapter);
   } catch (err) {
     restore();
-    throw new Error(`adapter ${loaded.adapter.adapterId} threw on ${entry.id}@${revision.slice(0, 7)}: ${err.message} — tree rolled back`);
+    throw new Error(`adapter ${adapter.adapterId} threw: ${err.message} — tree rolled back`);
   }
-  if (refused.length) {
+  if (result.refused.length) {
     restore();
     throw new Error(
-      `adapter ${loaded.adapter.adapterId} refused ${refused.length} patch(es) on ${entry.id}@${revision.slice(0, 7)}: `
-      + refused.map((r) => `${r.patchId}/${r.reason} — ${r.detail}`).join('; ')
+      `adapter ${adapter.adapterId} refused ${result.refused.length} patch(es): `
+      + result.refused.map((r) => `${r.patchId}/${r.reason} — ${r.detail}`).join('; ')
       + '. Upstream changed under a pinned SHA, or the app tree is not what the adapter expects.'
       + ' Tree rolled back to the extracted tarball; requalify the template instead of scaffolding'
       + ' a half-patched tree.',
     );
   }
+  return result.applied;
+}
+
+function applyTemplateAdapter(entry, revision, workspace, ctx) {
+  const expectedAdapterId = entry.adapterId ?? null;
+  const loaded = loadAdapter(entry.id, revision);
+  if (!assertAdapterMatchesRegistry(entry.id, revision, expectedAdapterId, loaded)) return null;
+
+  const applied = applyAdapterAtomic(workspace.appDir, loaded.adapter);
   ctx.writeJson('evidence/adapter.json', {
     adapterId: loaded.adapter.adapterId,
     templateId: entry.id,
@@ -1062,4 +1091,9 @@ async function main() {
   process.exit(0);
 }
 
-main().catch((e) => die(e.stack || String(e)));
+// Main-guarded like every other stage script: the helpers above are imported by the
+// `adapter-contract` regression case, and an unguarded main() turned that import into a real
+// bootstrap run.
+const invokedAsScript = process.argv[1]
+  && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
+if (invokedAsScript) main().catch((e) => die(e.stack || String(e)));
