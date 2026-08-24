@@ -6,7 +6,7 @@
 #         marketplace (README); curl chỉ là đường phụ: --host claude.
 #
 #   ... | bash -s -- --host codex|claude|both    # chọn host đích (default: codex)
-#   ... | bash -s -- --version v0.3.2            # chỉ định version rõ ràng (git tag)
+#   ... | bash -s -- --version v0.4.0            # chỉ định version rõ ràng (git tag)
 #   ... | bash -s -- --channel staging           # bản thử nghiệm (nhánh staging)
 #   ... | bash -s -- --dest <dir>                # cài vào <dir>/create-zmp-app (bỏ qua --host)
 #

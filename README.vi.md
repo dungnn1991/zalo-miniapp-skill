@@ -65,11 +65,12 @@ Một số yêu cầu thường dùng:
 
 ## Template
 
-[ZaUI Templates](https://miniapp.zaloplatforms.com/zaui-templates) hiện công bố chín template.
-Mọi brief đều được chấm điểm với danh sách này, user không cần nói "dùng mẫu có sẵn"; nhưng skill
+Skill lập chỉ mục catalog [ZaUI Templates](https://miniapp.zaloplatforms.com/zaui-templates)
+chính thức. Mọi brief đều được chấm điểm tự động, user không cần nói "dùng mẫu có sẵn"; nhưng skill
 chỉ scaffold những revision đã đi qua qualification gate riêng để bảo đảm cài, build và render tái
-hiện được. Template đang đạt chuẩn nằm trong `skill/create-zmp-app/catalog/templates.json`; brief
-không có mẫu nào phù hợp sẽ dùng neutral starter, kèm báo cáo nói rõ ứng viên nào bị loại và vì sao.
+hiện được. Bản 0.4.0 hỗ trợ sáu profile: fashion, coffee, bistro, market, doctor và lucky-wheel.
+Trạng thái hiện hành nằm trong `skill/create-zmp-app/catalog/templates.json`; brief không có mẫu
+nào phù hợp sẽ dùng neutral starter, kèm báo cáo nói rõ ứng viên nào bị loại và vì sao.
 
 Cách chọn template nằm ở
 [Template routing](./skill/create-zmp-app/references/template-routing.md), cơ chế scaffold nằm ở
