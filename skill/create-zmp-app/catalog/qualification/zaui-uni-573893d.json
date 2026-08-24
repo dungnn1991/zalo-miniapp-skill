@@ -1,0 +1,637 @@
+{
+  "schemaVersion": 1,
+  "tool": "qualify-template",
+  "templateId": "zaui-uni",
+  "startedAt": "2026-08-23T06:44:54.877Z",
+  "workspace": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-uni-OXuvBh",
+  "runId": "qualify-zaui-uni-2026-08-23T06-44-54Z",
+  "registryPath": "/Users/dungnn/Project/DX/labs/miniapp-bootstrap-poc/skill/create-zmp-app/catalog/templates.json",
+  "license": {
+    "packageJsonLicense": "ISC",
+    "licenseFilePresent": true,
+    "registryLicenseFile": "MIT",
+    "registryPackageJsonLicense": "ISC",
+    "licenseDecision": "approved-internal"
+  },
+  "revision": "573893d5164518888c2a4c7d1dfa58f946b3bdc8",
+  "shortRevision": "573893d",
+  "upstreamHead": "573893d5164518888c2a4c7d1dfa58f946b3bdc8",
+  "evidenceValidForHead": true,
+  "recordedStateEffective": "candidate",
+  "adapter": {
+    "status": "none",
+    "file": null,
+    "adapterId": null,
+    "sha256": null,
+    "applied": [],
+    "refused": []
+  },
+  "postScaffoldDigest": {
+    "digest": "0eb2e8875004cbce07fe0ead8e363f6bf1b15289f0280698e9e02293dd881a38",
+    "fileCount": 97
+  },
+  "dependencyScan": {
+    "imported": [
+      "@tanstack/react-query",
+      "axios",
+      "react",
+      "react-dom",
+      "react-router-dom",
+      "react-transition-group",
+      "zmp-sdk",
+      "zmp-ui"
+    ],
+    "declared": [
+      "@tailwindcss/vite",
+      "@tanstack/react-query",
+      "@types/react",
+      "@types/react-dom",
+      "@types/react-transition-group",
+      "@vitejs/plugin-react",
+      "autoprefixer",
+      "axios",
+      "postcss",
+      "prettier",
+      "react",
+      "react-dom",
+      "react-router-dom",
+      "react-transition-group",
+      "tailwindcss",
+      "typescript",
+      "vite",
+      "zmp-sdk",
+      "zmp-ui",
+      "zmp-vite-plugin"
+    ],
+    "missingRuntime": [],
+    "missingTypeOnly": []
+  },
+  "toolchain": {
+    "node": "v22.22.3",
+    "pnpm": "9.15.4",
+    "os": "darwin 25.5.0 arm64",
+    "chrome": "Google Chrome 151.0.7922.170",
+    "packageManagerPolicy": "pnpm (isolated node_modules); npm hoisting is never used as a fallback",
+    "pnpmStore": "shared global pnpm store (pass --clean-store for a per-run store)",
+    "resolvedVersions": {
+      "react": "18.3.1",
+      "react-dom": "18.3.1",
+      "zmp-ui": "1.11.14",
+      "zmp-sdk": "2.53.0",
+      "vite": "5.4.21",
+      "zmp-vite-plugin": "1.1.6",
+      "@vitejs/plugin-react": "1.3.2",
+      "typescript": "5.9.3"
+    }
+  },
+  "buildInfo": {
+    "outDir": "www",
+    "builtAt": "2026-08-23T06:45:07.714Z"
+  },
+  "residualIdentifiers": {
+    "blocking": [],
+    "informational": []
+  },
+  "noHostOracle": {
+    "exitCode": 1,
+    "gates": {
+      "gates": [
+        {
+          "id": "react_mount",
+          "status": "pass",
+          "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "mount_not_empty",
+          "status": "pass",
+          "detail": "children=1 textLen=950",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "no_sim_runtime_marker",
+          "status": "pass",
+          "detail": "no window.__ZMP_DX_RUNTIME__ outside the simulator",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "no_horizontal_overflow",
+          "status": "pass",
+          "detail": "scrollWidth=390 innerWidth=390",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "cta_not_clipped",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "screenshot",
+          "status": "pass",
+          "detail": "mobile-390x844.png",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "interaction_add_to_cart",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "no_fatal_console_error",
+          "status": "fail",
+          "detail": "1 error/pageerror event(s)",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "react_mount",
+          "status": "pass",
+          "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "mount_not_empty",
+          "status": "pass",
+          "detail": "children=1 textLen=950",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "no_sim_runtime_marker",
+          "status": "pass",
+          "detail": "no window.__ZMP_DX_RUNTIME__ outside the simulator",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "no_horizontal_overflow",
+          "status": "pass",
+          "detail": "scrollWidth=360 innerWidth=360",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "cta_not_clipped",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "screenshot",
+          "status": "pass",
+          "detail": "mobile-360x800.png",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "no_fatal_console_error",
+          "status": "fail",
+          "detail": "1 error/pageerror event(s)",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "react_mount",
+          "status": "pass",
+          "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "mount_not_empty",
+          "status": "pass",
+          "detail": "children=1 textLen=950",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "no_sim_runtime_marker",
+          "status": "pass",
+          "detail": "no window.__ZMP_DX_RUNTIME__ outside the simulator",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "no_horizontal_overflow",
+          "status": "pass",
+          "detail": "scrollWidth=1280 innerWidth=1280",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "cta_not_clipped",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "screenshot",
+          "status": "pass",
+          "detail": "wide-1280x800.png",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "interaction_add_to_cart",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "no_fatal_console_error",
+          "status": "fail",
+          "detail": "1 error/pageerror event(s)",
+          "viewport": "wide-1280x800"
+        }
+      ]
+    },
+    "consoleExcerpt": {
+      "totalErrorEvents": 6,
+      "truncated": false,
+      "events": [
+        {
+          "viewport": "mobile-390x844",
+          "kind": "error-detail",
+          "source": "unhandledrejection",
+          "text": "{\"code\":-2000,\"message\":\"Unknown error. Please try again later.\",\"api\":\"showOAWidget\",\"detail\":\"[undefined]\"}"
+        },
+        {
+          "viewport": "mobile-390x844",
+          "kind": "pageerror",
+          "text": "Object"
+        },
+        {
+          "viewport": "mobile-360x800",
+          "kind": "error-detail",
+          "source": "unhandledrejection",
+          "text": "{\"code\":-2000,\"message\":\"Unknown error. Please try again later.\",\"api\":\"showOAWidget\",\"detail\":\"[undefined]\"}"
+        },
+        {
+          "viewport": "mobile-360x800",
+          "kind": "pageerror",
+          "text": "Object"
+        },
+        {
+          "viewport": "wide-1280x800",
+          "kind": "error-detail",
+          "source": "unhandledrejection",
+          "text": "{\"code\":-2000,\"message\":\"Unknown error. Please try again later.\",\"api\":\"showOAWidget\",\"detail\":\"[undefined]\"}"
+        },
+        {
+          "viewport": "wide-1280x800",
+          "kind": "pageerror",
+          "text": "Object"
+        }
+      ]
+    }
+  },
+  "oracleGates": {
+    "gates": [
+      {
+        "id": "react_mount",
+        "status": "pass",
+        "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "mount_not_empty",
+        "status": "pass",
+        "detail": "children=1 textLen=950",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "sim_runtime_marker",
+        "status": "pass",
+        "detail": "window.__ZMP_DX_RUNTIME__ schemaVersion=1 mode=simulator",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "no_horizontal_overflow",
+        "status": "pass",
+        "detail": "scrollWidth=390 innerWidth=390",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "cta_not_clipped",
+        "status": "skipped",
+        "detail": "profile simulator-official: no lab markers",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "screenshot",
+        "status": "pass",
+        "detail": "mobile-390x844.png",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "interaction_add_to_cart",
+        "status": "skipped",
+        "detail": "profile simulator-official: no lab markers",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "no_fatal_console_error",
+        "status": "pass",
+        "detail": "0 error/pageerror event(s)",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "react_mount",
+        "status": "pass",
+        "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "mount_not_empty",
+        "status": "pass",
+        "detail": "children=1 textLen=950",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "sim_runtime_marker",
+        "status": "pass",
+        "detail": "window.__ZMP_DX_RUNTIME__ schemaVersion=1 mode=simulator",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "no_horizontal_overflow",
+        "status": "pass",
+        "detail": "scrollWidth=360 innerWidth=360",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "cta_not_clipped",
+        "status": "skipped",
+        "detail": "profile simulator-official: no lab markers",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "screenshot",
+        "status": "pass",
+        "detail": "mobile-360x800.png",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "no_fatal_console_error",
+        "status": "pass",
+        "detail": "0 error/pageerror event(s)",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "react_mount",
+        "status": "pass",
+        "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "mount_not_empty",
+        "status": "pass",
+        "detail": "children=1 textLen=950",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "sim_runtime_marker",
+        "status": "pass",
+        "detail": "window.__ZMP_DX_RUNTIME__ schemaVersion=1 mode=simulator",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "no_horizontal_overflow",
+        "status": "pass",
+        "detail": "scrollWidth=1280 innerWidth=1280",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "cta_not_clipped",
+        "status": "skipped",
+        "detail": "profile simulator-official: no lab markers",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "screenshot",
+        "status": "pass",
+        "detail": "wide-1280x800.png",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "interaction_add_to_cart",
+        "status": "skipped",
+        "detail": "profile simulator-official: no lab markers",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "no_fatal_console_error",
+        "status": "pass",
+        "detail": "0 error/pageerror event(s)",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "sim_bridge_log_written",
+        "status": "pass",
+        "detail": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-uni-OXuvBh/runs/qualify-zaui-uni-2026-08-23T06-44-54Z/evidence/bridge-log.jsonl"
+      }
+    ]
+  },
+  "oracleProfile": "simulator-official",
+  "consoleExcerpt": null,
+  "screenshots": [
+    "mobile-360x800.png",
+    "mobile-390x844.png",
+    "wide-1280x800.png"
+  ],
+  "screenshotsPath": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-uni-OXuvBh/runs/qualify-zaui-uni-2026-08-23T06-44-54Z/evidence",
+  "externalRequirements": [
+    {
+      "kind": "env-var",
+      "name": "VITE_API_BASE_URL",
+      "neededForFirstPreview": true,
+      "sites": [
+        "src/lib/api.ts:4"
+      ]
+    },
+    {
+      "kind": "http-client-dependency",
+      "name": "@tanstack/react-query",
+      "neededForFirstPreview": false,
+      "sites": [
+        "package.json dependencies"
+      ]
+    },
+    {
+      "kind": "http-client-dependency",
+      "name": "axios",
+      "neededForFirstPreview": false,
+      "sites": [
+        "package.json dependencies"
+      ]
+    }
+  ],
+  "derivedState": "candidate",
+  "quarantineReason": null,
+  "promotion": {
+    "requested": false,
+    "eligible": false,
+    "blockedBy": [
+      "blocking gate \"external_dependency\" is fail: first_preview_self_contained: first preview needs the user to supply: VITE_API_BASE_URL (env-var, src/lib/api.ts:4)"
+    ],
+    "targetState": "release-supported",
+    "applied": false
+  },
+  "gates": [
+    {
+      "id": "provenance",
+      "blocking": true,
+      "status": "pass",
+      "detail": "Zalo-MiniApp/zaui-uni@573893d5164518888c2a4c7d1dfa58f946b3bdc8 snapshot verified",
+      "checks": [
+        {
+          "id": "owner_first_party",
+          "status": "pass",
+          "detail": "source.owner=Zalo-MiniApp (expected Zalo-MiniApp)"
+        },
+        {
+          "id": "repo_resolvable",
+          "status": "pass",
+          "detail": "git ls-remote HEAD of main = 573893d5164518888c2a4c7d1dfa58f946b3bdc8"
+        },
+        {
+          "id": "revision_pinned",
+          "status": "pass",
+          "detail": "qualifying revision=573893d5164518888c2a4c7d1dfa58f946b3bdc8 (source: upstream HEAD)"
+        },
+        {
+          "id": "snapshot_immutable",
+          "status": "pass",
+          "detail": "extracted top-level dir \"zaui-uni-573893d5164518888c2a4c7d1dfa58f946b3bdc8\""
+        },
+        {
+          "id": "snapshot_has_manifest",
+          "status": "pass",
+          "detail": "package.json present in the snapshot"
+        },
+        {
+          "id": "no_upstream_env_copied",
+          "status": "pass",
+          "detail": "snapshot ships .env.example — excluded from the scaffold copy"
+        },
+        {
+          "id": "license_recorded",
+          "status": "pass",
+          "detail": "package.json license=ISC, LICENSE file=true, registry licenseDecision=approved-internal"
+        }
+      ]
+    },
+    {
+      "id": "dependency",
+      "blocking": true,
+      "status": "pass",
+      "detail": "pnpm 9.15.4 installed 8 imported package(s), all declared",
+      "checks": [
+        {
+          "id": "direct_dependency_completeness",
+          "status": "pass",
+          "detail": "8 imported package(s), all declared directly"
+        },
+        {
+          "id": "pnpm_install",
+          "status": "pass",
+          "detail": "install.mjs exit 0"
+        }
+      ]
+    },
+    {
+      "id": "build",
+      "blocking": true,
+      "status": "pass",
+      "detail": "built into www",
+      "checks": [
+        {
+          "id": "vite_build",
+          "status": "pass",
+          "detail": "build.mjs exit 0, outDir=www (OUT_DIR_CANDIDATES detection reused from build.mjs)"
+        },
+        {
+          "id": "generic_vite_preparation",
+          "status": "pass",
+          "detail": "no generic preparation needed"
+        }
+      ]
+    },
+    {
+      "id": "rebrand_app_id",
+      "blocking": true,
+      "status": "pass",
+      "detail": "rebranded to \"qualify-zaui-uni\", APP_ID 1000000000000000001 bound and resolved by the build toolchain",
+      "checks": [
+        {
+          "id": "name_rebranded",
+          "status": "pass",
+          "detail": "package.json name=\"qualify-zaui-uni\" (rebranded files: package.json, app-config.json)"
+        },
+        {
+          "id": "app_id_persisted",
+          "status": "pass",
+          "detail": "app/.env APP_ID=1000000000000000001 (expected 1000000000000000001)"
+        },
+        {
+          "id": "app_id_resolved_by_build",
+          "status": "pass",
+          "detail": "vite loadEnv() inside the app resolved APP_ID=1000000000000000001"
+        },
+        {
+          "id": "no_foreign_app_id",
+          "status": "pass",
+          "detail": "no appId-keyed identifier other than the bound App ID"
+        }
+      ]
+    },
+    {
+      "id": "runtime",
+      "blocking": true,
+      "status": "pass",
+      "detail": "react mount + non-empty content + no horizontal overflow + no fatal console error on 3 viewports",
+      "checks": [
+        {
+          "id": "browser_oracle_no_host",
+          "status": "warn",
+          "detail": "served without a Zalo host: no_fatal_console_error@mobile-390x844: 1 error/pageerror event(s) | no_fatal_console_error@mobile-360x800: 1 error/pageerror event(s) | no_fatal_console_error@wide-1280x800: 1 error/pageerror event(s) — recorded, not blocking: see evidence/no-host-console.jsonl for what the app actually said"
+        },
+        {
+          "id": "browser_oracle",
+          "status": "pass",
+          "detail": "19 oracle gate(s) passed across 3 viewports (profile simulator-official)"
+        },
+        {
+          "id": "oracle_coverage",
+          "status": "warn",
+          "detail": "profile simulator-official skipped: cta_not_clipped, interaction_add_to_cart — no interaction evidence, so the highest evidence-backed rung is render-qualified"
+        }
+      ]
+    },
+    {
+      "id": "external_dependency",
+      "blocking": true,
+      "status": "fail",
+      "detail": "first_preview_self_contained: first preview needs the user to supply: VITE_API_BASE_URL (env-var, src/lib/api.ts:4)",
+      "checks": [
+        {
+          "id": "first_preview_self_contained",
+          "status": "fail",
+          "detail": "first preview needs the user to supply: VITE_API_BASE_URL (env-var, src/lib/api.ts:4)"
+        },
+        {
+          "id": "no_failed_remote_calls_at_runtime",
+          "status": "pass",
+          "detail": "no failing remote request observed in the browser run"
+        }
+      ]
+    },
+    {
+      "id": "safe_rerun",
+      "blocking": true,
+      "status": "pass",
+      "detail": "mutating pipeline is deterministic and the adapter refuses to double-apply",
+      "checks": [
+        {
+          "id": "pipeline_deterministic",
+          "status": "pass",
+          "detail": "same id+revision+appId produced tree digest 0eb2e8875004cbce vs 0eb2e8875004cbce (97 files)"
+        }
+      ]
+    }
+  ],
+  "finishedAt": "2026-08-23T06:45:16.259Z",
+  "durationMs": 21381,
+  "exitCode": 1
+}

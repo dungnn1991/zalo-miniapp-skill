@@ -1,0 +1,25 @@
+{
+  "id": "uniform-medical-commerce-not-clinic",
+  "group": "entity-vs-domain",
+  "brief": "bán đồng phục bác sĩ",
+  "blocking": true,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-fashion",
+      "zaui-shop"
+    ],
+    "mustNotSelect": [
+      "zaui-doctor"
+    ],
+    "requiredDomains": [
+      "commerce.general"
+    ],
+    "requiredJobs": [
+      "product.browse"
+    ]
+  },
+  "source": "CONTRACT-plan34.md DoD #4",
+  "note": "plan 34 §3 bảng ví dụ: \"cửa hàng bán đồng phục bác sĩ → Commerce/fashion\". Điểm cần bảo vệ là KHÔNG route sang healthcare; chọn fashion (apparel, đang release-supported) là đúng ý plan. Sửa kỳ vọng 2026-08-23 sau khi registry bỏ negative-signal y tế gán nhầm cho fashion."
+}

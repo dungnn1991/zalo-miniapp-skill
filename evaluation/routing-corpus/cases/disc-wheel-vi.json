@@ -1,0 +1,24 @@
+{
+  "id": "disc-wheel-vi",
+  "group": "clear-domain",
+  "brief": "app vòng quay may mắn cho chiến dịch khuyến mãi cuối năm",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-lucky-wheel"
+    ],
+    "mustNotSelect": [
+      "zaui-shop"
+    ],
+    "requiredDomains": [
+      "campaign.loyalty"
+    ],
+    "requiredJobs": [
+      "reward.spin"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Discovery probe cho zaui-lucky-wheel; non-blocking vì template chưa release-supported (review 35 F6)."
+}

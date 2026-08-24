@@ -21,7 +21,7 @@
         "1.0",
         "1.1"
       ],
-      "description": "1.1 khi run có stage login/deploy (Phase 2); 1.0 cho run chỉ tới verify."
+      "description": "1.1 khi run có stage login/deploy (Phase 2) hoặc mang templateSelection (plan 34); 1.0 cho run legacy."
     },
     "runId": {
       "type": "string",
@@ -72,8 +72,10 @@
             "app_id_missing",
             "app_id_conflict",
             "existing_app",
-            "login_required"
-          ]
+            "login_required",
+            "template_choice"
+          ],
+          "description": "template_choice: cần user chọn template (plan 34 D34-7) — dùng exit 2, KHÔNG còn exit 3 như v0.3.x."
         },
         "question": {
           "type": "string"
@@ -89,6 +91,32 @@
             "string",
             "null"
           ]
+        },
+        "templateOptions": {
+          "type": "array",
+          "description": "Chỉ với reason=template_choice: 2-3 lựa chọn kèm khác biệt hữu ích, không phải danh sách id trần.",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "why"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "why": {
+                "type": "string"
+              },
+              "jobs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
         }
       },
       "required": [
@@ -202,6 +230,61 @@
               "null"
             ],
             "description": "URL nguồn (FAQ/community/docs)"
+          }
+        }
+      }
+    },
+    "templateSelection": {
+      "$ref": "./template-selection.schema.json"
+    },
+    "warnings": {
+      "type": "array",
+      "description": "Cảnh báo có cấu trúc từ template adapter (mandate 42 §3.5). Khác insights: insights nói \"run này gặp vấn đề gì\", warnings nói \"app dựng ra còn thiếu gì trước production\". Bốn semantics bắt buộc tách rời: preview có dùng được không (blockingForPreview), feature nào cần backend trước production (blockingForProductionFeature + affectedFeature), fallback hiện tại là gì (fallback), và đọc hướng dẫn ở đâu (guide).",
+      "items": {
+        "type": "object",
+        "required": [
+          "code",
+          "blockingForPreview",
+          "blockingForProductionFeature",
+          "affectedFeature",
+          "fallback",
+          "guide",
+          "message"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Mã ổn định, vd PHONE_BACKEND_REQUIRED"
+          },
+          "blockingForPreview": {
+            "type": "boolean",
+            "description": "Preview đầu có bị chặn không"
+          },
+          "blockingForProductionFeature": {
+            "type": "boolean",
+            "description": "Feature có cần thêm việc trước production không"
+          },
+          "affectedFeature": {
+            "type": "string"
+          },
+          "fallback": {
+            "type": "string",
+            "description": "Hành vi hiện tại khi feature chưa sẵn sàng, vd manual-input"
+          },
+          "guide": {
+            "type": "string",
+            "description": "Đường dẫn tài liệu trong skill"
+          },
+          "message": {
+            "type": "string"
+          },
+          "source": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "adapterId đã sinh ra cảnh báo này"
           }
         }
       }

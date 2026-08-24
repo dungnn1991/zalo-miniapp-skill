@@ -1,0 +1,25 @@
+{
+  "id": "clinic-booking-vi-paraphrase",
+  "group": "paraphrase",
+  "brief": "làm mini app cho phòng mạch để bệnh nhân hẹn giờ bác sĩ",
+  "blocking": true,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-doctor"
+    ],
+    "mustNotSelect": [
+      "zaui-fashion",
+      "zaui-shop"
+    ],
+    "requiredDomains": [
+      "healthcare.clinic"
+    ],
+    "requiredJobs": [
+      "appointment.booking"
+    ]
+  },
+  "source": "plan 34 §6.1 (fixture mẫu trong plan)",
+  "note": "Case ví dụ ngay trong plan; \"phòng mạch\"/\"hẹn giờ bác sĩ\" là alias, không phải literal \"phòng khám\"."
+}

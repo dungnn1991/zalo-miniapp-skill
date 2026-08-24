@@ -63,6 +63,61 @@
   const rand8 = () => (Math.random().toString(16) + '00000000').slice(2, 10);
   const simToken = (api) => 'SIM_TOKEN_' + String(api).replace(/[^a-z0-9]/gi, '_').toUpperCase() + '_' + rand8();
 
+  // ---- MPDS: the native storage backend the SDK picks inside a real Zalo host ------------
+  // CONFIRMED zmp-sdk@2.53.0 (apis/common/apis/general/storage/index.js): the default backend
+  // is localStorage, but as soon as `zaloVersionCode >= ZALO_SUPPORT_STORAGE_VERSION[platform]`
+  // AND appEnv.isMp — both true under this shim — it swaps to NativeResourceStorage, which
+  // talks MPDS. Two transports:
+  //   async  jsCall action 'action.zbrowser.mpds' (convertSDKActionToJumpAction('ZBROWSER_MPDS'))
+  //   sync   ZaloJavaScriptInterface.processActionMPDS(json) -> json  (nativeStorage.handleResult)
+  // Without this, getItem/setStorage answer error_code -1 in the simulator and every template
+  // that restores UI state on mount logs a fatal console error (zaui-bistro `getItem`,
+  // zaui-menu `setStorage` — measured 2026-08-23). Values are opaque strings to us: the SDK
+  // has already run stringifyData/stringToData around them.
+  const MPDS_KEY = 'sim-mpds-' + APP_ID;
+  const mpdsLoad = () => {
+    try { return JSON.parse(localStorage.getItem(MPDS_KEY)) || {}; } catch (e) { return {}; }
+  };
+  const mpdsSave = (map) => {
+    try { localStorage.setItem(MPDS_KEY, JSON.stringify(map)); } catch (e) { /* storage off — stays empty */ }
+  };
+  const mpdsOk = (data) => ({ error_code: 0, error_message: 'Success', data: data });
+  // Returns the SDK-shaped response, or null when the mpds_action is not one we model —
+  // an unknown action must fail loudly like any other unmocked API, never silently succeed.
+  const mpdsHandle = (req) => {
+    const action = req && req.mpds_action;
+    const data = (req && req.mpds_data) || {};
+    const store = mpdsLoad();
+    if (action === 'mpds.get') {
+      const keys = Array.isArray(data.keys) ? data.keys : (data.keys == null ? Object.keys(store) : [data.keys]);
+      const map = {};
+      for (const k of keys) if (Object.prototype.hasOwnProperty.call(store, k)) map[k] = store[k];
+      return mpdsOk({ mpds_data: { map: map } });
+    }
+    if (action === 'mpds.set') {
+      const incoming = data.map || {};
+      for (const k of Object.keys(incoming)) store[k] = incoming[k];
+      mpdsSave(store);
+      return mpdsOk({ mpds_data: { error_keys: [] } });
+    }
+    if (action === 'mpds.remove.key') {
+      const keys = Array.isArray(data.keys) ? data.keys : (data.keys == null ? [] : [data.keys]);
+      for (const k of keys) delete store[k];
+      mpdsSave(store);
+      return mpdsOk({ mpds_data: { error_keys: [] } });
+    }
+    if (action === 'mpds.clear.appData') {
+      mpdsSave({});
+      return mpdsOk({});
+    }
+    if (action === 'mpds.get.size') {
+      let size = 0;
+      for (const k of Object.keys(store)) size += 2 * (String(k).length + String(store[k]).length);
+      return mpdsOk({ mpds_data: { size: size } });
+    }
+    return null;
+  };
+
   // ---- bridge log: fire-and-forget POST, must never break the app ----
   const log = (entry) => {
     try {
@@ -216,6 +271,18 @@
       return;
     }
 
+    if (action === 'action.zbrowser.mpds') {
+      const res = mpdsHandle(requestData);
+      if (res) {
+        respond(serialId, action, cb, res);
+        log({ action, api: 'nativeStorage', decision: 'infra', error_code: 0 });
+      } else {
+        respond(serialId, action, cb, { error_code: -1, error_message: 'mpds action not supported in simulator', data: null });
+        log({ action, api: 'nativeStorage', decision: 'unmocked', error_code: -1, unmocked: true });
+      }
+      return;
+    }
+
     const entry = api ? APIS[api] : null;
     if (!api || !entry) {
       // Outside the registry → explicit failure, never a silent success.
@@ -248,6 +315,32 @@
   window.ZaloJavaScriptInterface = {
     jsCall: function () { try { handleJsCall(Array.prototype.slice.call(arguments)); } catch (e) { /* never break the app */ } },
     jsH5EventCallback: function () { /* native event acks — no-op in simulator */ },
+    // SYNCHRONOUS native method, not a jsCall. zmp-ui reads
+    // `window.ANDROID_STATUS_BAR_HEIGHT` and, when that is NaN, falls back to
+    // `Math.round(ZaloJavaScriptInterface.getStatusBarHeight() / devicePixelRatio)` to set
+    // --zaui-safe-area (CONFIRMED zmp-sdk@2.53.0). A real Android host provides both; the shim
+    // used to provide neither, so the moment official templates started running under sim
+    // serving zaui-coffee died with "K2.getStatusBarHeight is not a function" and rendered
+    // blank (measured 2026-08-23). 24dp is the Android status bar height.
+    getStatusBarHeight: function () {
+      return 24 * (window.devicePixelRatio || 1);
+    },
+    // checkCameraPermission is deliberately NOT defined: the SDK typeof-guards it and treats
+    // its absence as "no camera", which is the honest answer for a simulator.
+    // Synchronous MPDS transport (nativeStorage.handleResult): takes a JSON string, returns a
+    // JSON string. It THROWS on the SDK side when error_code !== 0, so an unmodelled action
+    // still surfaces as a real failure instead of a fake empty read.
+    processActionMPDS: function (json) {
+      var req = null;
+      try { req = JSON.parse(json); } catch (e) { req = null; }
+      var res = mpdsHandle(req);
+      if (!res) {
+        log({ action: 'action.zbrowser.mpds', api: 'nativeStorage', decision: 'unmocked', error_code: -1, unmocked: true });
+        return JSON.stringify({ error_code: -1, error_message: 'mpds action not supported in simulator', data: null });
+      }
+      log({ action: 'action.zbrowser.mpds', api: 'nativeStorage', decision: 'infra', error_code: 0 });
+      return JSON.stringify(res);
+    },
   };
 
   // zalo-js-bridge global the SDK pokes during the token flow (jump() calls

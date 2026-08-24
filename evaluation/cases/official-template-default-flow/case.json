@@ -1,0 +1,8 @@
+{
+  "caseId": "official-template-default-flow",
+  "title": "Luồng scaffold MẶC ĐỊNH phải xanh cho mọi template auto-scaffoldable — không cần cờ simulator thủ công",
+  "expectation": {
+    "exitCode": 0,
+    "description": "Qualification chấm template dưới simulator, nhưng run.mjs trước đây chỉ truyền provider=simulator khi có --verify-sim. zaui-bistro, zaui-market và zaui-lucky-wheel đều fail no-host oracle nên lệnh scaffold bình thường dừng ở render — template 'auto-scaffoldable' trên giấy mà người dùng không dựng được. Case chạy TRỌN run.mjs (bootstrap → portal-fetch → install → build → render → verify) cho từng template auto-scaffoldable cần Zalo host, KHÔNG truyền cờ simulator nào, và kiểm input.json renderProvider được chốt từ registry qualification.runtime chứ không phải từ cờ."
+  }
+}

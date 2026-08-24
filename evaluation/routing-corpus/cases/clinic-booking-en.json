@@ -1,0 +1,25 @@
+{
+  "id": "clinic-booking-en",
+  "group": "diacritics",
+  "brief": "create a mini app for a clinic so patients can book a medical appointment",
+  "blocking": true,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-doctor"
+    ],
+    "mustNotSelect": [
+      "zaui-fashion",
+      "zaui-shop"
+    ],
+    "requiredDomains": [
+      "healthcare.clinic"
+    ],
+    "requiredJobs": [
+      "appointment.booking"
+    ]
+  },
+  "source": "plan 34 §6.2 (diacritics) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Bản English của DoD #1."
+}

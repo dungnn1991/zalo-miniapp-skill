@@ -1,0 +1,25 @@
+{
+  "id": "explicit-coffee-unsupported-stop",
+  "group": "explicit-override",
+  "brief": "tạo app cà phê",
+  "blocking": true,
+  "templateFlag": "official:zaui-coffee",
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "stop",
+    "acceptedTemplateIds": [
+      "zaui-coffee"
+    ],
+    "mustNotSelect": [
+      "zaui-fashion"
+    ],
+    "requiredDomains": [
+      "fnb.coffee"
+    ],
+    "requiredJobs": [
+      "food.order"
+    ]
+  },
+  "source": "plan 34 §6.2 (explicit-override) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Giữ parity với regression case official-template-support (exit 2 sau migration, trước đây exit 3)."
+}

@@ -1,0 +1,24 @@
+{
+  "id": "ambiguous-do-an-do-uong",
+  "group": "ambiguous",
+  "brief": "làm app bán đồ ăn đồ uống",
+  "blocking": true,
+  "expected": {
+    "acceptedTemplateIds": [
+      "zaui-coffee",
+      "zaui-bistro"
+    ],
+    "mustNotSelect": [
+      "zaui-fashion",
+      "zaui-market",
+      "zaui-doctor"
+    ],
+    "requiredDomains": [],
+    "requiredJobs": [],
+    "decisionWhenSupported": "choice",
+    "decisionWhenUnsupported": "lab",
+    "minOptions": 2
+  },
+  "source": "plan 34 §6.2 (ambiguous) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "\"đồ ăn\" là alias bistro, \"đồ uống\" là alias coffee — brief nêu hai flow F&B với bằng chứng ngang nhau nên phải HỎI, không đoán. Hai lần sửa 2026-08-23: (1) acceptedTemplateIds trước đây rỗng nên nhánh decisionWhenSupported không bao giờ chạy được, guard trong note chưa từng được thực thi; (2) có lúc tôi đổi kỳ vọng sang auto vì scorer chấm coffee 12 / bistro 6 — owner bác, đúng: chênh lệch đó do tiebreak \"phrase dài hơn\" giữa hai domain cùng strength, là artifact của implementation chứ không phải tín hiệu. Đã sửa logic intent: hai domain ANH EM (cùng họ fnb.*) hoà strength thì cùng là primary, nên coffee và bistro hoà và ranker trả choice. Luật giới hạn trong cùng họ: \"coffee shop\" (fnb.coffee vs commerce.general) không phải hai ngành cạnh tranh."
+}

@@ -123,3 +123,52 @@
 - **Fix:** dùng **Chế độ Device** — Mini App chạy trong Zalo thật nhưng load code từ server hot
   reload trên máy dev → gọi được API thật, nhận dữ liệu thật.
 - Nguồn: [API không có dữ liệu khi dev](https://miniapp.zaloplatforms.com/community/9179321132242792911/api-duoc-goi-thanh-cong-nhung-khong-co-du-lieu-khi-dev) — Hồng Phát, crawl 2026-08-21.
+
+---
+
+## 10. Template chạy được với npm nhưng gãy với pnpm (dependency khai thiếu)
+
+**Triệu chứng.** `pnpm install` xong, `vite build` chết với
+`Rollup failed to resolve import "react-router" from src/....`. Cùng repo đó chạy `npm ci` lại
+build ngon lành.
+
+**Nguyên nhân.** Source import một package mà `package.json` không khai. npm dựng
+`node_modules` phẳng nên mọi package transitive đều nhìn thấy được từ code ứng dụng — lỗi khai
+báo bị che đi. pnpm cô lập: chỉ dependency khai trực tiếp mới được symlink vào `node_modules/`,
+nên import đó không resolve và rollup dừng.
+
+Trường hợp hay gặp nhất là `react-router`: từ v7, `react-router-dom` để `react-router` làm
+dependency của chính nó. Code import `useRouteError`, `useNavigate`… thẳng từ `react-router`
+trong khi `package.json` chỉ khai `react-router-dom` là đủ để gãy dưới pnpm.
+
+**Cách sửa.** Khai đúng package đó vào `dependencies` với version khớp gói đang dùng:
+
+```jsonc
+"react-router": "^7.6.1",      // cùng version với react-router-dom
+"react-router-dom": "^7.6.1"
+```
+
+**Không** dùng `shamefully-hoist=true`, cũng **không** đổi riêng dự án đó sang npm. Cả hai chỉ
+làm lỗi khai báo biến mất khỏi tầm mắt; lần sau nâng version hoặc đổi máy là nó quay lại.
+
+Một biến thể lành tính: import **chỉ dùng ở vị trí type** (`import { EmblaCarouselType } from
+"embla-carousel"`) vẫn bị báo thiếu khai báo nhưng không làm gãy build, vì esbuild xoá nó lúc
+biên dịch. Vẫn nên khai cho đúng, nhưng nó không chặn việc chạy.
+
+## 11. `Could not load /src/...` khi build template chính thức
+
+**Triệu chứng.** `[vite:load-fallback] Could not load /src/router (imported by src/app.ts):
+ENOENT`.
+
+**Nguyên nhân.** `vite.config` khai `resolve.alias { "@": "/src" }`. Giá trị mở đầu bằng `/`
+được hiểu là đường dẫn tuyệt đối trên **filesystem**, nên vite đi tìm `/src/router` ở gốc ổ đĩa.
+Cấu hình này chỉ sống sót trong flow riêng của `zmp-cli`; chạy `vite build` thuần là lộ.
+
+**Cách sửa.** Trỏ alias vào thư mục `src` thật của project:
+
+```ts
+// vite.config.mts (ESM)
+resolve: { alias: { "@": new URL("./src", import.meta.url).pathname } }
+```
+
+Với config CommonJS thì dùng `path.resolve(__dirname, "src")`.

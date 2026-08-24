@@ -1,0 +1,25 @@
+{
+  "id": "disc-market-paraphrase",
+  "group": "paraphrase",
+  "brief": "khách đi chợ online, đặt rau củ thịt cá giao trong ngày",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-market"
+    ],
+    "mustNotSelect": [
+      "zaui-bistro",
+      "zaui-fashion"
+    ],
+    "requiredDomains": [
+      "commerce.grocery"
+    ],
+    "requiredJobs": [
+      "order.place"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Discovery probe cho zaui-market; non-blocking vì template chưa release-supported (review 35 F6)."
+}

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>runner negative control — uncaught non-Error payload</title>
+</head>
+<body>
+<!--
+  Negative control for report 41 §6.1 / review 42 R41-5.
+
+  Reproduces what zaui-market does to the evidence: an uncaught value that is NOT an Error.
+  Playwright flattens it to Error("Object") before it reaches node, so console.jsonl used to
+  record the literal text "Object" and the run became undiagnosable without a full factory
+  rerun. The runner's in-page capture must keep the nested fields — the marker string
+  NEGATIVE_CONTROL_NESTED_VALUE has to survive into evidence.
+-->
+<div id="app" data-testid="app-root">
+  <p>uncaught payload fixture</p>
+</div>
+<script>
+  // 1. plain object thrown synchronously from a timer (the zaui-market shape)
+  setTimeout(function () {
+    throw {
+      code: -2000,
+      api: 'getItem',
+      detail: { nested: { marker: 'NEGATIVE_CONTROL_NESTED_VALUE', attempt: 3 } },
+    };
+  }, 10);
+  // 2. rejected promise carrying an object — same flattening, different entry point
+  setTimeout(function () {
+    Promise.reject({ rejection: true, reason: { marker: 'NEGATIVE_CONTROL_REJECTION_VALUE' } });
+  }, 20);
+</script>
+</body>
+</html>

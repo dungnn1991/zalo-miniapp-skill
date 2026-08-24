@@ -1,0 +1,23 @@
+{
+  "id": "explicit-name-mmenu-vi",
+  "group": "explicit-override",
+  "brief": "dùng mmenu làm app gọi món",
+  "blocking": true,
+  "expected": {
+    "decision": "choice",
+    "acceptedTemplateIds": [
+      "zaui-mmenu"
+    ],
+    "mustNotSelect": [],
+    "requiredDomains": [
+      "fnb.menu"
+    ],
+    "requiredJobs": [
+      "menu.view"
+    ],
+    "minOptions": 2,
+    "forbidSelection": true
+  },
+  "source": "review vòng 3 (P1) — probe do owner đo",
+  "note": "Brief gọi ĐÍCH DANH mmenu. Trước 2026-08-23 ranker trả `lab`: nhánh 3b (\"ứng viên tốt nhất không dựng được → lab\") chạy TRƯỚC nhánh explicit-name và nuốt mất nó, vì template được gọi tên cũng chính là top candidate. Đúng thứ tự: explicit intent cụ thể hơn generic fallback nên phải quyết trước. Unconditional `choice` vì mmenu còn requiredInputs=[VITE_API_URL] — kể cả khi được promote nó vẫn không auto-scaffold được (xem constraint-mmenu-no-api-url)."
+}

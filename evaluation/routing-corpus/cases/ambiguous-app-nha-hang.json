@@ -1,0 +1,24 @@
+{
+  "id": "ambiguous-app-nha-hang",
+  "group": "ambiguous",
+  "brief": "app nhà hàng",
+  "blocking": true,
+  "expected": {
+    "acceptedTemplateIds": [
+      "zaui-restaurant",
+      "zaui-bistro"
+    ],
+    "mustNotSelect": [
+      "zaui-fashion",
+      "zaui-shop",
+      "zaui-doctor"
+    ],
+    "requiredDomains": [],
+    "requiredJobs": [],
+    "minOptions": 2,
+    "decisionWhenSupported": "choice",
+    "decisionWhenUnsupported": "lab"
+  },
+  "source": "CONTRACT-plan34.md DoD #3",
+  "note": "\"nhà hàng\" khớp alias zaui-restaurant nhưng cũng khớp audience của zaui-bistro (\"nhà hàng nhỏ\") → margin thấp, phải hỏi MỘT câu phân loại (đặt bàn / gọi món tại bàn / giao đồ ăn) chứ không đoán. Sửa 2026-08-23: acceptedTemplateIds trước đây rỗng nên nhánh decisionWhenSupported KHÔNG BAO GIỜ chạy được — case luôn kiểm nhánh lab và guard \"phải hỏi\" trong note chưa từng được thực thi. Từ khi zaui-bistro render-qualified, nhánh đó mới sống: ranker trả choice giữa zaui-restaurant (12, khớp nhất nhưng chưa qualified) và zaui-bistro (10, dựng được ngay), selectedId=null. Đúng DoD #3."
+}

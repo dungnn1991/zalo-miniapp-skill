@@ -1,0 +1,25 @@
+{
+  "id": "fnb-coffee-en",
+  "group": "diacritics",
+  "brief": "coffee shop mini app with online ordering and loyalty points",
+  "blocking": true,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-coffee"
+    ],
+    "mustNotSelect": [
+      "zaui-bistro",
+      "zaui-lucky-wheel"
+    ],
+    "requiredDomains": [
+      "fnb.coffee"
+    ],
+    "requiredJobs": [
+      "food.order"
+    ]
+  },
+  "source": "plan 34 §6.2 (diacritics) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "\"loyalty points\" là capability của coffee, không được kéo sang campaign.loyalty."
+}

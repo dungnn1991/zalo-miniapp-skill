@@ -1,0 +1,26 @@
+{
+  "id": "disc-bistro-paraphrase",
+  "group": "paraphrase",
+  "brief": "làm app để khách gọi đồ ăn rồi shipper giao tới tận nhà",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-bistro"
+    ],
+    "mustNotSelect": [
+      "zaui-menu",
+      "zaui-restaurant"
+    ],
+    "requiredDomains": [
+      "fnb.restaurant"
+    ],
+    "requiredJobs": [
+      "food.order",
+      "delivery.track"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Discovery probe cho zaui-bistro; non-blocking vì template chưa release-supported (review 35 F6)."
+}

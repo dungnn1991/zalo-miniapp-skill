@@ -6,7 +6,8 @@
     "id": "SIM_USER_ID_0000000001",
     "name": "Người Dùng Giả Lập",
     "avatar": "",
-    "note": "persona giả cho sim, không phải user thật"
+    "note": "persona giả cho sim, không phải user thật. phoneNumber là số MẪU dùng cho window.__ZMP_DX_RUNTIME__.mockData — chỉ hợp lệ trong simulator và phải luôn hiển thị kèm nhãn \"dữ liệu giả lập\"; ngoài simulator không được điền số này vào bất kỳ form nào.",
+    "phoneNumber": "0000000000"
   },
   "apis": {
     "getUserInfo": {

@@ -1,0 +1,25 @@
+{
+  "id": "disc-egov-vi",
+  "group": "clear-domain",
+  "brief": "app dịch vụ công cho phường xã, dân tra cứu thủ tục",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-egovernment"
+    ],
+    "mustNotSelect": [
+      "zaui-uni",
+      "zaui-doctor"
+    ],
+    "requiredDomains": [
+      "government.publicservice"
+    ],
+    "requiredJobs": [
+      "procedure.lookup"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Discovery probe cho zaui-egovernment; non-blocking vì template chưa release-supported (review 35 F6)."
+}

@@ -1,0 +1,20 @@
+{
+  "id": "unsupported-news-lab",
+  "group": "unsupported",
+  "brief": "app đọc tin tức hằng ngày cho toà soạn",
+  "blocking": true,
+  "expected": {
+    "decision": "lab",
+    "acceptedTemplateIds": [],
+    "mustNotSelect": [
+      "zaui-fashion",
+      "zaui-shop",
+      "zaui-uni",
+      "zaui-egovernment"
+    ],
+    "requiredDomains": [],
+    "requiredJobs": []
+  },
+  "source": "plan 34 §6.2 (unsupported) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "News không có trong 10 domain đóng → lab."
+}

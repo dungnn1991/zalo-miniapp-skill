@@ -1,0 +1,8 @@
+{
+  "caseId": "adapter-contract",
+  "title": "Adapter contract — registry là thẩm quyền hai chiều, và apply phải all-or-nothing",
+  "expectation": {
+    "exitCode": 0,
+    "description": "Cây user nhận được phải đúng bằng cây evidence được sinh ra từ đó. Case kiểm ba tính chất: (1) registry khai adapterId nhưng file mang id khác → fail; (2) registry khai null trong khi file adapter applicable tồn tại → CŨNG fail (chiều này trước đây bị bỏ sót, bootstrap vẫn áp adapter ngoài evidence); (3) adapter có patch thứ hai chắc chắn refuse → sau khi throw, mọi file adapter đụng tới phải byte-identical với trước, kể cả file mà patch thứ nhất ĐÃ ghi. Với zaui-lucky-wheel, cây vá một nửa là trạng thái nguy hiểm nhất: patch sửa build có thể đã ghi trong khi patch gỡ App Secret là cái refuse."
+  }
+}

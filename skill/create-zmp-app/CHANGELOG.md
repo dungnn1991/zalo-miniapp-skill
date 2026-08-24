@@ -4,6 +4,38 @@ Mọi thay đổi đáng kể của skill. Version = `package.json` + git tag `v
 Thay đổi phát sinh từ finding formal phải gắn id; expected/actual/lifecycle nằm trong
 `feedback/findings.jsonl`, decision và regression nằm trong `feedback/improvements.jsonl`.
 
+## [0.4.0] — 2026-08-24
+
+### Added
+- Template intelligence trở thành luồng mặc định: brief tiếng Việt có dấu/không dấu hoặc tiếng
+  Anh được map vào taxonomy domain/job/capability, chấm deterministic trên registry và trả một
+  trong bốn quyết định `auto`, `choice`, `lab`, `stop` với revision pin cùng evidence.
+- Sáu official profile đạt `release-supported`: `zaui-fashion`, `zaui-coffee`, `zaui-bistro`,
+  `zaui-market`, `zaui-doctor`, `zaui-lucky-wheel`. Qualification factory kiểm clean install,
+  build, App ID, safe rerun và browser oracle ở ba viewport trước khi promotion.
+- Runtime profile từ qualification đi xuyên bootstrap → render → preview. Template cần Zalo host
+  tự chạy qua simulator serving; user không phải biết cờ nội bộ `--verify-sim`.
+- Compatibility adapter được pin theo template + upstream SHA, exact-match hai chiều với registry
+  và apply atomic; bất kỳ precondition/refusal nào cũng rollback toàn bộ cây.
+- Result có `warnings[]` phân biệt preview dùng được với feature chưa production-ready. Recipe số
+  điện thoại hướng dẫn backend thật; simulator chỉ dùng dữ liệu mock có nhãn.
+
+### Fixed
+- Giữ payload của uncaught non-`Error` ngay trong page để qualification evidence không còn ghi
+  mỗi chữ `Object`; evidence kèm console excerpt đã redact và phân biệt preflight với build fail.
+- Lucky-wheel không còn gọi Graph endpoint server-side hoặc nhúng App Secret trong client; ngoài
+  simulator form fail closed, để trống số điện thoại và cho nhập tay
+  (`finding_28d737df0530`, `finding_f01e0ad02f15`).
+- Ranker không tự đổi template khi user gọi đích danh một profile chưa đủ điều kiện; các domain
+  feature như loyalty không lấn át ngành chính, và discovery failure nào thực sự auto-scaffold
+  sai một template supported sẽ chặn release.
+- Default scaffold dùng đúng oracle đã qualification; bistro, market và lucky-wheel không còn
+  pass factory nhưng fail ở luồng `run.mjs` bình thường.
+
+### Verification
+- Release checks **38/38**; blocking routing corpus **50/50**, top-1 **39/39 (100%)**;
+  unsafe discovery auto-route **0**; behavioral cases **37/37**, không blocked/fail.
+
 ## [0.3.2] — 2026-08-22
 
 ### Fixed

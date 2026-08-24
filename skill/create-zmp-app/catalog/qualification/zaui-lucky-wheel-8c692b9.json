@@ -1,0 +1,663 @@
+{
+  "schemaVersion": 1,
+  "tool": "qualify-template",
+  "templateId": "zaui-lucky-wheel",
+  "startedAt": "2026-08-23T08:13:02.515Z",
+  "workspace": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-lucky-wheel-qG309M",
+  "runId": "qualify-zaui-lucky-wheel-2026-08-23T08-13-02Z",
+  "registryPath": "/Users/dungnn/Project/DX/labs/miniapp-bootstrap-poc/skill/create-zmp-app/catalog/templates.json",
+  "license": {
+    "packageJsonLicense": "UNLICENSED",
+    "licenseFilePresent": false,
+    "registryLicenseFile": null,
+    "registryPackageJsonLicense": null,
+    "licenseDecision": "approved-internal"
+  },
+  "revision": "8c692b938727b4c6c38e866e4d6683cf1bdd4ed0",
+  "shortRevision": "8c692b9",
+  "upstreamHead": "8c692b938727b4c6c38e866e4d6683cf1bdd4ed0",
+  "evidenceValidForHead": true,
+  "recordedStateEffective": "release-supported",
+  "adapter": {
+    "status": "applicable",
+    "file": "/Users/dungnn/Project/DX/labs/miniapp-bootstrap-poc/skill/create-zmp-app/catalog/adapters/zaui-lucky-wheel.json",
+    "adapterId": "zaui-lucky-wheel-client-side-graph-removal",
+    "sha256": "0ca31e90db4ca171ec98a30428b1d16c07b3faafdbd8adcca51600169723b41b",
+    "applied": [
+      {
+        "patchId": "alias-at-to-project-src",
+        "file": "vite.config.mts",
+        "kind": "replace"
+      },
+      {
+        "patchId": "add-clsx",
+        "file": "package.json",
+        "kind": "add-dependency",
+        "dependency": {
+          "name": "clsx",
+          "version": "^2.1.1"
+        }
+      },
+      {
+        "patchId": "user-services-remove-client-side-graph-call",
+        "file": "src/services/user.services.ts",
+        "kind": "replace"
+      },
+      {
+        "patchId": "user-services-drop-unused-sdk-imports",
+        "file": "src/services/user.services.ts",
+        "kind": "replace"
+      },
+      {
+        "patchId": "register-form-import-usestate",
+        "file": "src/components/register-form.tsx",
+        "kind": "replace"
+      },
+      {
+        "patchId": "register-form-phone-source-state",
+        "file": "src/components/register-form.tsx",
+        "kind": "replace"
+      },
+      {
+        "patchId": "register-form-no-fake-phone-outside-simulator",
+        "file": "src/components/register-form.tsx",
+        "kind": "replace"
+      },
+      {
+        "patchId": "register-form-phone-source-notice",
+        "file": "src/components/register-form.tsx",
+        "kind": "replace"
+      }
+    ],
+    "refused": [],
+    "expired": false
+  },
+  "postScaffoldDigest": {
+    "digest": "0ad3ef1eaa24be27b59b9d1dd5363c9cceaa8ba7accb61545489ed20f804a4a9",
+    "fileCount": 48
+  },
+  "dependencyScan": {
+    "imported": [
+      "@tanstack/react-form",
+      "clsx",
+      "react",
+      "react-dom",
+      "tailwind-merge",
+      "valibot",
+      "zmp-sdk",
+      "zmp-ui",
+      "zustand"
+    ],
+    "declared": [
+      "@tanstack/react-form",
+      "@types/react",
+      "@types/react-dom",
+      "@vitejs/plugin-react",
+      "autoprefixer",
+      "clsx",
+      "cross-env",
+      "postcss",
+      "postcss-cli",
+      "postcss-preset-env",
+      "react",
+      "react-dom",
+      "sass",
+      "tailwind-merge",
+      "tailwindcss",
+      "valibot",
+      "vite",
+      "zmp-sdk",
+      "zmp-ui",
+      "zmp-vite-plugin",
+      "zustand"
+    ],
+    "missingRuntime": [],
+    "missingTypeOnly": []
+  },
+  "toolchain": {
+    "node": "v22.22.3",
+    "pnpm": "9.15.4",
+    "os": "darwin 25.5.0 arm64",
+    "chrome": "Google Chrome 151.0.7922.170",
+    "packageManagerPolicy": "pnpm (isolated node_modules); npm hoisting is never used as a fallback",
+    "pnpmStore": "shared global pnpm store (pass --clean-store for a per-run store)",
+    "resolvedVersions": {
+      "react": "18.3.1",
+      "react-dom": "18.3.1",
+      "zmp-ui": "1.11.14",
+      "zmp-sdk": "2.53.0",
+      "vite": "5.4.21",
+      "zmp-vite-plugin": "1.1.6",
+      "@vitejs/plugin-react": "4.7.0",
+      "typescript": null
+    }
+  },
+  "buildInfo": {
+    "outDir": "src/www",
+    "builtAt": "2026-08-23T08:13:15.107Z"
+  },
+  "residualIdentifiers": {
+    "blocking": [],
+    "informational": []
+  },
+  "noHostOracle": {
+    "exitCode": 1,
+    "gates": {
+      "gates": [
+        {
+          "id": "react_mount",
+          "status": "pass",
+          "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "mount_not_empty",
+          "status": "pass",
+          "detail": "children=1 textLen=149",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "no_sim_runtime_marker",
+          "status": "pass",
+          "detail": "no window.__ZMP_DX_RUNTIME__ outside the simulator",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "no_horizontal_overflow",
+          "status": "pass",
+          "detail": "scrollWidth=390 innerWidth=390",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "cta_not_clipped",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "screenshot",
+          "status": "pass",
+          "detail": "mobile-390x844.png",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "interaction_add_to_cart",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "no_fatal_console_error",
+          "status": "fail",
+          "detail": "1 error/pageerror event(s)",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "react_mount",
+          "status": "pass",
+          "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "mount_not_empty",
+          "status": "pass",
+          "detail": "children=1 textLen=149",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "no_sim_runtime_marker",
+          "status": "pass",
+          "detail": "no window.__ZMP_DX_RUNTIME__ outside the simulator",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "no_horizontal_overflow",
+          "status": "pass",
+          "detail": "scrollWidth=360 innerWidth=360",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "cta_not_clipped",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "screenshot",
+          "status": "pass",
+          "detail": "mobile-360x800.png",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "no_fatal_console_error",
+          "status": "fail",
+          "detail": "1 error/pageerror event(s)",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "react_mount",
+          "status": "pass",
+          "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "mount_not_empty",
+          "status": "pass",
+          "detail": "children=1 textLen=149",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "no_sim_runtime_marker",
+          "status": "pass",
+          "detail": "no window.__ZMP_DX_RUNTIME__ outside the simulator",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "no_horizontal_overflow",
+          "status": "pass",
+          "detail": "scrollWidth=1280 innerWidth=1280",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "cta_not_clipped",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "screenshot",
+          "status": "pass",
+          "detail": "wide-1280x800.png",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "interaction_add_to_cart",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "no_fatal_console_error",
+          "status": "fail",
+          "detail": "1 error/pageerror event(s)",
+          "viewport": "wide-1280x800"
+        }
+      ]
+    },
+    "consoleExcerpt": {
+      "totalErrorEvents": 6,
+      "truncated": false,
+      "events": [
+        {
+          "viewport": "mobile-390x844",
+          "kind": "error-detail",
+          "source": "unhandledrejection",
+          "text": "{\"code\":-2000,\"message\":\"Unknown error. Please try again later.\",\"api\":\"login\",\"detail\":\"[undefined]\"}"
+        },
+        {
+          "viewport": "mobile-390x844",
+          "kind": "pageerror",
+          "text": "Object"
+        },
+        {
+          "viewport": "mobile-360x800",
+          "kind": "error-detail",
+          "source": "unhandledrejection",
+          "text": "{\"code\":-2000,\"message\":\"Unknown error. Please try again later.\",\"api\":\"login\",\"detail\":\"[undefined]\"}"
+        },
+        {
+          "viewport": "mobile-360x800",
+          "kind": "pageerror",
+          "text": "Object"
+        },
+        {
+          "viewport": "wide-1280x800",
+          "kind": "error-detail",
+          "source": "unhandledrejection",
+          "text": "{\"code\":-2000,\"message\":\"Unknown error. Please try again later.\",\"api\":\"login\",\"detail\":\"[undefined]\"}"
+        },
+        {
+          "viewport": "wide-1280x800",
+          "kind": "pageerror",
+          "text": "Object"
+        }
+      ]
+    }
+  },
+  "oracleGates": {
+    "gates": [
+      {
+        "id": "react_mount",
+        "status": "pass",
+        "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "mount_not_empty",
+        "status": "pass",
+        "detail": "children=1 textLen=270",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "sim_runtime_marker",
+        "status": "pass",
+        "detail": "window.__ZMP_DX_RUNTIME__ schemaVersion=1 mode=simulator",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "no_horizontal_overflow",
+        "status": "pass",
+        "detail": "scrollWidth=390 innerWidth=390",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "cta_not_clipped",
+        "status": "skipped",
+        "detail": "profile simulator-official: no lab markers",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "screenshot",
+        "status": "pass",
+        "detail": "mobile-390x844.png",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "interaction_add_to_cart",
+        "status": "skipped",
+        "detail": "profile simulator-official: no lab markers",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "no_fatal_console_error",
+        "status": "pass",
+        "detail": "0 error/pageerror event(s)",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "react_mount",
+        "status": "pass",
+        "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "mount_not_empty",
+        "status": "pass",
+        "detail": "children=1 textLen=270",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "sim_runtime_marker",
+        "status": "pass",
+        "detail": "window.__ZMP_DX_RUNTIME__ schemaVersion=1 mode=simulator",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "no_horizontal_overflow",
+        "status": "pass",
+        "detail": "scrollWidth=360 innerWidth=360",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "cta_not_clipped",
+        "status": "skipped",
+        "detail": "profile simulator-official: no lab markers",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "screenshot",
+        "status": "pass",
+        "detail": "mobile-360x800.png",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "no_fatal_console_error",
+        "status": "pass",
+        "detail": "0 error/pageerror event(s)",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "react_mount",
+        "status": "pass",
+        "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "mount_not_empty",
+        "status": "pass",
+        "detail": "children=1 textLen=270",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "sim_runtime_marker",
+        "status": "pass",
+        "detail": "window.__ZMP_DX_RUNTIME__ schemaVersion=1 mode=simulator",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "no_horizontal_overflow",
+        "status": "pass",
+        "detail": "scrollWidth=1280 innerWidth=1280",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "cta_not_clipped",
+        "status": "skipped",
+        "detail": "profile simulator-official: no lab markers",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "screenshot",
+        "status": "pass",
+        "detail": "wide-1280x800.png",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "interaction_add_to_cart",
+        "status": "skipped",
+        "detail": "profile simulator-official: no lab markers",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "no_fatal_console_error",
+        "status": "pass",
+        "detail": "0 error/pageerror event(s)",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "sim_bridge_log_written",
+        "status": "pass",
+        "detail": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-lucky-wheel-qG309M/runs/qualify-zaui-lucky-wheel-2026-08-23T08-13-02Z/evidence/bridge-log.jsonl"
+      }
+    ]
+  },
+  "oracleProfile": "simulator-official",
+  "consoleExcerpt": null,
+  "screenshots": [
+    "mobile-360x800.png",
+    "mobile-390x844.png",
+    "wide-1280x800.png"
+  ],
+  "screenshotsPath": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-lucky-wheel-qG309M/runs/qualify-zaui-lucky-wheel-2026-08-23T08-13-02Z/evidence",
+  "externalRequirements": [],
+  "derivedState": "render-qualified",
+  "quarantineReason": null,
+  "promotion": {
+    "requested": true,
+    "eligible": true,
+    "blockedBy": [],
+    "targetState": "release-supported",
+    "applied": true
+  },
+  "gates": [
+    {
+      "id": "provenance",
+      "blocking": true,
+      "status": "pass",
+      "detail": "Zalo-MiniApp/zaui-lucky-wheel@8c692b938727b4c6c38e866e4d6683cf1bdd4ed0 snapshot verified",
+      "checks": [
+        {
+          "id": "owner_first_party",
+          "status": "pass",
+          "detail": "source.owner=Zalo-MiniApp (expected Zalo-MiniApp)"
+        },
+        {
+          "id": "repo_resolvable",
+          "status": "pass",
+          "detail": "git ls-remote HEAD of main = 8c692b938727b4c6c38e866e4d6683cf1bdd4ed0"
+        },
+        {
+          "id": "revision_pinned",
+          "status": "pass",
+          "detail": "qualifying revision=8c692b938727b4c6c38e866e4d6683cf1bdd4ed0 (source: registry source.revision)"
+        },
+        {
+          "id": "snapshot_immutable",
+          "status": "pass",
+          "detail": "extracted top-level dir \"zaui-lucky-wheel-8c692b938727b4c6c38e866e4d6683cf1bdd4ed0\""
+        },
+        {
+          "id": "snapshot_has_manifest",
+          "status": "pass",
+          "detail": "package.json present in the snapshot"
+        },
+        {
+          "id": "no_upstream_env_copied",
+          "status": "pass",
+          "detail": "snapshot ships no .env file"
+        },
+        {
+          "id": "license_recorded",
+          "status": "pass",
+          "detail": "package.json license=UNLICENSED, LICENSE file=false, registry licenseDecision=approved-internal"
+        }
+      ]
+    },
+    {
+      "id": "dependency",
+      "blocking": true,
+      "status": "pass",
+      "detail": "pnpm 9.15.4 installed 9 imported package(s), all declared",
+      "checks": [
+        {
+          "id": "direct_dependency_completeness",
+          "status": "pass",
+          "detail": "9 imported package(s), all declared directly"
+        },
+        {
+          "id": "pnpm_install",
+          "status": "pass",
+          "detail": "install.mjs exit 0"
+        }
+      ]
+    },
+    {
+      "id": "build",
+      "blocking": true,
+      "status": "pass",
+      "detail": "built into src/www",
+      "checks": [
+        {
+          "id": "vite_build",
+          "status": "pass",
+          "detail": "build.mjs exit 0, outDir=src/www (OUT_DIR_CANDIDATES detection reused from build.mjs)"
+        },
+        {
+          "id": "generic_vite_preparation",
+          "status": "pass",
+          "detail": "prepareViteSrcEntry() generated src/index.html from the root index.html (shipped harness preparation, review 35 F3)"
+        }
+      ]
+    },
+    {
+      "id": "rebrand_app_id",
+      "blocking": true,
+      "status": "pass",
+      "detail": "rebranded to \"qualify-zaui-lucky-wheel\", APP_ID 1000000000000000001 bound and resolved by the build toolchain",
+      "checks": [
+        {
+          "id": "name_rebranded",
+          "status": "pass",
+          "detail": "package.json name=\"qualify-zaui-lucky-wheel\" (rebranded files: package.json, zmp-cli.json, app-config.json)"
+        },
+        {
+          "id": "app_id_persisted",
+          "status": "pass",
+          "detail": "app/.env APP_ID=1000000000000000001 (expected 1000000000000000001)"
+        },
+        {
+          "id": "app_id_resolved_by_build",
+          "status": "pass",
+          "detail": "vite loadEnv() inside the app resolved APP_ID=1000000000000000001"
+        },
+        {
+          "id": "no_foreign_app_id",
+          "status": "pass",
+          "detail": "no appId-keyed identifier other than the bound App ID"
+        }
+      ]
+    },
+    {
+      "id": "runtime",
+      "blocking": true,
+      "status": "pass",
+      "detail": "react mount + non-empty content + no horizontal overflow + no fatal console error on 3 viewports",
+      "checks": [
+        {
+          "id": "browser_oracle_no_host",
+          "status": "warn",
+          "detail": "served without a Zalo host: no_fatal_console_error@mobile-390x844: 1 error/pageerror event(s) | no_fatal_console_error@mobile-360x800: 1 error/pageerror event(s) | no_fatal_console_error@wide-1280x800: 1 error/pageerror event(s) — recorded, not blocking: see evidence/no-host-console.jsonl for what the app actually said"
+        },
+        {
+          "id": "browser_oracle",
+          "status": "pass",
+          "detail": "19 oracle gate(s) passed across 3 viewports (profile simulator-official)"
+        },
+        {
+          "id": "oracle_coverage",
+          "status": "warn",
+          "detail": "profile simulator-official skipped: cta_not_clipped, interaction_add_to_cart — no interaction evidence, so the highest evidence-backed rung is render-qualified"
+        }
+      ]
+    },
+    {
+      "id": "external_dependency",
+      "blocking": true,
+      "status": "pass",
+      "detail": "first preview runs on bundled/mock data only",
+      "checks": [
+        {
+          "id": "first_preview_self_contained",
+          "status": "pass",
+          "detail": "no backend/API/env input required for the first preview"
+        },
+        {
+          "id": "no_failed_remote_calls_at_runtime",
+          "status": "pass",
+          "detail": "no failing remote request observed in the browser run"
+        }
+      ]
+    },
+    {
+      "id": "safe_rerun",
+      "blocking": true,
+      "status": "pass",
+      "detail": "mutating pipeline is deterministic and the adapter refuses to double-apply",
+      "checks": [
+        {
+          "id": "pipeline_deterministic",
+          "status": "pass",
+          "detail": "same id+revision+appId produced tree digest 0ad3ef1eaa24be27 vs 0ad3ef1eaa24be27 (48 files)"
+        },
+        {
+          "id": "adapter_refuses_double_apply",
+          "status": "pass",
+          "detail": "second application: applied=0 refused=8 (alias-at-to-project-src/precondition_mismatch, add-clsx/precondition_mismatch, user-services-remove-client-side-graph-call/precondition_mismatch, user-services-drop-unused-sdk-imports/precondition_mismatch, register-form-import-usestate/precondition_mismatch, register-form-phone-source-state/precondition_mismatch, register-form-no-fake-phone-outside-simulator/precondition_mismatch, register-form-phone-source-notice/precondition_mismatch), tree unchanged=true"
+        }
+      ]
+    }
+  ],
+  "finishedAt": "2026-08-23T08:13:22.082Z",
+  "durationMs": 19566,
+  "exitCode": 0
+}

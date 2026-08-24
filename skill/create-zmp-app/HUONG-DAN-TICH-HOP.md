@@ -26,7 +26,7 @@ curl -fsSL https://raw.githubusercontent.com/dungnn1991/zalo-miniapp-skill/main/
 curl -fsSL .../main/install.sh | bash -s -- --host claude
 
 # chỉ định version rõ ràng (khi cần tái hiện đúng bản để check bug):
-curl -fsSL .../main/install.sh | bash -s -- --version v0.3.2
+curl -fsSL .../main/install.sh | bash -s -- --version v0.4.0
 
 # kênh thử nghiệm (team nội bộ, đổi liên tục — KHÔNG dùng cho demo):
 curl -fsSL https://raw.githubusercontent.com/dungnn1991/zalo-miniapp-skill/staging/install.sh | bash -s -- --channel staging

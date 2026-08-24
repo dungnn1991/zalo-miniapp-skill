@@ -38,12 +38,18 @@ if (isOfficial && !appId) {
   process.exit(3);
 }
 
-// Phase 3 (plan 28): --sim opens a HEADED Chrome window (playwright channel chrome —
+// Phase 3 (plan 28): the simulator opens a HEADED Chrome window (playwright channel chrome —
 // accepted deviation from "default browser") with the same route-interception + shim as the
 // simulator runner. Default decision for preview is `manual` so the human sees the sheet.
-if (argv.includes('--sim')) {
+//
+// `--sim` forces it; otherwise the run's own input.json decides, exactly like render.mjs. A
+// template that only renders inside a Zalo host (registry
+// `qualification.runtime.requiresZaloHost`) would otherwise open a blank preview window and
+// leave the user guessing.
+const previewSim = argv.includes('--sim') || ctx.readJson('input.json')?.renderProvider === 'simulator';
+if (previewSim) {
   if (!appId) {
-    console.error('preview: --sim requires input.json miniAppId');
+    console.error('preview: simulator preview requires input.json miniAppId');
     process.exit(3);
   }
   const { chromium } = await import('playwright-core');

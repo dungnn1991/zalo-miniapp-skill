@@ -1,0 +1,25 @@
+{
+  "id": "disc-wheel-job-points",
+  "group": "job-signal",
+  "brief": "app tích điểm thành viên đổi quà",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-lucky-wheel"
+    ],
+    "mustNotSelect": [
+      "zaui-fashion",
+      "zaui-coffee"
+    ],
+    "requiredDomains": [
+      "campaign.loyalty"
+    ],
+    "requiredJobs": [
+      "loyalty.points"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "loyalty.points là JOB chính ở đây, khác với loyalty là capability phụ của fashion/coffee."
+}

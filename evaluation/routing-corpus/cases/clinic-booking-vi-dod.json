@@ -1,0 +1,26 @@
+{
+  "id": "clinic-booking-vi-dod",
+  "group": "clear-domain",
+  "brief": "tạo app phòng khám hỗ trợ đặt lịch, appId=1234567890",
+  "blocking": true,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-doctor"
+    ],
+    "mustNotSelect": [
+      "zaui-fashion",
+      "zaui-shop",
+      "zaui-egovernment"
+    ],
+    "requiredDomains": [
+      "healthcare.clinic"
+    ],
+    "requiredJobs": [
+      "appointment.booking"
+    ]
+  },
+  "source": "CONTRACT-plan34.md DoD #1 (owner use case)",
+  "note": "zaui-doctor còn state=candidate → hôm nay đúng là lab KÈM giải thích (doctor phải nằm trong alternatives với rejectedBecause), KHÔNG được âm thầm rơi về fashion."
+}

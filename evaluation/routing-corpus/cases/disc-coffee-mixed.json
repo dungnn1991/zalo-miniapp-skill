@@ -1,0 +1,24 @@
+{
+  "id": "disc-coffee-mixed",
+  "group": "mixed-intent",
+  "brief": "app cà phê có tích điểm thành viên và theme màu nâu",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-coffee"
+    ],
+    "mustNotSelect": [
+      "zaui-lucky-wheel"
+    ],
+    "requiredDomains": [
+      "fnb.coffee"
+    ],
+    "requiredJobs": [
+      "food.order"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "tích điểm là capability loyalty của coffee, không được đổi base sang campaign.loyalty."
+}

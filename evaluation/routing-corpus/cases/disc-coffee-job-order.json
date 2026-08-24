@@ -1,0 +1,24 @@
+{
+  "id": "disc-coffee-job-order",
+  "group": "job-signal",
+  "brief": "app đặt đồ uống trước rồi ghé lấy tại quầy",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-coffee"
+    ],
+    "mustNotSelect": [
+      "zaui-bistro"
+    ],
+    "requiredDomains": [
+      "fnb.coffee"
+    ],
+    "requiredJobs": [
+      "order.place"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Discovery probe cho zaui-coffee; non-blocking vì template chưa release-supported (review 35 F6)."
+}

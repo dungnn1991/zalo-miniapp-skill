@@ -1,0 +1,689 @@
+{
+  "schemaVersion": 1,
+  "tool": "qualify-template",
+  "templateId": "zaui-coffee",
+  "startedAt": "2026-08-23T08:11:30.131Z",
+  "workspace": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-coffee-a58UVL",
+  "runId": "qualify-zaui-coffee-2026-08-23T08-11-30Z",
+  "registryPath": "/Users/dungnn/Project/DX/labs/miniapp-bootstrap-poc/skill/create-zmp-app/catalog/templates.json",
+  "license": {
+    "packageJsonLicense": "UNLICENSED",
+    "licenseFilePresent": false,
+    "registryLicenseFile": null,
+    "registryPackageJsonLicense": null,
+    "licenseDecision": "approved-internal"
+  },
+  "revision": "2d3d5e85c283b6079aa16b51591ccf11a11e693b",
+  "shortRevision": "2d3d5e8",
+  "upstreamHead": "2d3d5e85c283b6079aa16b51591ccf11a11e693b",
+  "evidenceValidForHead": true,
+  "recordedStateEffective": "release-supported",
+  "adapter": {
+    "status": "applicable",
+    "file": "/Users/dungnn/Project/DX/labs/miniapp-bootstrap-poc/skill/create-zmp-app/catalog/adapters/zaui-coffee.json",
+    "adapterId": "zaui-coffee-react-router-direct-dep",
+    "sha256": "7ecc0ca82aa34e8a8f9b28aa216afe3bcdea810c7295bff1ad64673940802c99",
+    "applied": [
+      {
+        "patchId": "add-react-router",
+        "file": "package.json",
+        "kind": "add-dependency",
+        "dependency": {
+          "name": "react-router",
+          "version": "^6.8.2"
+        }
+      }
+    ],
+    "refused": [],
+    "expired": false
+  },
+  "postScaffoldDigest": {
+    "digest": "b92af0bcf63a65ff3899d0e666fe12beda51106fb67abd8fb49e2fc44566c26f",
+    "fileCount": 114
+  },
+  "dependencyScan": {
+    "imported": [
+      "components",
+      "hooks",
+      "lodash",
+      "pages",
+      "react",
+      "react-dom",
+      "react-router",
+      "recoil",
+      "state",
+      "static",
+      "swiper",
+      "types",
+      "utils",
+      "zmp-sdk",
+      "zmp-ui"
+    ],
+    "declared": [
+      "@react-spring/web",
+      "@types/lodash",
+      "@types/react",
+      "@types/react-dom",
+      "@types/react-router-dom",
+      "@vitejs/plugin-react",
+      "autoprefixer",
+      "cross-env",
+      "lodash",
+      "postcss",
+      "postcss-aspect-ratio-polyfill",
+      "postcss-cli",
+      "postcss-preset-env",
+      "prop-types",
+      "react",
+      "react-dom",
+      "react-router",
+      "react-router-dom",
+      "recoil",
+      "sass",
+      "swiper",
+      "tailwindcss",
+      "vite",
+      "vite-tsconfig-paths",
+      "zmp-sdk",
+      "zmp-ui",
+      "zmp-vite-plugin"
+    ],
+    "missingRuntime": [
+      {
+        "name": "components",
+        "typeOnly": false,
+        "sites": [
+          "src/components/product/item.tsx:1",
+          "src/components/product/multiple-option-picker.tsx:1",
+          "src/components/product/picker.tsx:1",
+          "src/components/product/picker.tsx:2"
+        ]
+      },
+      {
+        "name": "hooks",
+        "typeOnly": false,
+        "sites": [
+          "src/components/fullscreen-sheet.tsx:1",
+          "src/components/layout.tsx:14",
+          "src/components/navigation.tsx:1",
+          "src/pages/cart/index.tsx:8"
+        ]
+      },
+      {
+        "name": "pages",
+        "typeOnly": false,
+        "sites": [
+          "src/components/layout.tsx:5",
+          "src/components/layout.tsx:6",
+          "src/components/layout.tsx:7",
+          "src/components/layout.tsx:8"
+        ]
+      },
+      {
+        "name": "state",
+        "typeOnly": false,
+        "sites": [
+          "src/components/cart-icon.tsx:3",
+          "src/components/product/picker.tsx:6",
+          "src/pages/cart/cart-items.tsx:7",
+          "src/pages/cart/delivery.tsx:9"
+        ]
+      },
+      {
+        "name": "static",
+        "typeOnly": false,
+        "sites": [
+          "src/pages/index/welcome.tsx:3",
+          "src/pages/profile.tsx:3",
+          "src/state.ts:3"
+        ]
+      },
+      {
+        "name": "types",
+        "typeOnly": false,
+        "sites": [
+          "src/components/display/final-price.tsx:2",
+          "src/components/display/final-price.tsx:3",
+          "src/components/display/price-change.tsx:2",
+          "src/components/display/selected-options.tsx:2"
+        ]
+      },
+      {
+        "name": "utils",
+        "typeOnly": false,
+        "sites": [
+          "src/components/app.tsx:4",
+          "src/components/display/final-price.tsx:4",
+          "src/components/display/price-change.tsx:3",
+          "src/components/display/price.tsx:2"
+        ]
+      }
+    ],
+    "missingTypeOnly": []
+  },
+  "toolchain": {
+    "node": "v22.22.3",
+    "pnpm": "9.15.4",
+    "os": "darwin 25.5.0 arm64",
+    "chrome": "Google Chrome 151.0.7922.170",
+    "packageManagerPolicy": "pnpm (isolated node_modules); npm hoisting is never used as a fallback",
+    "pnpmStore": "shared global pnpm store (pass --clean-store for a per-run store)",
+    "resolvedVersions": {
+      "react": "18.3.1",
+      "react-dom": "18.3.1",
+      "zmp-ui": "1.11.14",
+      "zmp-sdk": "2.53.0",
+      "vite": "5.4.21",
+      "zmp-vite-plugin": "1.1.6",
+      "@vitejs/plugin-react": "1.3.2",
+      "typescript": null
+    }
+  },
+  "buildInfo": {
+    "outDir": "src/www",
+    "builtAt": "2026-08-23T08:11:46.123Z"
+  },
+  "residualIdentifiers": {
+    "blocking": [],
+    "informational": [
+      {
+        "file": ".github/workflows/zalo-mini-app.yml",
+        "line": 54,
+        "value": "194839900003483517",
+        "key": null
+      }
+    ]
+  },
+  "noHostOracle": {
+    "exitCode": 0,
+    "gates": {
+      "gates": [
+        {
+          "id": "react_mount",
+          "status": "pass",
+          "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "mount_not_empty",
+          "status": "pass",
+          "detail": "children=1 textLen=483",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "no_sim_runtime_marker",
+          "status": "pass",
+          "detail": "no window.__ZMP_DX_RUNTIME__ outside the simulator",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "no_horizontal_overflow",
+          "status": "pass",
+          "detail": "scrollWidth=390 innerWidth=390",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "cta_not_clipped",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "screenshot",
+          "status": "pass",
+          "detail": "mobile-390x844.png",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "interaction_add_to_cart",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "no_fatal_console_error",
+          "status": "pass",
+          "detail": "0 error/pageerror event(s)",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "react_mount",
+          "status": "pass",
+          "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "mount_not_empty",
+          "status": "pass",
+          "detail": "children=1 textLen=483",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "no_sim_runtime_marker",
+          "status": "pass",
+          "detail": "no window.__ZMP_DX_RUNTIME__ outside the simulator",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "no_horizontal_overflow",
+          "status": "pass",
+          "detail": "scrollWidth=360 innerWidth=360",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "cta_not_clipped",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "screenshot",
+          "status": "pass",
+          "detail": "mobile-360x800.png",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "no_fatal_console_error",
+          "status": "pass",
+          "detail": "0 error/pageerror event(s)",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "react_mount",
+          "status": "pass",
+          "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "mount_not_empty",
+          "status": "pass",
+          "detail": "children=1 textLen=483",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "no_sim_runtime_marker",
+          "status": "pass",
+          "detail": "no window.__ZMP_DX_RUNTIME__ outside the simulator",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "no_horizontal_overflow",
+          "status": "pass",
+          "detail": "scrollWidth=1280 innerWidth=1280",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "cta_not_clipped",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "screenshot",
+          "status": "pass",
+          "detail": "wide-1280x800.png",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "interaction_add_to_cart",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "no_fatal_console_error",
+          "status": "pass",
+          "detail": "0 error/pageerror event(s)",
+          "viewport": "wide-1280x800"
+        }
+      ]
+    },
+    "consoleExcerpt": null
+  },
+  "oracleGates": {
+    "gates": [
+      {
+        "id": "react_mount",
+        "status": "pass",
+        "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "mount_not_empty",
+        "status": "pass",
+        "detail": "children=1 textLen=483",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "sim_runtime_marker",
+        "status": "pass",
+        "detail": "window.__ZMP_DX_RUNTIME__ schemaVersion=1 mode=simulator",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "no_horizontal_overflow",
+        "status": "pass",
+        "detail": "scrollWidth=390 innerWidth=390",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "cta_not_clipped",
+        "status": "skipped",
+        "detail": "profile simulator-official: no lab markers",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "screenshot",
+        "status": "pass",
+        "detail": "mobile-390x844.png",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "interaction_add_to_cart",
+        "status": "skipped",
+        "detail": "profile simulator-official: no lab markers",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "no_fatal_console_error",
+        "status": "pass",
+        "detail": "0 error/pageerror event(s)",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "react_mount",
+        "status": "pass",
+        "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "mount_not_empty",
+        "status": "pass",
+        "detail": "children=1 textLen=483",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "sim_runtime_marker",
+        "status": "pass",
+        "detail": "window.__ZMP_DX_RUNTIME__ schemaVersion=1 mode=simulator",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "no_horizontal_overflow",
+        "status": "pass",
+        "detail": "scrollWidth=360 innerWidth=360",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "cta_not_clipped",
+        "status": "skipped",
+        "detail": "profile simulator-official: no lab markers",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "screenshot",
+        "status": "pass",
+        "detail": "mobile-360x800.png",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "no_fatal_console_error",
+        "status": "pass",
+        "detail": "0 error/pageerror event(s)",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "react_mount",
+        "status": "pass",
+        "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "mount_not_empty",
+        "status": "pass",
+        "detail": "children=1 textLen=483",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "sim_runtime_marker",
+        "status": "pass",
+        "detail": "window.__ZMP_DX_RUNTIME__ schemaVersion=1 mode=simulator",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "no_horizontal_overflow",
+        "status": "pass",
+        "detail": "scrollWidth=1280 innerWidth=1280",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "cta_not_clipped",
+        "status": "skipped",
+        "detail": "profile simulator-official: no lab markers",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "screenshot",
+        "status": "pass",
+        "detail": "wide-1280x800.png",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "interaction_add_to_cart",
+        "status": "skipped",
+        "detail": "profile simulator-official: no lab markers",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "no_fatal_console_error",
+        "status": "pass",
+        "detail": "0 error/pageerror event(s)",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "sim_bridge_log_written",
+        "status": "skipped",
+        "detail": "profile simulator-official: app made no native call — nothing to log (marker gate proves the shim ran)"
+      }
+    ]
+  },
+  "oracleProfile": "simulator-official",
+  "consoleExcerpt": null,
+  "screenshots": [
+    "mobile-360x800.png",
+    "mobile-390x844.png",
+    "wide-1280x800.png"
+  ],
+  "screenshotsPath": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-coffee-a58UVL/runs/qualify-zaui-coffee-2026-08-23T08-11-30Z/evidence",
+  "externalRequirements": [],
+  "derivedState": "render-qualified",
+  "quarantineReason": null,
+  "promotion": {
+    "requested": true,
+    "eligible": true,
+    "blockedBy": [],
+    "targetState": "release-supported",
+    "applied": true
+  },
+  "gates": [
+    {
+      "id": "provenance",
+      "blocking": true,
+      "status": "pass",
+      "detail": "Zalo-MiniApp/zaui-coffee@2d3d5e85c283b6079aa16b51591ccf11a11e693b snapshot verified",
+      "checks": [
+        {
+          "id": "owner_first_party",
+          "status": "pass",
+          "detail": "source.owner=Zalo-MiniApp (expected Zalo-MiniApp)"
+        },
+        {
+          "id": "repo_resolvable",
+          "status": "pass",
+          "detail": "git ls-remote HEAD of main = 2d3d5e85c283b6079aa16b51591ccf11a11e693b"
+        },
+        {
+          "id": "revision_pinned",
+          "status": "pass",
+          "detail": "qualifying revision=2d3d5e85c283b6079aa16b51591ccf11a11e693b (source: registry source.revision)"
+        },
+        {
+          "id": "snapshot_immutable",
+          "status": "pass",
+          "detail": "extracted top-level dir \"zaui-coffee-2d3d5e85c283b6079aa16b51591ccf11a11e693b\""
+        },
+        {
+          "id": "snapshot_has_manifest",
+          "status": "pass",
+          "detail": "package.json present in the snapshot"
+        },
+        {
+          "id": "no_upstream_env_copied",
+          "status": "pass",
+          "detail": "snapshot ships no .env file"
+        },
+        {
+          "id": "license_recorded",
+          "status": "pass",
+          "detail": "package.json license=UNLICENSED, LICENSE file=false, registry licenseDecision=approved-internal"
+        }
+      ]
+    },
+    {
+      "id": "dependency",
+      "blocking": true,
+      "status": "pass",
+      "detail": "pnpm 9.15.4 installed 15 imported package(s), all declared",
+      "checks": [
+        {
+          "id": "direct_dependency_completeness",
+          "status": "warn",
+          "detail": "imported but not declared: components (src/components/product/item.tsx:1), hooks (src/components/fullscreen-sheet.tsx:1), pages (src/components/layout.tsx:5), state (src/components/cart-icon.tsx:3), static (src/pages/index/welcome.tsx:3), types (src/components/display/final-price.tsx:2), utils (src/components/app.tsx:4) — pnpm isolated node_modules chỉ resolve được nếu package được khai trực tiếp; build/runtime gate là nơi quyết định pass/fail"
+        },
+        {
+          "id": "pnpm_install",
+          "status": "pass",
+          "detail": "install.mjs exit 0"
+        }
+      ]
+    },
+    {
+      "id": "build",
+      "blocking": true,
+      "status": "pass",
+      "detail": "built into src/www",
+      "checks": [
+        {
+          "id": "vite_build",
+          "status": "pass",
+          "detail": "build.mjs exit 0, outDir=src/www (OUT_DIR_CANDIDATES detection reused from build.mjs)"
+        },
+        {
+          "id": "generic_vite_preparation",
+          "status": "pass",
+          "detail": "prepareViteSrcEntry() generated src/index.html from the root index.html (shipped harness preparation, review 35 F3)"
+        },
+        {
+          "id": "build_css_prestep",
+          "status": "pass",
+          "detail": "template ships a build:css script; build.mjs ran it as the pre-step (exit recorded in build.log)"
+        }
+      ]
+    },
+    {
+      "id": "rebrand_app_id",
+      "blocking": true,
+      "status": "pass",
+      "detail": "rebranded to \"qualify-zaui-coffee\", APP_ID 1000000000000000001 bound and resolved by the build toolchain",
+      "checks": [
+        {
+          "id": "name_rebranded",
+          "status": "pass",
+          "detail": "package.json name=\"qualify-zaui-coffee\" (rebranded files: package.json, zmp-cli.json, app-config.json)"
+        },
+        {
+          "id": "app_id_persisted",
+          "status": "pass",
+          "detail": "app/.env APP_ID=1000000000000000001 (expected 1000000000000000001)"
+        },
+        {
+          "id": "app_id_resolved_by_build",
+          "status": "pass",
+          "detail": "vite loadEnv() inside the app resolved APP_ID=1000000000000000001"
+        },
+        {
+          "id": "no_foreign_app_id",
+          "status": "pass",
+          "detail": "no appId-keyed identifier other than the bound App ID"
+        },
+        {
+          "id": "residual_upstream_identifiers",
+          "status": "warn",
+          "detail": ".github/workflows/zalo-mini-app.yml:54 (unkeyed)=194839900003483517"
+        }
+      ]
+    },
+    {
+      "id": "runtime",
+      "blocking": true,
+      "status": "pass",
+      "detail": "react mount + non-empty content + no horizontal overflow + no fatal console error on 3 viewports",
+      "checks": [
+        {
+          "id": "browser_oracle_no_host",
+          "status": "pass",
+          "detail": "app also renders clean with no Zalo host at all"
+        },
+        {
+          "id": "browser_oracle",
+          "status": "pass",
+          "detail": "18 oracle gate(s) passed across 3 viewports (profile simulator-official)"
+        },
+        {
+          "id": "oracle_coverage",
+          "status": "warn",
+          "detail": "profile simulator-official skipped: cta_not_clipped, interaction_add_to_cart, sim_bridge_log_written — no interaction evidence, so the highest evidence-backed rung is render-qualified"
+        }
+      ]
+    },
+    {
+      "id": "external_dependency",
+      "blocking": true,
+      "status": "pass",
+      "detail": "first preview runs on bundled/mock data only",
+      "checks": [
+        {
+          "id": "first_preview_self_contained",
+          "status": "pass",
+          "detail": "no backend/API/env input required for the first preview"
+        },
+        {
+          "id": "no_failed_remote_calls_at_runtime",
+          "status": "pass",
+          "detail": "no failing remote request observed in the browser run"
+        }
+      ]
+    },
+    {
+      "id": "safe_rerun",
+      "blocking": true,
+      "status": "pass",
+      "detail": "mutating pipeline is deterministic and the adapter refuses to double-apply",
+      "checks": [
+        {
+          "id": "pipeline_deterministic",
+          "status": "pass",
+          "detail": "same id+revision+appId produced tree digest b92af0bcf63a65ff vs b92af0bcf63a65ff (114 files)"
+        },
+        {
+          "id": "adapter_refuses_double_apply",
+          "status": "pass",
+          "detail": "second application: applied=0 refused=1 (add-react-router/precondition_mismatch), tree unchanged=true"
+        }
+      ]
+    }
+  ],
+  "finishedAt": "2026-08-23T08:11:53.242Z",
+  "durationMs": 23111,
+  "exitCode": 0
+}

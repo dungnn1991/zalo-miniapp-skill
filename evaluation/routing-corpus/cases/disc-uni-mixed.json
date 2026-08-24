@@ -1,0 +1,24 @@
+{
+  "id": "disc-uni-mixed",
+  "group": "mixed-intent",
+  "brief": "app tuyển sinh có biểu mẫu nộp hồ sơ và theme xanh dương",
+  "blocking": false,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-uni"
+    ],
+    "mustNotSelect": [
+      "zaui-egovernment"
+    ],
+    "requiredDomains": [
+      "education.university"
+    ],
+    "requiredJobs": [
+      "admission.apply"
+    ]
+  },
+  "source": "plan 34 §2.2 (discovery set, 8 prompt/template) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "forms là capability; theme là style."
+}

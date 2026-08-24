@@ -67,14 +67,17 @@ Common requests:
 
 ## Templates
 
-The official [ZaUI Templates](https://miniapp.zaloplatforms.com/zaui-templates) catalog currently
-lists nine templates. The skill scaffolds only revisions that have passed its own release gates so
-installation, build, and rendering are reproducible. In v0.3.2, the release-supported official
-template is `zaui-fashion`; requests without a qualified template use the neutral starter for
-further development.
+The skill indexes the official [ZaUI Templates](https://miniapp.zaloplatforms.com/zaui-templates)
+catalog. Every brief is ranked automatically — no "use a template" phrase needed — but the skill
+only scaffolds revisions that have passed its own qualification gates, so installation, build,
+and rendering are reproducible. Version 0.4.0 qualifies six profiles: fashion, coffee, bistro,
+market, doctor, and lucky-wheel. The live state remains in
+`skill/create-zmp-app/catalog/templates.json`; a brief with no qualified match gets the neutral
+starter and the report says which candidate was skipped and why.
 
-See [Official templates](./skill/create-zmp-app/references/official-templates.md) for catalog,
-revision, and support-policy details.
+See [Template routing](./skill/create-zmp-app/references/template-routing.md) for how a template
+is chosen, and [Official templates](./skill/create-zmp-app/references/official-templates.md) for
+the scaffold mechanics.
 
 ## Quality and safety
 
@@ -101,8 +104,8 @@ revision, and support-policy details.
 
 ## Skill development
 
-This repository contains the skill runtime and its verification lab. The release gate currently
-runs a 32-case suite plus metadata validation:
+This repository contains the skill runtime and its verification lab. The release gate runs
+metadata validation, the routing corpus, and a 37-case suite:
 
 ```bash
 npm test

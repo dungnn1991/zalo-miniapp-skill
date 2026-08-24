@@ -148,11 +148,19 @@ let result = null;
 try { result = JSON.parse(fs.readFileSync(resultPath, 'utf8')); } catch { /* validated by verify */ }
 let deployedUrl;
 try { deployedUrl = JSON.parse(fs.readFileSync(path.join(runDir, 'evidence', 'deploy.json'), 'utf8')).deployedUrl; } catch { /* no deploy */ }
+// Structured adapter warnings ride all the way out. `insights` is a COUNT because insights are
+// about this run and the host agent can read them from resultPath; a warning is different — it
+// says the app that was just built is missing something before production (today:
+// PHONE_BACKEND_REQUIRED on zaui-lucky-wheel). Emitting only a count let the host agent finish
+// with "done, 0 insights" and never mention it, so the whole warning contract died at the last
+// hop. The array is emitted verbatim; SKILL.md requires the final report to repeat it.
+const warnings = Array.isArray(result?.warnings) ? result.warnings : [];
 console.log(JSON.stringify({
   runId,
   status: 'pass',
   ...(deployedUrl ? { deployedUrl } : {}),
   insights: result?.insights?.length ?? 0,
+  ...(warnings.length ? { warnings } : {}),
   resultPath,
 }));
 

@@ -112,28 +112,46 @@ async function main() {
     process.exit(3);
   }
 
-  // Phase 3 (plan 28): --provider simulator — no static server at all. The runner serves the
+  // Which environment to render in. An explicit --provider always wins; otherwise the run's own
+  // input.json decides, because bootstrap already knows whether the chosen template needs a Zalo
+  // host (registry `qualification.runtime.requiresZaloHost`, recorded by the factory).
+  //
+  // This used to read only the flag, so a template qualified under the simulator was verified in
+  // one environment and scaffolded in another: `zaui-bistro`, `zaui-market` and
+  // `zaui-lucky-wheel` all fail the no-host oracle, so a plain `run.mjs` scaffold stopped at
+  // render unless the user happened to know about --verify-sim.
+  const provider = getArg(argv, 'provider') ?? ctx.readJson('input.json')?.renderProvider ?? 'browser';
+  if (provider !== 'browser' && provider !== 'simulator') {
+    console.error(`render: unknown --provider "${provider}" (browser|simulator)`);
+    process.exit(3);
+  }
+  ctx.event('render', { stage: 'render', status: 'provider_resolved', detail: `${provider} (${getArg(argv, 'provider') ? 'flag' : 'input.json'})` });
+  // What the run ACTUALLY rendered in. `--verify-sim` (and any explicit --provider) overrides
+  // input.json, so reading input.json afterwards would report `browser` for a run that really
+  // used the simulator. verify.mjs reads this file first.
+  ctx.writeJson('evidence/render-info.json', {
+    provider,
+    source: getArg(argv, 'provider') ? 'flag' : 'input.json',
+    resolvedAt: new Date().toISOString(),
+  });
+
+  // Phase 3 (plan 28): provider simulator — no static server at all. The runner serves the
   // app via playwright route-interception at https://h5.zdn.vn/zapps/<appId>/ (isMp needs the
   // real hostname+path) using scripts/sim/intercept.mjs and the manifest written here.
-  if (getArg(argv, 'provider') === 'simulator') {
+  if (provider === 'simulator') {
     if (!appId) {
       console.error('render: --provider simulator requires input.json miniAppId');
       process.exit(3);
     }
-    // Demo flow xin quyền (tab Tài khoản + markers) chỉ tồn tại trong LAB template.
-    // App scaffold từ official template chưa được wire cho sim UI-demo — fail rõ thay vì
-    // để runner rơi vào react_mount fail khó hiểu (guard sau finding_30d7006aeaa7 incident).
-    const tmplSource = ctx.readJson('input.json')?.template?.source;
-    if (tmplSource === 'official' || tmplSource === 'existing') {
-      console.error(
-        'render: simulator demo flow xin quyền hiện chỉ hỗ trợ app tạo từ LAB template ' +
-        '(tab "Tài khoản" + demo markers). App này scaffold từ ' +
-        (tmplSource === 'official' ? 'official template. ' : 'nguồn ngoài (--existing, không có manifest). ') +
-        'Muốn thử flow quyền: tạo app lab template (prompt KHÔNG kèm "mẫu có sẵn"), vd: ' +
-        '"tạo app bán quần áo với appId=..." rồi chạy giả lập trên app đó.'
-      );
-      process.exit(3);
-    }
+    // Sim SERVING và sim DEMO-FLOW là hai thứ khác nhau (mandate 42 §3.3). Serving = host
+    // interception + shim + runtime marker + bridge log, đúng cho mọi app. Demo-flow = tab
+    // "Tài khoản" + marker api-btn-* của LAB template, official template không có.
+    // Trước đây official bị chặn thẳng ở đây vì hai thứ đó bị gộp làm một, nên template chính
+    // thức không bao giờ chạy được dưới môi trường thật sự của nó. Giờ chỉ chọn oracle profile
+    // khác; guard cũ (finding_30d7006aeaa7) vẫn còn nguyên giá trị dưới dạng profile
+    // simulator-official — nó không đòi marker của lab nên không rơi vào react_mount fail
+    // khó hiểu.
+    const simProfile = isOfficial ? 'simulator-official' : 'simulator';
     const { buildSimManifest } = await import('./sim/intercept.mjs');
     const decision = getArg(argv, 'sim-decision', 'accept');
     const manifest = buildSimManifest(ctx, ws, { decision });
@@ -145,14 +163,14 @@ async function main() {
     ctx.event('render', {
       stage: 'render',
       status: 'runner_start',
-      command: `node ${RUNNER_PATH} --out <evidence> --profile simulator --sim-manifest ${manifestPath}`,
-      detail: `simDecision=${decision}`,
+      command: `node ${RUNNER_PATH} --out <evidence> --profile ${simProfile} --sim-manifest ${manifestPath}`,
+      detail: `simDecision=${decision} profile=${simProfile}`,
     });
     const child2 = spawn(process.execPath, [
       RUNNER_PATH,
       '--out', path.join(runDir, 'evidence'),
       '--config', CONFIG_PATH,
-      '--profile', 'simulator',
+      '--profile', simProfile,
       '--sim-manifest', manifestPath,
     ], { stdio: ['ignore', 'pipe', 'pipe'] });
     let out = '';
@@ -170,7 +188,7 @@ async function main() {
       detail: out.trim().slice(-500),
     });
     const simExit = code === 0 ? 0 : code === 1 ? 1 : 3;
-    console.log(JSON.stringify({ runId, stage: 'render', status: simExit === 0 ? 'ok' : 'fail', exitCode: simExit, provider: 'simulator' }));
+    console.log(JSON.stringify({ runId, stage: 'render', status: simExit === 0 ? 'ok' : 'fail', exitCode: simExit, provider: 'simulator', profile: simProfile }));
     process.exit(simExit);
   }
   // Oracle profile from input.json template.source: official → official-template, else full.

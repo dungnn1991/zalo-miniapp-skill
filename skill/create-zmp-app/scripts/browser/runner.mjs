@@ -17,6 +17,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright-core';
+import { redactText } from '../lib/redact.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const argv = process.argv.slice(2);
@@ -33,16 +34,21 @@ const configPath = arg('config', path.resolve(__dirname, '..', '..', 'config.jso
 const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 const { markers, viewports, interactionCheck } = cfg;
 
-// Oracle profile: "full" (default), "official-template", or "simulator" (Phase 3).
-// simulator: full gates + sim serve-interception (no external server) + demo API checks.
+// Oracle profile: "full" (default), "official-template", "simulator" (Phase 3) or
+// "simulator-official". Two orthogonal axes, deliberately not one flag (mandate 42 §3.3):
+//   sim SERVING   — host interception + shim + runtime marker + bridge log (isSim)
+//   lab MARKERS   — the 8 data-testid gates, cta and the interaction check (isFull)
+//   sim DEMO-FLOW — the lab template's account-tab permission demo (demoFlow)
+// An official template gets sim serving without lab markers and without the demo flow.
 const profileName = arg('profile', 'full');
 const profile = (cfg.oracleProfiles || {})[profileName];
 if (!profile) {
   console.error(`runner_error: unknown profile "${profileName}" (see config.json oracleProfiles)`);
   process.exit(3);
 }
-const isSim = profileName === 'simulator';
-const isFull = profileName === 'full' || isSim;
+const isSim = profileName === 'simulator' || profileName === 'simulator-official';
+const isFull = profileName === 'full' || profileName === 'simulator';
+const runsDemoFlow = isSim && profile.demoFlow !== false;
 const mountSelector = isFull ? markers.appRoot : profile.mountSelector;
 
 // Simulator mode: --sim-manifest replaces --url; pages are served via route interception
@@ -77,6 +83,83 @@ const consolePath = path.join(outDir, 'console.jsonl');
 fs.writeFileSync(consolePath, '');
 const logConsole = (rec) => fs.appendFileSync(consolePath, JSON.stringify(rec) + '\n');
 
+// --- uncaught-payload capture (report 41 §6.1) --------------------------------------------
+// Playwright's `pageerror` hands us a PlaywrightError rebuilt from the page, and a thrown
+// non-Error is flattened before it ever reaches node: a `throw {code:-2000, detail:{…}}`
+// arrives as name="" message="Object" stack="" — so name/message/stack and JSON.stringify(err)
+// all lose the payload (measured, zmp-qualify probe 2026-08-23; this is why zaui-market's
+// evidence read literally "Object"). The only place the original value still exists is the
+// page, so we serialize it THERE, in a window 'error'/'unhandledrejection' listener installed
+// before the app bundle, and ship it out over an exposed function.
+//
+// These lines are EVIDENCE ONLY: kind='error-detail' never touches fatalConsole. `pageerror`
+// stays the sole fatal counter so the gate keeps its exact previous semantics.
+const ERROR_DETAIL_SINK = '__zmpDxErrorSink';
+const ERROR_DETAIL_MAX_CHARS = 4000;   // per record, after serialization
+const ERROR_DETAIL_MAX_RECORDS = 25;   // per viewport — a render loop must not fill the disk
+
+// Runs IN THE PAGE. Depth/width/length caps keep a cyclic or huge payload bounded; the node
+// side redacts and caps again. Errors keep name/message/stack, everything else keeps its shape.
+function installErrorDetailCapture(sinkName, maxChars) {
+  const MAX_DEPTH = 4;
+  const MAX_KEYS = 30;
+  const MAX_ARRAY = 20;
+  const MAX_STRING = 500;
+  const clip = (s) => (s.length > MAX_STRING ? s.slice(0, MAX_STRING) + '…[clipped]' : s);
+  const ser = (v, depth, seen) => {
+    if (v === null || v === undefined) return v === null ? null : '[undefined]';
+    const t = typeof v;
+    if (t === 'string') return clip(v);
+    if (t === 'number' || t === 'boolean') return v;
+    if (t === 'bigint') return String(v) + 'n';
+    if (t === 'symbol' || t === 'function') return '[' + t + ' ' + clip(String(v.name || '')) + ']';
+    if (v instanceof Error) {
+      return { __type: 'Error', name: v.name, message: clip(String(v.message)), stack: clip(String(v.stack || '')) };
+    }
+    if (seen.has(v)) return '[Circular]';
+    if (depth >= MAX_DEPTH) return '[depth-limit]';
+    seen.add(v);
+    try {
+      if (Array.isArray(v)) {
+        const out = v.slice(0, MAX_ARRAY).map((x) => ser(x, depth + 1, seen));
+        if (v.length > MAX_ARRAY) out.push('…[' + (v.length - MAX_ARRAY) + ' more]');
+        return out;
+      }
+      if (typeof Node !== 'undefined' && v instanceof Node) return '[DOM ' + (v.nodeName || 'Node') + ']';
+      const out = {};
+      const keys = Object.keys(v).slice(0, MAX_KEYS);
+      for (const k of keys) {
+        try { out[k] = ser(v[k], depth + 1, seen); } catch (e) { out[k] = '[getter threw]'; }
+      }
+      const total = Object.keys(v).length;
+      if (total > MAX_KEYS) out['…'] = '[' + (total - MAX_KEYS) + ' more key(s)]';
+      if (!keys.length && v.constructor && v.constructor.name && v.constructor.name !== 'Object') {
+        out.__type = v.constructor.name;
+      }
+      return out;
+    } finally {
+      seen.delete(v);
+    }
+  };
+  const send = (source, value) => {
+    try {
+      let text = JSON.stringify(ser(value, 0, new Set()));
+      if (typeof text !== 'string') text = String(text);
+      if (text.length > maxChars) text = text.slice(0, maxChars) + '…[clipped]';
+      window[sinkName](source, text, typeof value, value instanceof Error);
+    } catch (e) { /* evidence capture must never break the app */ }
+  };
+  window.addEventListener('error', (ev) => {
+    // Resource load failures fire a plain Event with no payload — browser noise, not an
+    // uncaught value; page.on('console') already records them.
+    if (typeof ErrorEvent === 'undefined' || !(ev instanceof ErrorEvent)) return;
+    send('window.onerror', 'error' in ev && ev.error !== undefined && ev.error !== null
+      ? ev.error
+      : { message: ev.message, filename: ev.filename, lineno: ev.lineno, colno: ev.colno });
+  });
+  window.addEventListener('unhandledrejection', (ev) => send('unhandledrejection', ev.reason));
+}
+
 const gates = [];
 const gate = (id, status, detail, viewport) => gates.push({ id, status, detail, ...(viewport ? { viewport } : {}) });
 
@@ -98,6 +181,32 @@ try {
       ...(isSim ? { userAgent: SIM_UA, ignoreHTTPSErrors: true } : {}),
     });
     if (isSim) await setupSimContext(context, simManifest);
+
+    // Uncaught-payload capture: the sink must exist before the init script runs, and both
+    // before any page of this context loads. Failure here is non-fatal — the run still
+    // produces the same gates, only without the extra diagnostic lines.
+    let detailRecords = 0;
+    try {
+      await context.exposeFunction(ERROR_DETAIL_SINK, (source, text, valueType, isError) => {
+        if (detailRecords >= ERROR_DETAIL_MAX_RECORDS) return;
+        detailRecords++;
+        logConsole({
+          viewport: vpName,
+          kind: 'error-detail',
+          source,
+          valueType,
+          isError: !!isError,
+          text: redactText(String(text)).slice(0, ERROR_DETAIL_MAX_CHARS),
+          at: new Date().toISOString(),
+        });
+      });
+      await context.addInitScript(
+        { content: `(${installErrorDetailCapture.toString()})(${JSON.stringify(ERROR_DETAIL_SINK)}, ${ERROR_DETAIL_MAX_CHARS});` },
+      );
+    } catch (err) {
+      logConsole({ viewport: vpName, kind: 'runner-note', text: `error-detail capture unavailable: ${String(err.message).slice(0, 200)}`, at: new Date().toISOString() });
+    }
+
     const page = await context.newPage();
 
     let fatalConsole = 0;
@@ -156,6 +265,29 @@ try {
       gate('mount_not_empty', content.children > 0 && content.textLen > 0 ? 'pass' : 'fail',
         `children=${content.children} textLen=${content.textLen}`, vpName);
 
+      // DX runtime marker (mandate 42 §3.2). The simulator serves from the REAL hostname and
+      // path so zmp-sdk detects the right environment — which means nothing about the URL can
+      // distinguish simulator from production. The marker is the only signal, so both
+      // directions are gated: present and well-formed under sim serving, and absent everywhere
+      // else. A leaked marker outside the simulator would let a template hand out mock data in
+      // a real host.
+      const dxRuntime = await page.evaluate(() => {
+        const m = window.__ZMP_DX_RUNTIME__;
+        if (!m || typeof m !== 'object') return null;
+        return { schemaVersion: m.schemaVersion ?? null, mode: m.mode ?? null, hasMockData: !!m.mockData };
+      });
+      vpSummary.dxRuntime = dxRuntime;
+      if (isSim) {
+        const ok = dxRuntime && dxRuntime.schemaVersion === 1 && dxRuntime.mode === 'simulator';
+        gate('sim_runtime_marker', ok ? 'pass' : 'fail',
+          ok ? 'window.__ZMP_DX_RUNTIME__ schemaVersion=1 mode=simulator' : `marker missing/invalid: ${JSON.stringify(dxRuntime)}`,
+          vpName);
+      } else {
+        gate('no_sim_runtime_marker', dxRuntime === null ? 'pass' : 'fail',
+          dxRuntime === null ? 'no window.__ZMP_DX_RUNTIME__ outside the simulator' : `marker leaked into a non-simulator run: ${JSON.stringify(dxRuntime)}`,
+          vpName);
+      }
+
       const overflow = await page.evaluate(() => ({
         scrollWidth: document.documentElement.scrollWidth,
         innerWidth: window.innerWidth,
@@ -205,7 +337,8 @@ try {
       }
 
       // Simulator demo API checks — default viewport only (config.simulatorDemo contract).
-      if (isSim && vp.isDefault && cfg.simulatorDemo) {
+      // Lab profile only: the markers this drives are the lab template's account tab.
+      if (runsDemoFlow && vp.isDefault && cfg.simulatorDemo) {
         const sd = cfg.simulatorDemo;
         const decision = simManifest.simConfig?.decision || 'accept';
         try {
@@ -255,6 +388,9 @@ try {
     }
 
     domSummary.viewports[vpName] = vpSummary;
+    // The sink is an async round-trip; give in-flight records a moment to land before the
+    // context (and with it the binding) goes away.
+    await page.waitForTimeout(150).catch(() => {});
     await context.close();
   }
 } finally {
@@ -264,7 +400,17 @@ try {
 if (isSim) {
   const logPath = simManifest.logEvidencePathAbs;
   const ok = logPath && fs.existsSync(logPath) && fs.statSync(logPath).size > 0;
-  gate('sim_bridge_log_written', ok ? 'pass' : 'fail', ok ? logPath : 'bridge-log missing/empty');
+  if (runsDemoFlow) {
+    // Lab demo flow always crosses the bridge (it clicks every demo API), so an empty log
+    // means the interception never engaged.
+    gate('sim_bridge_log_written', ok ? 'pass' : 'fail', ok ? logPath : 'bridge-log missing/empty');
+  } else {
+    // An official template may legitimately make no native call at all on first render
+    // (zaui-fashion and zaui-doctor do not). Absence of a log is then evidence of nothing —
+    // `sim_runtime_marker` is what proves the shim was injected and running.
+    gate('sim_bridge_log_written', ok ? 'pass' : 'skipped',
+      ok ? logPath : `profile ${profileName}: app made no native call — nothing to log (marker gate proves the shim ran)`);
+  }
 }
 
 fs.writeFileSync(path.join(outDir, 'dom.json'), JSON.stringify(domSummary, null, 2) + '\n');

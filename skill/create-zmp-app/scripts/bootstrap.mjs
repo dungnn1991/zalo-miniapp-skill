@@ -18,12 +18,12 @@
 //                     already in the workspace (feature-integration / verify-existing mode).
 //   --force-scaffold  explicit user-authorized overwrite; rewrites the manifest.
 //
-// --template official:<id> (Phase 2.5, opt-in): scaffold from the platform's official
-// template catalog (lab.config.json `officialTemplates` — authoritative). Also activated
-// when the brief contains an opt-in phrase; catalog keywords then map the brief to an id
-// in declaration order (first match wins). Opt-in without a match -> exit 3 with a final
-// stdout JSON {"status":"needs_template_choice","catalog":[...]} — never guessed, never a
-// silent fallback. Without opt-in the lab template path is byte-identical to before.
+// --template auto|lab|official:<id> (plan 34; default auto): every create brief is ranked
+// against catalog/templates.json by scripts/recommend-template.mjs — no opt-in phrase needed.
+// `lab` pins the bundled shell, `official:<id>` names one. Ambiguous-but-actionable -> exit 2
+// with needsInput.reason="template_choice"; unknown/unqualified id -> exit 2 blocked, naming
+// what is usable. Any other value -> exit 3. Nothing is fetched or written before the
+// decision; see references/template-routing.md for the full contract.
 //
 // --confirm-app-id: explicit, user-confirmed choice of the PROMPT App ID after an
 // app_id_conflict. Must equal the resolved prompt App ID byte-for-byte; only then may a
@@ -38,9 +38,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 import { TEMPLATE_DIR, loadLabConfig, resolveWorkspace, getArg } from './lib/paths.mjs';
 import { newRunId, openRun, fingerprint } from './lib/run-context.mjs';
 import { redactText } from './lib/redact.mjs';
+import { rankTemplates, supportedIds as rankerSupportedIds, loadRegistry as loadTemplateRegistry, InvalidTemplateArg } from './recommend-template.mjs';
+// Same adapter loader the qualification factory uses — deliberately the SAME code, not a copy:
+// an app scaffolded at runtime must be byte-identical to the tree the evidence was produced
+// from, or the evidence describes something the user never gets.
+import { loadAdapter, applyAdapter } from './qualify-template.mjs';
 
 const INVOKED_VIA = ['slash-command', 'codex-skill', 'natural-language', 'harness'];
 
@@ -132,43 +138,6 @@ function classifyVariant(brief, allowedVariants) {
   return allowedVariants.includes(variant) ? variant : 'neutral';
 }
 
-// --- Official templates (Phase 2.5, opt-in) ------------------------------------------
-// Catalog, opt-in phrases, keyword mapping and tarball URL pattern are LOCKED in
-// lab.config.json `officialTemplates`. Modes: lab (default) | official | ambiguous.
-function resolveTemplateSelection(argv, brief, config) {
-  const ot = config.officialTemplates;
-  const explicit = getArg(argv, 'template', null);
-  if (explicit !== null) {
-    if (!ot) die('lab.config.json has no officialTemplates section; --template unsupported');
-    const ids = ot.catalog.map((c) => c.id);
-    const supported = ot.catalog.filter((c) => c.releaseSupported === true);
-    const m = /^official:(.+)$/.exec(explicit.trim());
-    if (!m) die(`invalid --template "${explicit}" (expected official:<id>; ids: ${ids.join(', ')})`);
-    const id = m[1].trim();
-    const entry = ot.catalog.find((c) => c.id === id);
-    if (!entry) die(`unknown official template id "${id}"; valid ids: ${ids.join(', ')}`);
-    if (entry.releaseSupported !== true) return { mode: 'unsupported', entry, supported };
-    return { mode: 'official', entry };
-  }
-  if (!ot || !brief) return { mode: 'lab' };
-  // normalize hai chiều (matchNormalization): 'dung mau co san' == 'dùng mẫu có sẵn'
-  const nt = normalizeVi(brief);
-  const optIn = ot.optInPhrases.some((p) => matchNormalized(nt, p));
-  if (!optIn) return { mode: 'lab' };
-  const supported = ot.catalog.filter((c) => c.releaseSupported === true);
-  // Catalog declaration order, first keyword match wins (specific before generic). A known
-  // but unsupported match is surfaced explicitly; it is never fetched and never silently
-  // replaced with a different-domain template.
-  for (const entry of ot.catalog) {
-    if (entry.keywords.some((k) => matchNormalized(nt, k))) {
-      return entry.releaseSupported === true
-        ? { mode: 'official', entry }
-        : { mode: 'unsupported', entry, supported };
-    }
-  }
-  return { mode: 'ambiguous', supported };
-}
-
 function slugify(name) {
   const s = name
     .toLowerCase()
@@ -178,6 +147,130 @@ function slugify(name) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
   return s || 'zmp-app';
+}
+
+/**
+ * Apply the pinned adapter to a freshly scaffolded official template.
+ *
+ * The qualification factory has always applied adapters; bootstrap never did. So evidence said
+ * "zaui-coffee renders clean" for a tree with the missing `react-router` declared, while the
+ * user's scaffold got the raw upstream tree and a build failure. Four of the five templates
+ * auto-scaffoldable on 2026-08-23 carry an adapter, and one of them (`zaui-lucky-wheel`, once
+ * qualified) is only SAFE because its adapter strips a server-side call and an App Secret out
+ * of the client — shipping that tree unpatched is a security defect, not a build defect.
+ *
+ * So: whatever the evidence was produced from is what the user gets, or the run stops.
+ *   - registry records an adapterId → an applicable adapter MUST load and apply cleanly;
+ *   - any refusal, revision mismatch or invalid file → throw, before the user builds anything.
+ * Writes `evidence/adapter.json`; verify.mjs turns its `resultWarnings` into result.warnings.
+ */
+/**
+ * The registry is the authority on WHICH adapter (if any) the evidence was produced with, and the
+ * check has to close BOTH directions. An earlier version only compared ids when the registry
+ * named one, so `adapterId: null` plus an applicable file on disk meant bootstrap happily patched
+ * the tree with something no evidence covers — the same class of defect as running the wrong
+ * adapter, just from the other side.
+ *
+ * Returns null when there is nothing to apply; throws with the reason otherwise.
+ * Exported for the regression case (`adapter-contract`).
+ */
+export function assertAdapterMatchesRegistry(templateId, revision, expectedAdapterId, loaded) {
+  const at = `${templateId}@${String(revision).slice(0, 7)}`;
+  if (loaded.status === 'none') {
+    if (expectedAdapterId) {
+      throw new Error(
+        `catalog/adapters/${templateId}.json missing, but the registry says qualification evidence`
+        + ` for ${at} was produced with adapter "${expectedAdapterId}".`
+        + ' Refusing to scaffold a tree the evidence does not cover.',
+      );
+    }
+    return false;
+  }
+  if (loaded.status !== 'applicable') {
+    // A file pinned to a different revision is not "no adapter": if the registry expected one,
+    // the mismatch is the whole story, and if it did not, an unexpected file is still a surprise.
+    throw new Error(`adapter for ${templateId} not applicable (${loaded.status}): ${loaded.detail}`);
+  }
+  if (!expectedAdapterId) {
+    throw new Error(
+      `catalog/adapters/${templateId}.json declares "${loaded.adapter.adapterId}" and applies to ${at},`
+      + ' but the registry records no adapterId for this template — the qualification evidence was'
+      + ' produced WITHOUT an adapter. Refusing to patch a tree the evidence does not cover;'
+      + ' requalify with the adapter, or remove the file.',
+    );
+  }
+  if (loaded.adapter.adapterId !== expectedAdapterId) {
+    throw new Error(
+      `adapter id mismatch for ${templateId}: registry evidence was produced with "${expectedAdapterId}"`
+      + ` but catalog/adapters/${templateId}.json is "${loaded.adapter.adapterId}". Requalify before scaffolding.`,
+    );
+  }
+  return true;
+}
+
+/**
+ * Apply an adapter as ONE unit. `applyAdapter` walks patches in order and mutates as it goes, so
+ * a refusal on patch 5 leaves patches 1–4 written. For zaui-lucky-wheel that half-patched state is
+ * the dangerous one: the build fixes can land while the patch that removes the client-side secret
+ * is the one that refuses. Snapshot every file the adapter can touch, restore all of them on any
+ * refusal or throw, so the caller's error leaves the tree exactly as the tarball extracted it.
+ * Exported for the regression case (`adapter-contract`).
+ */
+export function applyAdapterAtomic(appDir, adapter) {
+  const touched = [...new Set((adapter.patches ?? []).map((patch) => patch.file || 'package.json'))];
+  const snapshot = new Map();
+  for (const rel of touched) {
+    const abs = path.join(appDir, rel);
+    snapshot.set(rel, fs.existsSync(abs) ? fs.readFileSync(abs) : null);
+  }
+  const restore = () => {
+    for (const [rel, buf] of snapshot) {
+      const abs = path.join(appDir, rel);
+      if (buf === null) fs.rmSync(abs, { force: true });
+      else fs.writeFileSync(abs, buf);
+    }
+  };
+  let result;
+  try {
+    result = applyAdapter(appDir, adapter);
+  } catch (err) {
+    restore();
+    throw new Error(`adapter ${adapter.adapterId} threw: ${err.message} — tree rolled back`);
+  }
+  if (result.refused.length) {
+    restore();
+    throw new Error(
+      `adapter ${adapter.adapterId} refused ${result.refused.length} patch(es): `
+      + result.refused.map((r) => `${r.patchId}/${r.reason} — ${r.detail}`).join('; ')
+      + '. Upstream changed under a pinned SHA, or the app tree is not what the adapter expects.'
+      + ' Tree rolled back to the extracted tarball; requalify the template instead of scaffolding'
+      + ' a half-patched tree.',
+    );
+  }
+  return result.applied;
+}
+
+function applyTemplateAdapter(entry, revision, workspace, ctx) {
+  const expectedAdapterId = entry.adapterId ?? null;
+  const loaded = loadAdapter(entry.id, revision);
+  if (!assertAdapterMatchesRegistry(entry.id, revision, expectedAdapterId, loaded)) return null;
+
+  const applied = applyAdapterAtomic(workspace.appDir, loaded.adapter);
+  ctx.writeJson('evidence/adapter.json', {
+    adapterId: loaded.adapter.adapterId,
+    templateId: entry.id,
+    upstreamRevision: revision,
+    adapterSha256: loaded.sha256,
+    appliedAt: new Date().toISOString(),
+    patches: applied.map((a) => a.patchId),
+    resultWarnings: loaded.adapter.resultWarnings ?? [],
+  });
+  ctx.event('bootstrap', {
+    stage: 'scaffold',
+    status: 'ok',
+    detail: `adapter ${loaded.adapter.adapterId} applied: ${applied.map((a) => a.patchId).join(', ')}`,
+  });
+  return loaded.adapter;
 }
 
 // Scaffold from an official template: codeload tarball (never `zmp init` — interactive,
@@ -242,6 +335,7 @@ async function scaffoldOfficial(entry, appName, config, workspace, ctx, { force,
         status: 'ok',
         detail: `official template ${entry.id} scaffolded (name=${slug}, title=${appName})`,
       });
+      applyTemplateAdapter(entry, revision, workspace, ctx);
     } finally {
       writeScaffoldManifest(workspace.appDir, templateInfo, writeSet);
     }
@@ -489,6 +583,69 @@ function scaffoldFromTemplate(appDir, appName, variant, config, ctx, { force, ma
   writeScaffoldManifest(appDir, templateInfo, writeSet);
 }
 
+
+// --- plan 34: ranker deterministic thay cho opt-in phrase + first-keyword ------------------
+// `--template auto` là MẶC ĐỊNH. Ranker đọc catalog/templates.json (registry đã pin revision)
+// và trả templateSelection đúng schema; hàm này chỉ map sang shape nội bộ mà đường scaffold
+// hiện có đang dùng ({mode:'official'|'lab'|..., entry:{id,revision,branch}}), để không phải
+// viết lại phần scaffold đã qua E2E.
+async function resolveTemplateV2(argv, brief) {
+  const requested = getArg(argv, 'template', null) ?? 'auto';
+  // rankTemplates trả đủ {selection, templateOptions, blocked}; recommend() chỉ trả selection
+  // phẳng nên dùng nó ở đây sẽ nuốt mất danh sách lựa chọn cho user.
+  let raw;
+  try {
+    raw = rankTemplates(brief ?? '', { template: requested });
+  } catch (e) {
+    if (!(e instanceof InvalidTemplateArg)) throw e;
+    die(e.message);  // config error, không phải ask-user
+  }
+  const sel = raw.selection;
+
+  if (sel.mode === 'lab') return { mode: 'lab', selection: sel };
+
+  if (sel.mode === 'choice') {
+    return { mode: 'choice', selection: sel, options: raw.templateOptions ?? [] };
+  }
+
+  // auto | explicit
+  if (!sel.selectedId || !sel.revision) {
+    // explicit tới template chưa support / id không tồn tại → dừng, KHÔNG fallback lab.
+    // Ranker chỉ set `blocked` cho id không tồn tại; trường hợp id có thật nhưng chưa đạt
+    // gate thì lý do nằm ở alternatives[].rejectedBecause — dựng lại để câu hỏi nói đúng
+    // chuyện gì đã xảy ra thay vì rơi vào câu mơ hồ chung.
+    // Dùng đúng predicate của ranker (kể cả grandfather) — tự viết lại ở đây từng làm câu
+    // thông báo nói sai rằng "chưa có template nào dùng được" trong khi fashion vẫn scaffold ok.
+    const supportedIds = rankerSupportedIds(loadTemplateRegistry());
+    const alt = (sel.alternatives ?? []).find((a) => a.id === sel.selectedId);
+    const blocked = raw.blocked ?? (sel.selectedId
+      ? {
+          id: sel.selectedId,
+          reason: `Template ${sel.selectedId} ${alt?.rejectedBecause ?? 'chưa dùng được'}`,
+          kind: 'unsupported',
+          supported: supportedIds,
+        }
+      : null);
+    return { mode: 'blocked', selection: sel, blocked };
+  }
+  const profile = loadTemplateRegistry().templates.find((t) => t.id === sel.selectedId);
+  return {
+    mode: 'official',
+    selection: sel,
+    entry: {
+      id: sel.selectedId,
+      revision: sel.revision,
+      branch: profile?.source?.defaultBranch ?? 'main',
+      // What the qualification evidence was produced with; scaffoldOfficial enforces it.
+      adapterId: profile?.qualification?.adapterId ?? null,
+      // …and WHERE it was produced. A template that fails the no-host oracle only renders
+      // inside a Zalo host, so the run must verify it in the simulator — the user should never
+      // have to know a flag for that.
+      requiresZaloHost: profile?.qualification?.runtime?.requiresZaloHost === true,
+    },
+  };
+}
+
 // --- Main ----------------------------------------------------------------------------
 async function main() {
   const argv = process.argv.slice(2);
@@ -520,42 +677,58 @@ async function main() {
   }
 
   const startedAt = new Date().toISOString();
-  const provider = config.defaults.renderProvider;
+  let provider = config.defaults.renderProvider;
 
-  // Phase 2.5: resolve template selection first (pure parse of argv/brief vs the locked
-  // catalog). Explicit invalid id die()s above (exit 3, ids listed). Opt-in without a
-  // keyword match -> ask the user to choose; no scaffold, no guessing.
-  const templateSel = useExisting ? { mode: 'existing' } : resolveTemplateSelection(argv, brief, config);
-  if (templateSel.mode === 'ambiguous' || templateSel.mode === 'unsupported') {
-    const supported = templateSel.supported
-      ?? config.officialTemplates.catalog.filter((c) => c.releaseSupported === true);
-    const ids = supported.map((c) => c.id);
+  // plan 34: resolve template selection first — pure ranking of the brief against the
+  // registry, before any fetch or mutation. Unknown/unqualified id and genuine ambiguity
+  // both stop at exit 2 (`template_choice`) so the user chooses; only a malformed
+  // --template value is exit 3.
+  const templateSel = useExisting ? { mode: 'existing' } : await resolveTemplateV2(argv, brief);
+  // plan 34 D34-7: cần user chọn template là ASK-USER, không phải lỗi môi trường.
+  // Trả exit 2 + needsInput.reason='template_choice' (schema result 1.1), KHÔNG còn exit 3.
+  if (templateSel.mode === 'choice' || templateSel.mode === 'blocked') {
+    const sel = templateSel.selection;
+    const opts = templateSel.options ?? [];
+    const blocked = templateSel.blocked ?? null;
     const ambRunId = newRunId();
     const ambCtx = openRun(workspace.runsDir, ambRunId);
     ambCtx.event('bootstrap', {
       stage: 'input',
       status: 'needs_input',
-      detail: templateSel.mode === 'unsupported'
-        ? `official template ${templateSel.entry.id} is not release-supported; no fetch or app mutation`
-        : 'official-template opt-in without a supported keyword match; user must choose a release-supported template',
+      detail: blocked
+        ? `explicit template không dùng được: ${blocked.reason}; không fetch, không mutation`
+        : 'brief khớp nhiều hướng sản phẩm khác nhau; hỏi user chốt trước khi scaffold',
     });
-    const unavailable = templateSel.mode === 'unsupported' ? templateSel.entry.id : null;
+    const question = blocked
+      ? `${blocked.reason}. Template đang dùng được: ${(blocked.supported ?? []).join(', ') || '(chưa có)'}. ` +
+        'Chọn một id trong danh sách, hoặc bỏ --template để skill tự chọn.'
+      : 'Brief có thể đi theo nhiều hướng sản phẩm khác nhau. Bạn muốn hướng nào?\n' +
+        opts.map((o) => `- ${o.id}: ${o.why}`).join('\n');
+    ambCtx.writeJson('result.json', {
+      schemaVersion: '1.1',
+      runId: ambRunId,
+      status: 'needs_input',
+      stage: 'input',
+      provider,
+      needsInput: {
+        reason: 'template_choice',
+        question,
+        templateOptions: opts.map((o) => ({ id: o.id, why: o.why, jobs: o.jobs ?? [] })),
+      },
+      appIdSource: null,
+      expectedAppId: null,
+      resolvedAppId: null,
+      appIdBound: false,
+      gates: [],
+      findingIds: [],
+      templateSelection: sel,
+      startedAt,
+      finishedAt: new Date().toISOString(),
+    });
     process.stdout.write(
-      JSON.stringify({
-        runId: ambRunId,
-        status: 'needs_template_choice',
-        question: unavailable
-          ? `Template ${unavailable} hiện chưa đạt release gate nên skill không tải hoặc scaffold. ` +
-            `Các template đang được support: ${ids.join(', ') || '(chưa có)'}. ` +
-            'Chọn một id được support, hoặc bỏ yêu cầu "mẫu có sẵn" để dùng lab template.'
-          : 'Brief yêu cầu dùng mẫu có sẵn nhưng không khớp template đã đạt release gate. ' +
-            `Các template đang được support: ${ids.join(', ') || '(chưa có)'}. ` +
-            'Chọn một id được support, hoặc bỏ yêu cầu "mẫu có sẵn" để dùng lab template.',
-        catalog: ids,
-        unavailableTemplate: unavailable,
-      }) + '\n'
+      JSON.stringify({ runId: ambRunId, status: 'needs_template_choice', question, options: opts, blocked }) + '\n'
     );
-    process.exit(3);
+    process.exit(2);
   }
 
   // §5.2 step 1: prompt value (explicit flag, else embedded in the brief text).
@@ -770,6 +943,16 @@ async function main() {
       detail: '--existing: app kept as-is, no template copy (bind + verify only)',
     });
   } else if (templateSel.mode === 'official') {
+    // Verify the app in the environment its evidence was produced in. Recorded in input.json so
+    // render.mjs and preview.mjs both inherit it without the user knowing any flag exists.
+    if (templateSel.entry.requiresZaloHost) {
+      provider = 'simulator';
+      ctx.event('bootstrap', {
+        stage: 'scaffold',
+        status: 'ok',
+        detail: `renderProvider=simulator: ${templateSel.entry.id} chỉ render được trong Zalo host (qualification.runtime.requiresZaloHost)`,
+      });
+    }
     try {
       await scaffoldOfficial(templateSel.entry, appName, config, workspace, ctx, scaffoldOpts);
     } catch (e) {
@@ -888,13 +1071,15 @@ async function main() {
 
   // Normalized input for the rest of the pipeline (input.schema.json, additionalProperties:false).
   ctx.writeJson('input.json', {
-    schemaVersion: '1.0',
+    // 1.1 khi run mang templateSelection (plan 34); run legacy giữ 1.0.
+    schemaVersion: templateSel.selection ? '1.1' : '1.0',
     brief: brief ?? null,
     miniAppId: expectedAppId,
     appIdSource,
     appName,
     variant,
     template: templateInfo,
+    ...(templateSel.selection ? { templateSelection: templateSel.selection } : {}),
     renderProvider: provider,
     defaultViewport: config.defaults.defaultViewport,
     packageManager: config.defaults.packageManager,
@@ -906,4 +1091,9 @@ async function main() {
   process.exit(0);
 }
 
-main().catch((e) => die(e.stack || String(e)));
+// Main-guarded like every other stage script: the helpers above are imported by the
+// `adapter-contract` regression case, and an unguarded main() turned that import into a real
+// bootstrap run.
+const invokedAsScript = process.argv[1]
+  && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
+if (invokedAsScript) main().catch((e) => die(e.stack || String(e)));

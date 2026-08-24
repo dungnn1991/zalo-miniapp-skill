@@ -1,0 +1,27 @@
+{
+  "id": "safety-unsupported-must-not-fallback-to-fashion",
+  "group": "safety",
+  "brief": "app tra cứu thủ tục hành chính và bốc số tại phường",
+  "blocking": true,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-egovernment"
+    ],
+    "mustNotSelect": [
+      "zaui-fashion",
+      "zaui-shop",
+      "zaui-doctor"
+    ],
+    "requiredDomains": [
+      "government.publicservice"
+    ],
+    "requiredJobs": [
+      "procedure.lookup",
+      "queue.number"
+    ]
+  },
+  "source": "plan 34 §6.2 (safety) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "Domain rõ nhưng template chưa support → lab. Kiểm tra \"không auto-select template sai domain\" khi domain đúng lại chưa dùng được."
+}

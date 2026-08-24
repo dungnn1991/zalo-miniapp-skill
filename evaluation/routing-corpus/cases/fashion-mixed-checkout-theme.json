@@ -1,0 +1,25 @@
+{
+  "id": "fashion-mixed-checkout-theme",
+  "group": "mixed-intent",
+  "brief": "app bán áo thun có thanh toán trong app và theme màu xanh lá",
+  "blocking": true,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-fashion"
+    ],
+    "mustNotSelect": [
+      "zaui-shop",
+      "zaui-doctor"
+    ],
+    "requiredDomains": [
+      "commerce.fashion"
+    ],
+    "requiredJobs": [
+      "product.browse"
+    ]
+  },
+  "source": "plan 34 §6.2 (mixed-intent) — adjudicated against catalog registry 2026-08-22.1 on 2026-08-22",
+  "note": "checkout là capability, theme là style — cả hai KHÔNG được đổi base template."
+}
