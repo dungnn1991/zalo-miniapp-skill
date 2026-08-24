@@ -220,6 +220,189 @@ không được dùng trong CI. Validate skill packaging:
 
 ## Trạng thái
 
+- 2026-08-23 — **Vòng 3: khép hai P1 về explicit-name và adapter contract.**
+
+  **Nhánh "gọi đích danh template" vừa thiếu vừa nhận nhầm.** Hai nguyên nhân độc lập, cả hai
+  đo được: (a) nhánh 3b `!top.eligible → lab` chạy TRƯỚC 3b-bis và nuốt mất nó — mà template
+  được gọi tên gần như luôn là top candidate, nên `dùng mmenu làm app gọi món` trả `lab` và
+  không hề nhắc mmenu; (b) `briefNamesTemplate()` chỉ cần một use-cue ở đâu đó và tên ở đâu đó,
+  nên `sử dụng app cho quán cà phê có menu` bị đọc là yêu cầu `zaui-menu` và
+  `dùng app cho shop quần áo` là `zaui-shop`. Sửa: 3b-bis quyết trước generic fallback (explicit
+  intent cụ thể hơn), và cue phải LIỀN KỀ tên — chấp nhận `dùng/sử dụng/use/set up [the]
+  [template|mẫu] <tên>`, `template <tên>`, `<tên> template`, `mẫu <tên>`, hoặc id chính xác
+  `zaui-<tên>`. Tên nào cũng là từ vựng thường (`menu` là job phrase) thì bắt buộc có marker.
+  Bốn probe của owner thành blocking case (`explicit-name-*`).
+
+  **Adapter exact-match mới kín một chiều.** Điều kiện cũ chỉ chạy khi `expectedAdapterId`
+  truthy, nên registry ghi `adapterId: null` mà catalog có file applicable thì bootstrap vẫn áp
+  adapter ngoài evidence. Nay `assertAdapterMatchesRegistry()` chặn cả bốn tổ hợp; release
+  validator thêm gate chặn adapter file không được registry khai (chiều orphan); và
+  `applyAdapterAtomic()` được tách ra export để case `adapter-contract` kiểm rollback thật —
+  patch 1 apply, patch 2 refuse, mọi file phải byte-identical. `bootstrap.mjs` nay có main-guard
+  như mọi stage script khác (import nó trước đây chạy luôn một run thật).
+
+  **Hai chỉnh nhỏ cùng vòng.** Release validator trước chỉ kiểm `verifiedProvider`/`oracleProfile`
+  là truthy — `"banana"` vẫn pass; nay validate enum + đối chiếu với `oracleProfile` trong
+  evidence. Và `verify.mjs` ghi provider render THỰC TẾ (`evidence/render-info.json`) thay vì
+  provider dự kiến trong `input.json`, nên `run.mjs --verify-sim` không còn báo `browser` cho một
+  run chạy simulator.
+
+  Verify: 38 release checks 38 pass · corpus blocking **50/50** top-1 39/39 (100%) · discovery
+  63/80 top-1 88.2%, unsafe auto-route 0 · **37 cases** 37 pass 0 blocked 0 fail.
+
+- 2026-08-23 — **Hai P0 từ review vòng 2: "auto-scaffoldable" phải đúng với luồng người dùng
+  thật, và discovery failure nguy hiểm phải chặn release.**
+
+  **P0-1 — qualification và runtime dùng hai oracle khác nhau.** Template được promote bằng
+  simulator, nhưng `run.mjs` chỉ truyền `--provider simulator` khi có cờ `--verify-sim`.
+  `zaui-bistro`, `zaui-market`, `zaui-lucky-wheel` đều `noHostOracle.exitCode=1`, nên lệnh
+  scaffold bình thường DỪNG Ở RENDER — "6 template auto-scaffoldable" chỉ đúng trên giấy. Sửa:
+  factory ghi `qualification.runtime {verifiedProvider, oracleProfile, requiresZaloHost}` lúc
+  promote; bootstrap chốt `input.json.renderProvider` từ đó; `render.mjs` và `preview.mjs` cùng
+  kế thừa (cờ tường minh vẫn thắng). Case mới `official-template-default-flow` chạy TRỌN
+  `run.mjs` cho cả ba template, không cờ thủ công. Release check chặn template
+  auto-scaffoldable nào không khai runtime hoặc khai lệch evidence.
+
+  **P0-2 — discovery failure không chặn release.** `campaign.loyalty` biến "tích điểm"/"voucher"
+  thành domain chính, nên "app cà phê có tích điểm thành viên", "app tạp hoá … tích điểm khách
+  hàng" và "app bán voucher du lịch" đều auto-route sang `zaui-lucky-wheel` — ba lần dựng sai
+  im lặng, gate vẫn xanh. Sửa ba tầng:
+  1. `taxonomy.subordinateDomains` = `campaign.loyalty` (lớp tính năng chồng lên ngành) +
+     `commerce.general` (định nghĩa là "chưa rõ ngành hàng"). Domain subordinate không bao giờ
+     làm primaryDomain khi brief đã có domain cụ thể.
+  2. Alias lucky-wheel bỏ từ tính năng trần ("tích điểm", "voucher"), giữ cụm chỉ CHƯƠNG TRÌNH
+     ("tích điểm thành viên", "chương trình tích điểm", "đổi quà") — wheel vẫn thắng brief
+     loyalty thuần.
+  3. `run-corpus.mjs`: discovery failure nào thực sự `mode=auto` vào một template
+     auto-scaffoldable thì **chặn suite**. Gate này lập tức bắt thêm ba ca chưa ai thấy —
+     "bán máy pha cà phê" → coffee, "quản lý tồn kho siêu thị" → market, và
+     "nhà hàng fine dining … đặt chỗ online" → market (alias `chợ online` khớp `chỗ online` sau
+     khi bỏ dấu). Xử lý bằng negativeSignals trong registry.
+
+- 2026-08-23 — **Ba chỗ owner bác, đã sửa lại theo hướng owner chốt.**
+  `ambiguous-do-an-do-uong` giữ `choice`: chênh lệch coffee 12 / bistro 6 là artifact của
+  tiebreak "phrase dài hơn" giữa hai domain cùng strength, không phải tín hiệu — nay hai domain
+  ANH EM (cùng họ `fnb.*`) hoà strength thì cùng primary. Luật giới hạn trong cùng họ vì
+  "coffee shop" (fnb.coffee vs commerce.general) không phải hai ngành cạnh tranh.
+  `constraint-mmenu-no-api-url` giữ `choice`: nhánh mới `3b-bis` phát hiện brief gọi ĐÍCH DANH
+  một template (tên riêng + use-cue) mà template đó không dựng được → hỏi, nêu lý do, đề xuất
+  cái dựng được; không đổi thầm.
+  Kèm hai P1: `run.mjs` trả `warnings[]` nguyên văn ở JSON cuối (trước chỉ có số `insights` nên
+  `PHONE_BACKEND_REQUIRED` chết ở hop cuối) và SKILL.md bắt buộc báo đủ bốn semantics; adapter
+  trong bootstrap exact-match `adapterId` với registry và apply ATOMIC (snapshot + rollback) —
+  trước đó patch sau refuse có thể để lại cây đã vá một nửa, đúng trạng thái nguy hiểm nhất với
+  lucky-wheel.
+
+  **Chưa làm, ghi rõ:** span-level dedupe (một đoạn brief hiện vẫn được tính cho cả domain + job
+  + capability + alias) là fix đúng cho gốc vấn đề, nhưng đo thử cho thấy nó kéo blocking xuống
+  41/46 và discovery xuống 41/80 vì `AUTO_SELECT_MIN_SCORE`/`MIN_MARGIN` được calibrate theo
+  scorer cũ. Đó là một slice calibration riêng, không gộp vào đây — xem backlog.
+  Verify: 37 release checks 37 pass · corpus blocking 46/46 top-1 35/35 (100%) · discovery 65/80
+  top-1 88.2%, unsafe auto-route 0 · 36 cases 36 pass 0 blocked 0 fail.
+
+- 2026-08-23 — **zaui-lucky-wheel: compatibility adapter phía DX, không miễn trừ gate nào**
+  (mandate 42 §3.4–3.6). Upstream `8c692b9` làm server-side decode ngay trong client: nhúng
+  literal App Secret và gọi Graph endpoint từ browser; kèm theo form đăng ký catch mọi lỗi, hiện
+  snackbar `type="success"` rồi điền một số điện thoại hardcode. Preflight
+  `server_side_api_scan` chặn ĐÚNG THEO THIẾT KẾ — adapter không nới gate, nó gỡ chính đoạn code
+  vi phạm. Trong simulator lấy số mẫu từ `__ZMP_DX_RUNTIME__` kèm nhãn "DỮ LIỆU GIẢ LẬP"; mọi
+  môi trường khác fail-closed sang `backend-required`, ô để trống, nhập tay vẫn dùng được.
+  Case `lucky-wheel-phone-fail-closed` chạy thật hai lượt trên cùng một bản build — lượt hai
+  chặn marker để mô phỏng host Zalo thật, thứ không phân biệt được bằng URL/hostname/UA — và
+  kiểm cả "không có request Graph nào". lucky-wheel giờ render-qualified và đã promote; ba
+  finding upstream đã route kèm file + SHA. Backend thật, decode số thật và UAT trên Zalo thật
+  vẫn thuộc phase sau (`references/phone-number-backend.md`).
+
+- 2026-08-23 — **P0 phát hiện khi làm việc trên: bootstrap chưa bao giờ áp adapter.**
+  Qualification factory luôn áp adapter, `bootstrap.mjs` thì không. Nghĩa là evidence nói
+  "zaui-coffee render sạch" cho một cây đã khai `react-router`, còn user scaffold ra cây upstream
+  thô và build gãy. Bốn trong năm template auto-scaffoldable hôm nay có adapter, và với
+  lucky-wheel thì cây chưa vá còn là lỗ hổng bảo mật chứ không chỉ lỗi build. Sửa: bootstrap
+  dùng CHÍNH `loadAdapter`/`applyAdapter` của factory (không copy), ghi
+  `evidence/adapter.json`, và **dừng hẳn** nếu adapter refuse / lệch revision / registry khai
+  `adapterId` mà file không có. Release validator chặn luôn ở tầng metadata.
+
+- 2026-08-23 — **Catalog metadata nói đúng sự thật + `warnings[]` có cấu trúc trong result.**
+  Note `"chưa chạy qualification factory"` từng còn nguyên trên 11/12 profile kể cả template đã
+  promote đủ evidence; `requiredInputs`/`backendRequiredForPreview` của egovernment/menu/uni mâu
+  thuẫn với chính evidence của chúng. Cả hai giờ sinh từ evidence trên đĩa và có ba release check
+  chặn regress. `result.json` thêm `warnings[]` (schema 1.1) tách rõ bốn ý: preview có dùng được
+  không · feature nào cần backend trước production · fallback hiện tại · đọc hướng dẫn ở đâu.
+  Verify: 36 release checks 36 pass · corpus blocking 46/46 top-1 35/35 (100%) · 35 cases
+  35 pass 0 blocked 0 fail. Auto-scaffoldable: **6** (fashion, coffee, bistro, market, doctor,
+  lucky-wheel).
+
+- 2026-08-23 — **Official template chạy được dưới sim serving; tách khỏi lab demo-flow**
+  (mandate 42 §3.2–3.3). `render.mjs --provider simulator` trước đây từ chối thẳng mọi app
+  official vì "sim serving" và "sim demo-flow" bị gộp làm một; giờ là hai trục riêng và official
+  đi profile mới `simulator-official` (sim serving, không marker lab, không demo-flow).
+  Kèm theo:
+  - **Runtime marker `window.__ZMP_DX_RUNTIME__`** (schemaVersion 1, mode, mockData) inject
+    in-memory trước bundle. Không nhận biết sim bằng URL/hostname/UA được — sim cố ý dùng
+    hostname thật. Gate cả hai chiều: `sim_runtime_marker` (phải có) và `no_sim_runtime_marker`
+    (phải không có ở mọi run khác); case `sim-runtime-marker` giữ cả hai + chứng minh marker
+    không lọt vào dist.
+  - **MPDS mock trong shim.** CONFIRMED zmp-sdk@2.53.0: khi `zaloVersionCode` đủ mới và
+    `isMp`, storage đổi sang NativeResourceStorage nói MPDS qua `action.zbrowser.mpds` (async)
+    và `processActionMPDS` (sync). Thiếu nó thì `getItem`/`setStorage` trả -1.
+  - **`getStatusBarHeight`** — method native đồng bộ zmp-ui gọi khi
+    `window.ANDROID_STATUS_BAR_HEIGHT` là NaN. Thiếu nó, zaui-coffee chết
+    `K2.getStatusBarHeight is not a function` và render trắng ngay khi official bắt đầu chạy
+    dưới sim serving.
+  - **Qualification chạy HAI oracle.** no-host (server tĩnh, không Zalo host) ghi lại nhưng
+    KHÔNG blocking — đó không phải môi trường Mini App bao giờ chạy; simulator là verdict
+    blocking. Gate `no_fatal_console_error` không đổi một chữ: không hạ `console.error` thành
+    warn (mandate R41-4 cấm đúng việc đó), chỉ chạy app trong môi trường nó được viết cho.
+  Kết quả đo được, thay cho phỏng đoán "bistro/menu/uni" của report 41: bốn template cùng một
+  bệnh (`-2000` do thiếu host) — bistro `getItem`, menu `setStorage`, uni `showOAWidget`,
+  market `login`. Sim serving mở khoá **bistro + market** (đã promote). **menu và uni giờ PASS
+  runtime nhưng vẫn fail `external_dependency`** (`VITE_API_URL` / `VITE_API_BASE_URL`) — thuộc
+  N3, để vòng sau. egovernment còn đúng một blocker thật `VITE_BASE_URL` sau khi
+  `VITE_MINI_APP_ID` được phân loại là false positive của scanner (R41-2): nó là fallback sau
+  `window.APP_ID ||`, không phải input user phải cấp.
+  Auto-scaffoldable hôm nay: **fashion, coffee, bistro, market, doctor** (2 → 5).
+
+- 2026-08-23 — **Ranker: margin phải tính trên ứng viên NGỮ NGHĨA, không chỉ ứng viên eligible.**
+  Lỗi lộ ra ngay khi zaui-bistro được promote: "app đặt bàn trước cho nhà hàng" chấm
+  zaui-restaurant 17 (template duy nhất khai job `table.reserve`) và zaui-bistro 10, nhưng vì
+  tier chỉ gồm ứng viên eligible nên restaurant biến mất khỏi phép tính và ranker auto-select
+  bistro với "margin 10" — một template không có đặt bàn. Cùng cơ chế đó phá DoD #3
+  ("app nhà hàng" phải hỏi một câu). Sửa: tier = toàn bộ semantic candidate; eligibility quay
+  lại ở đúng chỗ của nó — 3a chỉ hỏi khi có ít nhất một lựa chọn dựng được ngay, 3b từ chối
+  thay thầm bằng template khác khi ứng viên khớp nhất không dựng được.
+  Ba case corpus blocking từng "xanh" nhờ trạng thái registry chứ không nhờ cơ chế nào
+  (`ambiguous-app-nha-hang` có `acceptedTemplateIds` rỗng nên nhánh guard chưa từng chạy) đã
+  được sửa kỳ vọng, lý do ghi trong `note` từng case.
+  Verify: 33 release checks 33 pass · corpus blocking 46/46 top-1 35/35 (100%) · 34 cases
+  34 pass 0 blocked 0 fail · smoke `fixtures/smoke.html` 47/47.
+
+- 2026-08-23 — **zaui-coffee đạt render-qualified và được promote** (report 41 N1, mandate 42
+  R41-3). Adapter copy nguyên `react-router@^7.6.1` từ zaui-doctor trong khi coffee khai
+  `react-router-dom@^6.8.2`, nên cây pnpm có cả 6.30.6 lẫn 7.18.2: build pass, runtime trắng
+  trang. Fix tối thiểu là pin `^6.8.2` + thêm precondition `file-contains` khoá đúng range của
+  `react-router-dom` để adapter refuse nếu upstream đổi major (không làm cơ chế suy version
+  tổng quát khi chưa có regression riêng cho nó).
+  Verify: full factory pass đủ 7 blocking gate ở 3 viewport, safe rerun + adapter refusal pass,
+  `--promote` áp vào registry. Auto-scaffoldable hôm nay: fashion, coffee, doctor.
+  **Hệ quả phải xử lý cùng lúc** (không phải template nào cũng miễn phí khi được promote):
+  `official-template-support` từng hardcode zaui-coffee làm "template chưa support" nên xanh-mà-sai
+  ngay khi coffee được promote — case giờ chọn probe từ registry lúc chạy. Hai case corpus
+  blocking (`ambiguous-do-an-do-uong`, `constraint-mmenu-no-api-url`) đổi kỳ vọng sang `auto`;
+  lý do ghi trong `note` của từng case, guard cho đường ra lệnh vẫn nằm ở
+  `constraint-mmenu-explicit-no-api-url` (decision=stop).
+
+- 2026-08-23 — **Locked-file change: uncaught-payload capture trong browser runner**
+  (report 41 §6.1–6.3, mandate 42 §4.2). Đo thật: playwright làm phẳng một `throw {…}` thành
+  `Error("Object")` trước khi tới node, nên `name/message/stack` và `JSON.stringify(err)` đều
+  rỗng — hướng fix ghi trong report 41 §6.1 KHÔNG chạy được. Runner giờ serialize payload
+  **trong page** (listener `error`/`unhandledrejection` cài trước bundle) và ghi dòng
+  `kind="error-detail"` có redaction + size cap; `no_fatal_console_error` vẫn chỉ đếm
+  `pageerror` + `console.error` nên verdict của gate không đổi. Kèm: qualification evidence
+  lưu `consoleExcerpt` thay vì chỉ số đếm, và gate build phân biệt `preflight_failed` với
+  `vite_build` (lucky-wheel từng bị đọc nhầm là lỗi build vì nhãn này).
+  Verify: smoke `fixtures/smoke.html` **44/44** exit 0; case mới `pageerror-object-detail`;
+  full release gate `33 release checks 33 pass` + `33 cases: 33 pass, 0 blocked, 0 fail`.
+
 - 2026-08-22 — **Candidate v0.3.2:** sửa contract relay QR sau phiên deploy thật qua Codex
   Remote: chụp/crop và gửi một ảnh, không stream raw PTY/spinner/ANSI; agent ngừng poll đến
   khi user báo đã quét. Release validator có gate chống regress về wording cũ; runtime/token

@@ -301,7 +301,19 @@
     },
     "simulator": {
       "extends": "full",
-      "note": "Phase 3: full profile + shim mock host (serve interception tại h5.zdn.vn/zapps) + demo API checks theo simulatorDemo. Chạy demo checks chỉ ở viewport mặc định. simDecision=accept: click từng api-btn → result marker non-empty; deny: → error marker non-empty; sheet badge SIMULATOR phải hiện diện trong DOM shim."
+      "note": "Phase 3: full profile + shim mock host (serve interception tại h5.zdn.vn/zapps) + demo API checks theo simulatorDemo. Chạy demo checks chỉ ở viewport mặc định. simDecision=accept: click từng api-btn → result marker non-empty; deny: → error marker non-empty; sheet badge SIMULATOR phải hiện diện trong DOM shim.",
+      "demoFlow": true
+    },
+    "simulator-official": {
+      "extends": "official-template",
+      "mountSelector": "#app, #root, [data-testid=\"app-root\"]",
+      "skippedGates": [
+        "markers",
+        "interaction",
+        "cta"
+      ],
+      "demoFlow": false,
+      "note": "Sim SERVING (host interception + shim + runtime marker + bridge log) ghép với oracle official-template. Tách khỏi profile \"simulator\" vì cái đó còn chạy sim DEMO-FLOW của lab (tab Tài khoản + marker api-btn-*), thứ official template không có. Dùng cho qualification runtime gate của template chính thức: đó là môi trường app thật sự chạy, nên lỗi -2000 do thiếu Zalo host không phát sinh — KHÔNG hạ chuẩn console.error."
     }
   },
   "dependencyPolicy": {

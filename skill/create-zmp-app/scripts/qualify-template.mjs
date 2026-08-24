@@ -40,6 +40,7 @@ import { spawnSync } from 'node:child_process';
 import { builtinModules } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { childEnv, getArg, resolveHeadSha, DEFAULT_REGISTRY } from './sync-template-catalog.mjs';
+import { redactText } from './lib/redact.mjs';
 // Reused from the shipped harness — see review 35 F3. Not re-implemented here.
 import { OUT_DIR_CANDIDATES, detectOutDir } from './build.mjs';
 
@@ -61,6 +62,55 @@ const VITE_BUILTIN_ENV = new Set(['PROD', 'DEV', 'MODE', 'BASE_URL', 'SSR', 'LEG
 
 const nowIso = () => new Date().toISOString();
 const sha256 = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
+
+// Report 41 §6.2: evidence used to keep only the COUNT of console failures ("1 error/pageerror
+// event(s)"), so answering "why did it fail" meant rerunning the whole factory. Keep a bounded,
+// redacted excerpt of what the browser actually said — including the kind='error-detail' lines
+// the runner adds for uncaught non-Error payloads (§6.1).
+const CONSOLE_EXCERPT_MAX_LINES = 20;
+const CONSOLE_EXCERPT_MAX_CHARS = 1200;
+export function readConsoleExcerpt(consoleFile) {
+  if (!fs.existsSync(consoleFile)) return null;
+  const lines = fs.readFileSync(consoleFile, 'utf8').split('\n').filter(Boolean);
+  const events = [];
+  for (const raw of lines) {
+    let e;
+    try { e = JSON.parse(raw); } catch { continue; }
+    if (e.kind === 'pageerror' || e.kind === 'error-detail' || (e.kind === 'console' && e.type === 'error')) events.push(e);
+  }
+  if (!events.length) return null;
+  return {
+    totalErrorEvents: events.length,
+    truncated: events.length > CONSOLE_EXCERPT_MAX_LINES,
+    events: events.slice(0, CONSOLE_EXCERPT_MAX_LINES).map((e) => ({
+      viewport: e.viewport ?? null,
+      kind: e.kind,
+      ...(e.type ? { type: e.type } : {}),
+      ...(e.source ? { source: e.source } : {}),
+      text: redactText(String(e.text ?? '')).slice(0, CONSOLE_EXCERPT_MAX_CHARS),
+    })),
+  };
+}
+
+/**
+ * Report 41 §6.3: build.mjs exits 1 from the Tier-1 preflight LONG before vite runs, but the
+ * gate reported `vite_build: ... no build output detected. tail: ` with an empty tail, and
+ * zaui-lucky-wheel was read as a build failure for days. Name the real stage.
+ */
+export function classifyBuildStop(preflightJson, buildLog, buildOutput) {
+  const failed = (preflightJson?.gates ?? []).filter((g) => g.status === 'fail');
+  if (failed.length) {
+    return {
+      checkId: 'preflight_failed',
+      detail: `build.mjs stopped in Tier-1 preflight before vite ran — ${failed.map((g) => `${g.id}: ${g.detail}`).join(' | ')}`,
+    };
+  }
+  // Last non-empty line of whatever the child actually printed; build.log is empty when the
+  // stop happened before vite, so fall back to the child's own stdout/stderr.
+  const tailOf = (text) => String(text || '').split('\n').map((l) => l.trim()).filter(Boolean).slice(-4).join(' / ');
+  const tail = tailOf(buildLog) || tailOf(buildOutput) || '(no output captured)';
+  return { checkId: 'vite_build', detail: `no build output detected. tail: ${tail.slice(-600)}` };
+}
 
 // --- gate bookkeeping ------------------------------------------------------------------------
 
@@ -216,7 +266,24 @@ export function scanExternalDependencies(appDir, profile) {
       const name = m[1] || m[2];
       if (VITE_BUILTIN_ENV.has(name)) continue;
       const line = text.slice(0, m.index).split('\n').length;
-      push({ kind: 'env-var', name, neededForFirstPreview: name !== 'APP_ID', sites: [`${rel}:${line}`] });
+      // `window.APP_ID || import.meta.env.VITE_MINI_APP_ID` is a FALLBACK, not a requirement:
+      // the host defines window.APP_ID (the real Zalo wrapper does, and so does the harness at
+      // serve time), so the env var is never read on the path the first preview takes. Counting
+      // it as an unsatisfied input made zaui-egovernment look like it needed two things from the
+      // user when it needs one (review 42 R41-2). Only the canonical host-provided App ID
+      // counts as a guard — any other left-hand side is a real alternative source we cannot
+      // vouch for.
+      const before = text.slice(Math.max(0, m.index - 60), m.index);
+      const guardedByHostAppId = /window\.APP_ID\s*(?:\|\||\?\?)\s*\(?\s*$/.test(before);
+      push({
+        kind: 'env-var',
+        name,
+        neededForFirstPreview: name !== 'APP_ID' && !guardedByHostAppId,
+        sites: [`${rel}:${line}`],
+        ...(guardedByHostAppId
+          ? { note: 'fallback sau `window.APP_ID ||` — host (và harness lúc serve) đã định nghĩa window.APP_ID nên nhánh này không chạy ở preview đầu' }
+          : {}),
+      });
     }
     urlRe.lastIndex = 0;
     while ((m = urlRe.exec(text))) {
@@ -465,7 +532,7 @@ export function evaluatePromotion({ profile, gates, revision, upstreamHead }) {
   return { eligible: blockedBy.length === 0, blockedBy };
 }
 
-function writePromotion(registryPath, templateId, { revision, state, adapterId, evidenceRef }) {
+function writePromotion(registryPath, templateId, { revision, state, adapterId, evidenceRef, runtime }) {
   const raw = fs.readFileSync(registryPath, 'utf8');
   const registry = JSON.parse(raw);
   const profile = registry.templates.find((t) => t.id === templateId);
@@ -474,6 +541,16 @@ function writePromotion(registryPath, templateId, { revision, state, adapterId, 
   profile.qualification.testedRevision = revision;
   profile.qualification.adapterId = adapterId;
   profile.qualification.evidence = evidenceRef;
+  // WHICH ENVIRONMENT the evidence was produced in. Without this the registry says "this
+  // template renders clean" while hiding that it only does so inside a Zalo host, and the
+  // default scaffold flow — which serves plain static files — stops at render. bootstrap reads
+  // `requiresZaloHost` and pins input.json renderProvider accordingly.
+  profile.qualification.runtime = runtime;
+  // Report 41 §6.4: the seeded "chưa chạy qualification factory" note survived zaui-doctor's
+  // promotion, so the registry claimed nobody had ever run the factory on a template that had
+  // full evidence. Promotion owns the note from now on.
+  profile.qualification.note = `qualification factory pass đủ 7 blocking gate tại ${revision.slice(0, 7)}`
+    + ` — evidence ${evidenceRef.qualificationResult}`;
   const tmp = `${registryPath}.tmp-${process.pid}`;
   fs.writeFileSync(tmp, JSON.stringify(registry, null, 2) + '\n');
   fs.renameSync(tmp, registryPath);
@@ -696,10 +773,18 @@ async function main() {
       : '';
     // build.mjs also owns the APP_ID probe; attribute its verdict to gate 4, not here.
     const artefactsOk = !!buildInfo?.outDir && detectOutDir(appDir) !== null;
-    check(g3, 'vite_build', artefactsOk ? 'pass' : 'fail',
-      artefactsOk
-        ? `build.mjs exit ${build.code}, outDir=${buildInfo.outDir} (OUT_DIR_CANDIDATES detection reused from build.mjs)`
-        : `build.mjs exit ${build.code}; no build output detected. tail: ${buildLog.split('\n').slice(-12).join(' / ').slice(-600)}`);
+    if (artefactsOk) {
+      check(g3, 'vite_build', 'pass',
+        `build.mjs exit ${build.code}, outDir=${buildInfo.outDir} (OUT_DIR_CANDIDATES detection reused from build.mjs)`);
+    } else {
+      // Which stage of build.mjs actually stopped: Tier-1 preflight, or vite itself (§6.3).
+      const preflight = fs.existsSync(path.join(runDir, 'evidence', 'preflight.json'))
+        ? JSON.parse(fs.readFileSync(path.join(runDir, 'evidence', 'preflight.json'), 'utf8'))
+        : null;
+      const stop = classifyBuildStop(preflight, buildLog, build.output);
+      result.buildStop = { stage: stop.checkId, exitCode: build.code };
+      check(g3, stop.checkId, 'fail', `build.mjs exit ${build.code}; ${stop.detail}`);
+    }
     if (artefactsOk) {
       const prepared = fs.existsSync(path.join(appDir, 'src', 'index.html')) && !fs.existsSync(path.join(snapshotDir, 'src', 'index.html'));
       check(g3, 'generic_vite_preparation', 'pass',
@@ -745,32 +830,76 @@ async function main() {
   sealGate(g4, `rebranded to "${scaffold.slug}", APP_ID ${appId} bound and resolved by the build toolchain`);
 
   // ---------- gate 5: runtime ----------
+  //
+  // TWO oracles, on purpose (mandate 42 §3.3 + R41-4):
+  //
+  //   no-host   plain static server, no Zalo host at all. Recorded, NOT blocking. This is not
+  //             an environment a Mini App ever ships into, and measured on 2026-08-23 four of
+  //             the nine Portal templates fail it for one reason only — a zmp-sdk call
+  //             answering -2000 because there is no host (bistro getItem, menu setStorage,
+  //             uni showOAWidget, market login). Failing a template for that is measuring the
+  //             harness, not the template. Kept because it is the only place a host-independent
+  //             regression (a real blank page, a real overflow) shows up unmasked.
+  //
+  //   simulator sim serving — real hostname/path + the SDK shim + the DX runtime marker. This
+  //             is the blocking verdict. Note what this is NOT: the gate is unchanged, every
+  //             console.error and pageerror is still fatal. Nothing was downgraded to a warning
+  //             (mandate 42 R41-4 forbids exactly that); the app is simply run in the
+  //             environment it is written for.
+  //
+  // The no-host run goes first and its evidence is copied aside, because the simulator run
+  // overwrites the canonical console.jsonl/gates.json.
   const g5 = gate('runtime');
+  const evidenceDir = path.join(runDir, 'evidence');
   if (!buildOk) {
     check(g5, 'browser_oracle', 'fail', 'skipped — no build output to serve');
   } else {
-    const render = runStage('render.mjs', ['--workspace', workspace, '--run-id', runId], { workspace, storeDir });
-    const gatesFile = path.join(runDir, 'evidence', 'gates.json');
+    const noHost = runStage('render.mjs', ['--workspace', workspace, '--run-id', runId, '--provider', 'browser'], { workspace, storeDir });
+    const noHostGates = fs.existsSync(path.join(evidenceDir, 'gates.json'))
+      ? JSON.parse(fs.readFileSync(path.join(evidenceDir, 'gates.json'), 'utf8'))
+      : null;
+    result.noHostOracle = {
+      exitCode: noHost.code,
+      gates: noHostGates,
+      consoleExcerpt: readConsoleExcerpt(path.join(evidenceDir, 'console.jsonl')),
+    };
+    for (const [from, to] of [['gates.json', 'no-host-gates.json'], ['console.jsonl', 'no-host-console.jsonl']]) {
+      if (fs.existsSync(path.join(evidenceDir, from))) {
+        fs.copyFileSync(path.join(evidenceDir, from), path.join(evidenceDir, to));
+      }
+    }
+    const noHostFailing = ((noHostGates?.gates) ?? []).filter((x) => x.status === 'fail');
+    check(g5, 'browser_oracle_no_host', noHostFailing.length === 0 ? 'pass' : 'warn',
+      noHostFailing.length
+        ? `served without a Zalo host: ${noHostFailing.map((x) => `${x.id}@${x.viewport}: ${x.detail}`).join(' | ')}`
+          + ' — recorded, not blocking: see evidence/no-host-console.jsonl for what the app actually said'
+        : 'app also renders clean with no Zalo host at all');
+
+    const render = runStage('render.mjs', ['--workspace', workspace, '--run-id', runId, '--provider', 'simulator'], { workspace, storeDir });
+    const gatesFile = path.join(evidenceDir, 'gates.json');
     const oracle = fs.existsSync(gatesFile) ? JSON.parse(fs.readFileSync(gatesFile, 'utf8')) : null;
     result.oracleGates = oracle;
+    result.oracleProfile = 'simulator-official';
+    // §6.2: keep WHAT the browser said, not just how many times it said something.
+    result.consoleExcerpt = readConsoleExcerpt(path.join(evidenceDir, 'console.jsonl'));
     if (!oracle) {
-      check(g5, 'browser_oracle', 'fail', `render.mjs exit ${render.code} produced no gates.json: ${render.output.slice(-400)}`);
+      check(g5, 'browser_oracle', 'fail', `render.mjs --provider simulator exit ${render.code} produced no gates.json: ${render.output.slice(-400)}`);
     } else {
       const list = Array.isArray(oracle) ? oracle : oracle.gates || [];
       const failing = list.filter((x) => x.status === 'fail');
       const skipped = [...new Set(list.filter((x) => x.status === 'skipped').map((x) => x.id))];
       check(g5, 'browser_oracle', failing.length === 0 ? 'pass' : 'fail',
         failing.length
-          ? failing.map((x) => `${x.id}@${x.viewport}: ${x.detail}`).join(' | ')
-          : `${list.filter((x) => x.status === 'pass').length} oracle gate(s) passed across 3 viewports (profile official-template)`);
+          ? failing.map((x) => `${x.id}@${x.viewport ?? '-'}: ${x.detail}`).join(' | ')
+          : `${list.filter((x) => x.status === 'pass').length} oracle gate(s) passed across 3 viewports (profile simulator-official)`);
       // The locked profile deliberately skips lab-only marker/interaction/cta gates. Recording
       // this keeps the evidence honest about what "runtime pass" does and does not cover.
       if (skipped.length) {
         check(g5, 'oracle_coverage', 'warn',
-          `profile official-template skipped: ${skipped.join(', ')} — no interaction evidence, so the highest evidence-backed rung is render-qualified`);
+          `profile simulator-official skipped: ${skipped.join(', ')} — no interaction evidence, so the highest evidence-backed rung is render-qualified`);
       }
-      result.screenshots = fs.readdirSync(path.join(runDir, 'evidence')).filter((f) => f.endsWith('.png')).sort();
-      result.screenshotsPath = path.join(runDir, 'evidence');
+      result.screenshots = fs.readdirSync(evidenceDir).filter((f) => f.endsWith('.png')).sort();
+      result.screenshotsPath = evidenceDir;
     }
   }
   const runtimeOk = sealGate(g5, 'react mount + non-empty content + no horizontal overflow + no fatal console error on 3 viewports');
@@ -787,7 +916,10 @@ async function main() {
   if (runtimeOk) {
     const consoleFile = path.join(runDir, 'evidence', 'console.jsonl');
     const lines = fs.existsSync(consoleFile) ? fs.readFileSync(consoleFile, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l)) : [];
-    const remote = lines.filter((l) => /https?:\/\/(?!127\.0\.0\.1|localhost)/.test(l.text || '') && /failed|error|refused/i.test(l.text || ''));
+    // console/pageerror only — the kind='error-detail' companions restate the same failure and
+    // would double-count it here.
+    const remote = lines.filter((l) => (l.kind === 'console' || l.kind === 'pageerror')
+      && /https?:\/\/(?!127\.0\.0\.1|localhost)/.test(l.text || '') && /failed|error|refused/i.test(l.text || ''));
     check(g6, 'no_failed_remote_calls_at_runtime', remote.length === 0 ? 'pass' : 'warn',
       remote.length ? `${remote.length} console line(s) mention a failing remote request` : 'no failing remote request observed in the browser run');
   }
@@ -850,6 +982,14 @@ async function main() {
       state: 'release-supported',
       adapterId: adapterInfo.adapterId ?? null,
       evidenceRef: { qualificationResult: `catalog/qualification/${templateId}-${result.shortRevision}.json`, runId },
+      runtime: {
+        verifiedProvider: 'simulator',
+        oracleProfile: result.oracleProfile ?? 'simulator-official',
+        // The no-host oracle is recorded, not blocking — but its verdict is exactly the question
+        // "does this app need a Zalo host to render at all?", and the answer has to travel with
+        // the promotion or the default scaffold flow will pick the wrong environment.
+        requiresZaloHost: (result.noHostOracle?.exitCode ?? 0) !== 0,
+      },
     });
     result.promotion.applied = true;
   }
@@ -887,6 +1027,14 @@ function finishRun({ result, gates, workspace, runDir, keepWorkspace, outDirArg,
   for (const g of gates) {
     lines.push(`  ${g.status === 'pass' ? 'PASS' : g.status === 'fail' ? 'FAIL' : 'SKIP'} ${g.id.padEnd(20)} ${g.detail}`);
     for (const c of g.checks.filter((c) => c.status !== 'pass')) lines.push(`       - ${c.status.toUpperCase()} ${c.id}: ${c.detail}`);
+  }
+  // §6.2: the console excerpt is the answer to "why did runtime fail" — print it here so the
+  // operator never has to rerun the factory just to read a log line.
+  if (result.consoleExcerpt) {
+    lines.push(`  console      : ${result.consoleExcerpt.totalErrorEvents} error event(s)${result.consoleExcerpt.truncated ? ' (excerpt truncated)' : ''}`);
+    for (const e of result.consoleExcerpt.events.slice(0, 6)) {
+      lines.push(`       ${e.kind}${e.type ? `/${e.type}` : ''}${e.source ? `/${e.source}` : ''} @${e.viewport ?? '-'}: ${e.text.slice(0, 220)}`);
+    }
   }
   lines.push(`  derived state: ${result.derivedState}${result.quarantineReason ? ` — ${result.quarantineReason}` : ''}`);
   if (result.promotion) {

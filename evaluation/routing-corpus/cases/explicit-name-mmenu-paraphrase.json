@@ -1,0 +1,23 @@
+{
+  "id": "explicit-name-mmenu-paraphrase",
+  "group": "explicit-override",
+  "brief": "sử dụng mmenu để gọi món",
+  "blocking": true,
+  "expected": {
+    "decision": "choice",
+    "acceptedTemplateIds": [
+      "zaui-mmenu"
+    ],
+    "mustNotSelect": [],
+    "requiredDomains": [
+      "fnb.menu"
+    ],
+    "requiredJobs": [
+      "menu.view"
+    ],
+    "minOptions": 2,
+    "forbidSelection": true
+  },
+  "source": "review vòng 3 (P1) — probe do owner đo",
+  "note": "Biến thể cue \"sử dụng\" của explicit-name-mmenu-vi; cùng một guard."
+}

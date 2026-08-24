@@ -38,10 +38,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 import { TEMPLATE_DIR, loadLabConfig, resolveWorkspace, getArg } from './lib/paths.mjs';
 import { newRunId, openRun, fingerprint } from './lib/run-context.mjs';
 import { redactText } from './lib/redact.mjs';
 import { rankTemplates, supportedIds as rankerSupportedIds, loadRegistry as loadTemplateRegistry, InvalidTemplateArg } from './recommend-template.mjs';
+// Same adapter loader the qualification factory uses — deliberately the SAME code, not a copy:
+// an app scaffolded at runtime must be byte-identical to the tree the evidence was produced
+// from, or the evidence describes something the user never gets.
+import { loadAdapter, applyAdapter } from './qualify-template.mjs';
 
 const INVOKED_VIA = ['slash-command', 'codex-skill', 'natural-language', 'harness'];
 
@@ -144,6 +149,130 @@ function slugify(name) {
   return s || 'zmp-app';
 }
 
+/**
+ * Apply the pinned adapter to a freshly scaffolded official template.
+ *
+ * The qualification factory has always applied adapters; bootstrap never did. So evidence said
+ * "zaui-coffee renders clean" for a tree with the missing `react-router` declared, while the
+ * user's scaffold got the raw upstream tree and a build failure. Four of the five templates
+ * auto-scaffoldable on 2026-08-23 carry an adapter, and one of them (`zaui-lucky-wheel`, once
+ * qualified) is only SAFE because its adapter strips a server-side call and an App Secret out
+ * of the client — shipping that tree unpatched is a security defect, not a build defect.
+ *
+ * So: whatever the evidence was produced from is what the user gets, or the run stops.
+ *   - registry records an adapterId → an applicable adapter MUST load and apply cleanly;
+ *   - any refusal, revision mismatch or invalid file → throw, before the user builds anything.
+ * Writes `evidence/adapter.json`; verify.mjs turns its `resultWarnings` into result.warnings.
+ */
+/**
+ * The registry is the authority on WHICH adapter (if any) the evidence was produced with, and the
+ * check has to close BOTH directions. An earlier version only compared ids when the registry
+ * named one, so `adapterId: null` plus an applicable file on disk meant bootstrap happily patched
+ * the tree with something no evidence covers — the same class of defect as running the wrong
+ * adapter, just from the other side.
+ *
+ * Returns null when there is nothing to apply; throws with the reason otherwise.
+ * Exported for the regression case (`adapter-contract`).
+ */
+export function assertAdapterMatchesRegistry(templateId, revision, expectedAdapterId, loaded) {
+  const at = `${templateId}@${String(revision).slice(0, 7)}`;
+  if (loaded.status === 'none') {
+    if (expectedAdapterId) {
+      throw new Error(
+        `catalog/adapters/${templateId}.json missing, but the registry says qualification evidence`
+        + ` for ${at} was produced with adapter "${expectedAdapterId}".`
+        + ' Refusing to scaffold a tree the evidence does not cover.',
+      );
+    }
+    return false;
+  }
+  if (loaded.status !== 'applicable') {
+    // A file pinned to a different revision is not "no adapter": if the registry expected one,
+    // the mismatch is the whole story, and if it did not, an unexpected file is still a surprise.
+    throw new Error(`adapter for ${templateId} not applicable (${loaded.status}): ${loaded.detail}`);
+  }
+  if (!expectedAdapterId) {
+    throw new Error(
+      `catalog/adapters/${templateId}.json declares "${loaded.adapter.adapterId}" and applies to ${at},`
+      + ' but the registry records no adapterId for this template — the qualification evidence was'
+      + ' produced WITHOUT an adapter. Refusing to patch a tree the evidence does not cover;'
+      + ' requalify with the adapter, or remove the file.',
+    );
+  }
+  if (loaded.adapter.adapterId !== expectedAdapterId) {
+    throw new Error(
+      `adapter id mismatch for ${templateId}: registry evidence was produced with "${expectedAdapterId}"`
+      + ` but catalog/adapters/${templateId}.json is "${loaded.adapter.adapterId}". Requalify before scaffolding.`,
+    );
+  }
+  return true;
+}
+
+/**
+ * Apply an adapter as ONE unit. `applyAdapter` walks patches in order and mutates as it goes, so
+ * a refusal on patch 5 leaves patches 1–4 written. For zaui-lucky-wheel that half-patched state is
+ * the dangerous one: the build fixes can land while the patch that removes the client-side secret
+ * is the one that refuses. Snapshot every file the adapter can touch, restore all of them on any
+ * refusal or throw, so the caller's error leaves the tree exactly as the tarball extracted it.
+ * Exported for the regression case (`adapter-contract`).
+ */
+export function applyAdapterAtomic(appDir, adapter) {
+  const touched = [...new Set((adapter.patches ?? []).map((patch) => patch.file || 'package.json'))];
+  const snapshot = new Map();
+  for (const rel of touched) {
+    const abs = path.join(appDir, rel);
+    snapshot.set(rel, fs.existsSync(abs) ? fs.readFileSync(abs) : null);
+  }
+  const restore = () => {
+    for (const [rel, buf] of snapshot) {
+      const abs = path.join(appDir, rel);
+      if (buf === null) fs.rmSync(abs, { force: true });
+      else fs.writeFileSync(abs, buf);
+    }
+  };
+  let result;
+  try {
+    result = applyAdapter(appDir, adapter);
+  } catch (err) {
+    restore();
+    throw new Error(`adapter ${adapter.adapterId} threw: ${err.message} — tree rolled back`);
+  }
+  if (result.refused.length) {
+    restore();
+    throw new Error(
+      `adapter ${adapter.adapterId} refused ${result.refused.length} patch(es): `
+      + result.refused.map((r) => `${r.patchId}/${r.reason} — ${r.detail}`).join('; ')
+      + '. Upstream changed under a pinned SHA, or the app tree is not what the adapter expects.'
+      + ' Tree rolled back to the extracted tarball; requalify the template instead of scaffolding'
+      + ' a half-patched tree.',
+    );
+  }
+  return result.applied;
+}
+
+function applyTemplateAdapter(entry, revision, workspace, ctx) {
+  const expectedAdapterId = entry.adapterId ?? null;
+  const loaded = loadAdapter(entry.id, revision);
+  if (!assertAdapterMatchesRegistry(entry.id, revision, expectedAdapterId, loaded)) return null;
+
+  const applied = applyAdapterAtomic(workspace.appDir, loaded.adapter);
+  ctx.writeJson('evidence/adapter.json', {
+    adapterId: loaded.adapter.adapterId,
+    templateId: entry.id,
+    upstreamRevision: revision,
+    adapterSha256: loaded.sha256,
+    appliedAt: new Date().toISOString(),
+    patches: applied.map((a) => a.patchId),
+    resultWarnings: loaded.adapter.resultWarnings ?? [],
+  });
+  ctx.event('bootstrap', {
+    stage: 'scaffold',
+    status: 'ok',
+    detail: `adapter ${loaded.adapter.adapterId} applied: ${applied.map((a) => a.patchId).join(', ')}`,
+  });
+  return loaded.adapter;
+}
+
 // Scaffold from an official template: codeload tarball (never `zmp init` — interactive,
 // hangs non-tty; never git clone), extract via system tar, strip the top-level dir, copy
 // into app/. Rebrand only what already exists: package.json/zmp-cli.json `name` and the
@@ -206,6 +335,7 @@ async function scaffoldOfficial(entry, appName, config, workspace, ctx, { force,
         status: 'ok',
         detail: `official template ${entry.id} scaffolded (name=${slug}, title=${appName})`,
       });
+      applyTemplateAdapter(entry, revision, workspace, ctx);
     } finally {
       writeScaffoldManifest(workspace.appDir, templateInfo, writeSet);
     }
@@ -502,7 +632,17 @@ async function resolveTemplateV2(argv, brief) {
   return {
     mode: 'official',
     selection: sel,
-    entry: { id: sel.selectedId, revision: sel.revision, branch: profile?.source?.defaultBranch ?? 'main' },
+    entry: {
+      id: sel.selectedId,
+      revision: sel.revision,
+      branch: profile?.source?.defaultBranch ?? 'main',
+      // What the qualification evidence was produced with; scaffoldOfficial enforces it.
+      adapterId: profile?.qualification?.adapterId ?? null,
+      // …and WHERE it was produced. A template that fails the no-host oracle only renders
+      // inside a Zalo host, so the run must verify it in the simulator — the user should never
+      // have to know a flag for that.
+      requiresZaloHost: profile?.qualification?.runtime?.requiresZaloHost === true,
+    },
   };
 }
 
@@ -537,7 +677,7 @@ async function main() {
   }
 
   const startedAt = new Date().toISOString();
-  const provider = config.defaults.renderProvider;
+  let provider = config.defaults.renderProvider;
 
   // plan 34: resolve template selection first — pure ranking of the brief against the
   // registry, before any fetch or mutation. Unknown/unqualified id and genuine ambiguity
@@ -803,6 +943,16 @@ async function main() {
       detail: '--existing: app kept as-is, no template copy (bind + verify only)',
     });
   } else if (templateSel.mode === 'official') {
+    // Verify the app in the environment its evidence was produced in. Recorded in input.json so
+    // render.mjs and preview.mjs both inherit it without the user knowing any flag exists.
+    if (templateSel.entry.requiresZaloHost) {
+      provider = 'simulator';
+      ctx.event('bootstrap', {
+        stage: 'scaffold',
+        status: 'ok',
+        detail: `renderProvider=simulator: ${templateSel.entry.id} chỉ render được trong Zalo host (qualification.runtime.requiresZaloHost)`,
+      });
+    }
     try {
       await scaffoldOfficial(templateSel.entry, appName, config, workspace, ctx, scaffoldOpts);
     } catch (e) {
@@ -941,4 +1091,9 @@ async function main() {
   process.exit(0);
 }
 
-main().catch((e) => die(e.stack || String(e)));
+// Main-guarded like every other stage script: the helpers above are imported by the
+// `adapter-contract` regression case, and an unguarded main() turned that import into a real
+// bootstrap run.
+const invokedAsScript = process.argv[1]
+  && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
+if (invokedAsScript) main().catch((e) => die(e.stack || String(e)));

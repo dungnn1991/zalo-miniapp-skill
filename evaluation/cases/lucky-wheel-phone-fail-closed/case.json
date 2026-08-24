@@ -1,0 +1,8 @@
+{
+  "caseId": "lucky-wheel-phone-fail-closed",
+  "title": "zaui-lucky-wheel — mock số điện thoại CHỈ trong simulator, mọi nơi khác fail-closed sang backend-required",
+  "expectation": {
+    "exitCode": 0,
+    "description": "Upstream 8c692b9 nhúng App Secret và gọi Graph endpoint từ client, đồng thời catch mọi lỗi rồi hiện snackbar type=success và điền một số điện thoại bịa. Adapter pinned phải: (1) gỡ endpoint server-side + secret khỏi client source, (2) trong simulator lấy số mẫu từ window.__ZMP_DX_RUNTIME__ và hiển thị nhãn dữ liệu giả lập, (3) ngoài simulator KHÔNG điền gì, hiện backend-required và giữ ô nhập tay dùng được, (4) không gọi Graph thật ở cả hai môi trường. Case chạy thật hai lần trên cùng một bản build: một lần có runtime marker, một lần marker bị chặn để mô phỏng host Zalo thật. Kèm kiểm result.json mang warnings[] có cấu trúc tách preview khỏi production-feature."
+  }
+}

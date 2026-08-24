@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "tool": "qualify-template",
   "templateId": "zaui-doctor",
-  "startedAt": "2026-08-22T18:12:36.261Z",
-  "workspace": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-doctor-wPsv48",
-  "runId": "qualify-zaui-doctor-2026-08-22T18-12-36Z",
+  "startedAt": "2026-08-23T08:12:40.891Z",
+  "workspace": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-doctor-ZyIinZ",
+  "runId": "qualify-zaui-doctor-2026-08-23T08-12-40Z",
   "registryPath": "/Users/dungnn/Project/DX/labs/miniapp-bootstrap-poc/skill/create-zmp-app/catalog/templates.json",
   "license": {
     "packageJsonLicense": "UNLICENSED",
@@ -17,7 +17,7 @@
   "shortRevision": "d6e5997",
   "upstreamHead": "d6e5997754671a47ed9d618cee7975cbc7a057e9",
   "evidenceValidForHead": true,
-  "recordedStateEffective": "candidate",
+  "recordedStateEffective": "release-supported",
   "adapter": {
     "status": "applicable",
     "file": "/Users/dungnn/Project/DX/labs/miniapp-bootstrap-poc/skill/create-zmp-app/catalog/adapters/zaui-doctor.json",
@@ -103,7 +103,7 @@
   },
   "buildInfo": {
     "outDir": "src/www",
-    "builtAt": "2026-08-22T18:12:48.137Z"
+    "builtAt": "2026-08-23T08:12:53.612Z"
   },
   "residualIdentifiers": {
     "blocking": [],
@@ -122,6 +122,152 @@
       }
     ]
   },
+  "noHostOracle": {
+    "exitCode": 0,
+    "gates": {
+      "gates": [
+        {
+          "id": "react_mount",
+          "status": "pass",
+          "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "mount_not_empty",
+          "status": "pass",
+          "detail": "children=1 textLen=790",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "no_sim_runtime_marker",
+          "status": "pass",
+          "detail": "no window.__ZMP_DX_RUNTIME__ outside the simulator",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "no_horizontal_overflow",
+          "status": "pass",
+          "detail": "scrollWidth=390 innerWidth=390",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "cta_not_clipped",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "screenshot",
+          "status": "pass",
+          "detail": "mobile-390x844.png",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "interaction_add_to_cart",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "no_fatal_console_error",
+          "status": "pass",
+          "detail": "0 error/pageerror event(s)",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "react_mount",
+          "status": "pass",
+          "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "mount_not_empty",
+          "status": "pass",
+          "detail": "children=1 textLen=790",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "no_sim_runtime_marker",
+          "status": "pass",
+          "detail": "no window.__ZMP_DX_RUNTIME__ outside the simulator",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "no_horizontal_overflow",
+          "status": "pass",
+          "detail": "scrollWidth=360 innerWidth=360",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "cta_not_clipped",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "screenshot",
+          "status": "pass",
+          "detail": "mobile-360x800.png",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "no_fatal_console_error",
+          "status": "pass",
+          "detail": "0 error/pageerror event(s)",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "react_mount",
+          "status": "pass",
+          "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "mount_not_empty",
+          "status": "pass",
+          "detail": "children=1 textLen=790",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "no_sim_runtime_marker",
+          "status": "pass",
+          "detail": "no window.__ZMP_DX_RUNTIME__ outside the simulator",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "no_horizontal_overflow",
+          "status": "pass",
+          "detail": "scrollWidth=1280 innerWidth=1280",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "cta_not_clipped",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "screenshot",
+          "status": "pass",
+          "detail": "wide-1280x800.png",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "interaction_add_to_cart",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "no_fatal_console_error",
+          "status": "pass",
+          "detail": "0 error/pageerror event(s)",
+          "viewport": "wide-1280x800"
+        }
+      ]
+    },
+    "consoleExcerpt": null
+  },
   "oracleGates": {
     "gates": [
       {
@@ -137,6 +283,12 @@
         "viewport": "mobile-390x844"
       },
       {
+        "id": "sim_runtime_marker",
+        "status": "pass",
+        "detail": "window.__ZMP_DX_RUNTIME__ schemaVersion=1 mode=simulator",
+        "viewport": "mobile-390x844"
+      },
+      {
         "id": "no_horizontal_overflow",
         "status": "pass",
         "detail": "scrollWidth=390 innerWidth=390",
@@ -145,7 +297,7 @@
       {
         "id": "cta_not_clipped",
         "status": "skipped",
-        "detail": "profile official-template: no lab markers",
+        "detail": "profile simulator-official: no lab markers",
         "viewport": "mobile-390x844"
       },
       {
@@ -157,7 +309,7 @@
       {
         "id": "interaction_add_to_cart",
         "status": "skipped",
-        "detail": "profile official-template: no lab markers",
+        "detail": "profile simulator-official: no lab markers",
         "viewport": "mobile-390x844"
       },
       {
@@ -179,6 +331,12 @@
         "viewport": "mobile-360x800"
       },
       {
+        "id": "sim_runtime_marker",
+        "status": "pass",
+        "detail": "window.__ZMP_DX_RUNTIME__ schemaVersion=1 mode=simulator",
+        "viewport": "mobile-360x800"
+      },
+      {
         "id": "no_horizontal_overflow",
         "status": "pass",
         "detail": "scrollWidth=360 innerWidth=360",
@@ -187,7 +345,7 @@
       {
         "id": "cta_not_clipped",
         "status": "skipped",
-        "detail": "profile official-template: no lab markers",
+        "detail": "profile simulator-official: no lab markers",
         "viewport": "mobile-360x800"
       },
       {
@@ -215,6 +373,12 @@
         "viewport": "wide-1280x800"
       },
       {
+        "id": "sim_runtime_marker",
+        "status": "pass",
+        "detail": "window.__ZMP_DX_RUNTIME__ schemaVersion=1 mode=simulator",
+        "viewport": "wide-1280x800"
+      },
+      {
         "id": "no_horizontal_overflow",
         "status": "pass",
         "detail": "scrollWidth=1280 innerWidth=1280",
@@ -223,7 +387,7 @@
       {
         "id": "cta_not_clipped",
         "status": "skipped",
-        "detail": "profile official-template: no lab markers",
+        "detail": "profile simulator-official: no lab markers",
         "viewport": "wide-1280x800"
       },
       {
@@ -235,7 +399,7 @@
       {
         "id": "interaction_add_to_cart",
         "status": "skipped",
-        "detail": "profile official-template: no lab markers",
+        "detail": "profile simulator-official: no lab markers",
         "viewport": "wide-1280x800"
       },
       {
@@ -243,15 +407,22 @@
         "status": "pass",
         "detail": "0 error/pageerror event(s)",
         "viewport": "wide-1280x800"
+      },
+      {
+        "id": "sim_bridge_log_written",
+        "status": "skipped",
+        "detail": "profile simulator-official: app made no native call — nothing to log (marker gate proves the shim ran)"
       }
     ]
   },
+  "oracleProfile": "simulator-official",
+  "consoleExcerpt": null,
   "screenshots": [
     "mobile-360x800.png",
     "mobile-390x844.png",
     "wide-1280x800.png"
   ],
-  "screenshotsPath": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-doctor-wPsv48/runs/qualify-zaui-doctor-2026-08-22T18-12-36Z/evidence",
+  "screenshotsPath": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-doctor-ZyIinZ/runs/qualify-zaui-doctor-2026-08-23T08-12-40Z/evidence",
   "externalRequirements": [],
   "derivedState": "render-qualified",
   "quarantineReason": null,
@@ -282,7 +453,7 @@
         {
           "id": "revision_pinned",
           "status": "pass",
-          "detail": "qualifying revision=d6e5997754671a47ed9d618cee7975cbc7a057e9 (source: upstream HEAD)"
+          "detail": "qualifying revision=d6e5997754671a47ed9d618cee7975cbc7a057e9 (source: registry source.revision)"
         },
         {
           "id": "snapshot_immutable",
@@ -382,14 +553,19 @@
       "detail": "react mount + non-empty content + no horizontal overflow + no fatal console error on 3 viewports",
       "checks": [
         {
+          "id": "browser_oracle_no_host",
+          "status": "pass",
+          "detail": "app also renders clean with no Zalo host at all"
+        },
+        {
           "id": "browser_oracle",
           "status": "pass",
-          "detail": "15 oracle gate(s) passed across 3 viewports (profile official-template)"
+          "detail": "18 oracle gate(s) passed across 3 viewports (profile simulator-official)"
         },
         {
           "id": "oracle_coverage",
           "status": "warn",
-          "detail": "profile official-template skipped: cta_not_clipped, interaction_add_to_cart — no interaction evidence, so the highest evidence-backed rung is render-qualified"
+          "detail": "profile simulator-official skipped: cta_not_clipped, interaction_add_to_cart, sim_bridge_log_written — no interaction evidence, so the highest evidence-backed rung is render-qualified"
         }
       ]
     },
@@ -430,7 +606,7 @@
       ]
     }
   ],
-  "finishedAt": "2026-08-22T18:12:51.461Z",
-  "durationMs": 15199,
+  "finishedAt": "2026-08-23T08:13:00.633Z",
+  "durationMs": 19742,
   "exitCode": 0
 }

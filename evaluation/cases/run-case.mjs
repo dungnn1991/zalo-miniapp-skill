@@ -49,12 +49,17 @@ const CASE_DEPS = {
   'preflight-asset-path': ['bootstrap', 'portal-fetch', 'template'],
   'cors-probe': [],
   'signature-match': [],
+  'pageerror-object-detail': [],
   'run-entry': ['bootstrap', 'portal-fetch', 'template'],
   // Phase 3 — simulator (extra sim deps checked in-scenario: registry A, runner sim, template tab B).
   'sim-accept': ['bootstrap', 'portal-fetch', 'template'],
   'sim-deny': ['bootstrap', 'portal-fetch', 'template'],
   'sim-manual-sheet': ['bootstrap', 'portal-fetch', 'template'],
   'sim-unmocked': ['bootstrap', 'template'],
+  'sim-runtime-marker': ['bootstrap', 'portal-fetch', 'template'],
+  'lucky-wheel-phone-fail-closed': ['bootstrap'],
+  'official-template-default-flow': ['bootstrap', 'portal-fetch'],
+  'adapter-contract': ['bootstrap'],
   'sim-permission-persist': ['bootstrap', 'template'],
   'doctor-autoinstall': [],
   // v0.3.1 — P0 regressions: safe rerun, workspace=cwd, installer host targeting.
@@ -709,6 +714,53 @@ process.exit(9);
     }
   },
 
+  // Report 41 §6.1 / review 42 R41-5: an uncaught value that is NOT an Error must still be
+  // diagnosable from evidence alone. `pageerror` cannot carry it (playwright flattens the
+  // payload to Error("Object") before node sees it) — the runner's in-page capture must.
+  async 'pageerror-object-detail'({ ws, check, note }) {
+    const fixture = path.join(LAB_ROOT, 'evaluation', 'browser', 'fixtures', 'throw-object.html');
+    if (!fs.existsSync(fixture)) return 'blocked: evaluation/browser/fixtures/throw-object.html missing';
+    const outDir = path.join(ws, 'evidence');
+    const runner = path.join(LAB_ROOT, 'skill', 'create-zmp-app', 'scripts', 'browser', 'runner.mjs');
+    const res = spawnSync(process.execPath, [
+      runner, '--url', pathToFileURL(fixture).href, '--out', outDir, '--profile', 'official-template',
+    ], { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
+    check('runner exits 1 (uncaught payload is still fatal)', res.status === 1,
+      `exit ${res.status}: ${(res.stderr || res.stdout || '').slice(-300)}`);
+
+    const lines = fs.existsSync(path.join(outDir, 'console.jsonl'))
+      ? fs.readFileSync(path.join(outDir, 'console.jsonl'), 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l))
+      : [];
+    const detail = lines.filter((l) => l.kind === 'error-detail');
+    const pageerror = lines.filter((l) => l.kind === 'pageerror');
+
+    check('pageerror line still records only the flattened text (bug reproduced, not hidden)',
+      pageerror.length > 0 && pageerror.every((l) => !String(l.text).includes('NEGATIVE_CONTROL')),
+      JSON.stringify(pageerror.slice(0, 2)));
+    check('window.onerror payload keeps the nested field',
+      detail.some((l) => l.source === 'window.onerror' && String(l.text).includes('NEGATIVE_CONTROL_NESTED_VALUE')
+        && String(l.text).includes('"code":-2000')),
+      JSON.stringify(detail.filter((l) => l.source === 'window.onerror').slice(0, 1)));
+    check('unhandledrejection payload keeps the nested field',
+      detail.some((l) => l.source === 'unhandledrejection' && String(l.text).includes('NEGATIVE_CONTROL_REJECTION_VALUE')),
+      JSON.stringify(detail.filter((l) => l.source === 'unhandledrejection').slice(0, 1)));
+
+    const cfg = readJsonIfExists(path.join(LAB_ROOT, 'skill', 'create-zmp-app', 'config.json'));
+    const vpNames = (cfg?.viewports ?? []).map((v) => v.name);
+    check('every viewport captured the payload, not just the default one',
+      vpNames.length > 0 && vpNames.every((v) => detail.some((l) => l.viewport === v)),
+      JSON.stringify({ vpNames, seen: [...new Set(detail.map((l) => l.viewport))] }));
+
+    // The detail lines are evidence only: the fatal counter must still be exactly the number
+    // of pageerror events per viewport (2 here), never inflated by the capture.
+    const gatesJson = readJsonIfExists(path.join(outDir, 'gates.json'));
+    const fatal = (gatesJson?.gates ?? []).filter((g) => g.id === 'no_fatal_console_error');
+    check('no_fatal_console_error counts pageerror only (error-detail is not counted)',
+      fatal.length === vpNames.length && fatal.every((g) => g.status === 'fail' && /^2 error\/pageerror event\(s\)/.test(g.detail)),
+      JSON.stringify(fatal));
+    note(`error-detail lines: ${detail.length}, pageerror lines: ${pageerror.length}`);
+  },
+
   // Phase 2.6 Tier-2: curated signature map turns a known log line into a diagnosis.
   async 'signature-match'({ ws, check, note }) {
     const sigPath = path.join(LAB_ROOT, 'skill', 'create-zmp-app', 'references', 'error-signatures.json');
@@ -759,6 +811,309 @@ process.exit(9);
   },
 
   // ---- Phase 3 simulator cases (plan 28) ----
+
+  // The tree a user gets must equal the tree the evidence was produced from. Both directions of
+  // the registry↔adapter agreement, and all-or-nothing application.
+  async 'adapter-contract'({ ws, check, note }) {
+    const boot = await import(pathToFileURL(path.join(SKILL_SCRIPTS, 'bootstrap.mjs')).href);
+    const { assertAdapterMatchesRegistry, applyAdapterAtomic } = boot;
+    if (typeof assertAdapterMatchesRegistry !== 'function' || typeof applyAdapterAtomic !== 'function') {
+      return 'blocked: bootstrap.mjs does not export assertAdapterMatchesRegistry/applyAdapterAtomic';
+    }
+    const REV = 'a'.repeat(40);
+    const threw = (fn) => { try { fn(); return null; } catch (e) { return e.message; } };
+
+    // --- direction 1: registry names an adapter, disk disagrees -----------------------------
+    const loadedWrongId = { status: 'applicable', adapter: { adapterId: 'other-id', patches: [] } };
+    check('registry adapterId vs a different adapter file → fail',
+      /adapter id mismatch/.test(threw(() => assertAdapterMatchesRegistry('zaui-x', REV, 'expected-id', loadedWrongId)) ?? ''),
+      String(threw(() => assertAdapterMatchesRegistry('zaui-x', REV, 'expected-id', loadedWrongId))));
+    check('registry names an adapter but no file → fail',
+      /Refusing to scaffold a tree the evidence does not cover/
+        .test(threw(() => assertAdapterMatchesRegistry('zaui-x', REV, 'expected-id', { status: 'none' })) ?? ''),
+      String(threw(() => assertAdapterMatchesRegistry('zaui-x', REV, 'expected-id', { status: 'none' }))));
+
+    // --- direction 2: registry expects NOTHING, disk has an applicable adapter --------------
+    const loadedUnexpected = { status: 'applicable', adapter: { adapterId: 'surprise', patches: [] } };
+    const msg = threw(() => assertAdapterMatchesRegistry('zaui-x', REV, null, loadedUnexpected));
+    check('registry adapterId=null but an applicable adapter file exists → fail',
+      /records no adapterId/.test(msg ?? ''), String(msg));
+    check('no adapter expected and none present → no-op, no throw',
+      assertAdapterMatchesRegistry('zaui-x', REV, null, { status: 'none' }) === false, '');
+    check('expected adapter that matches exactly → proceeds',
+      assertAdapterMatchesRegistry('zaui-x', REV, 'ok-id',
+        { status: 'applicable', adapter: { adapterId: 'ok-id', patches: [] } }) === true, '');
+
+    // --- all-or-nothing: patch 1 applies, patch 2 refuses, tree must be untouched -----------
+    const appDir = path.join(ws, 'app');
+    fs.mkdirSync(appDir, { recursive: true });
+    const files = {
+      'package.json': JSON.stringify({ name: 'x', dependencies: {} }, null, 2) + '\n',
+      'src/a.ts': 'const KEEP = "original-a";\n',
+      'src/b.ts': 'const KEEP = "original-b";\n',
+    };
+    for (const [rel, body] of Object.entries(files)) {
+      fs.mkdirSync(path.dirname(path.join(appDir, rel)), { recursive: true });
+      fs.writeFileSync(path.join(appDir, rel), body);
+    }
+    const partialAdapter = {
+      adapterId: 'partial-test', templateId: 'zaui-x', appliesTo: { revision: REV },
+      patches: [
+        // applies cleanly…
+        { id: 'p1', kind: 'replace', file: 'src/a.ts', find: 'original-a', replace: 'patched-a', expectedCount: 1, preconditions: [] },
+        // …and this one cannot: the anchor is not in the file.
+        { id: 'p2', kind: 'replace', file: 'src/b.ts', find: 'ANCHOR-THAT-IS-NOT-THERE', replace: 'x', expectedCount: 1, preconditions: [] },
+      ],
+    };
+    const atomicErr = threw(() => applyAdapterAtomic(appDir, partialAdapter));
+    check('a refusal anywhere makes the whole apply throw', /refused 1 patch/.test(atomicErr ?? ''), String(atomicErr));
+    check('the error names rollback so the operator is not left guessing', /rolled back/.test(atomicErr ?? ''), String(atomicErr));
+    const after = Object.fromEntries(Object.keys(files).map((rel) => [rel, fs.readFileSync(path.join(appDir, rel), 'utf8')]));
+    check('file written by the FIRST patch is rolled back byte-for-byte',
+      after['src/a.ts'] === files['src/a.ts'], JSON.stringify(after['src/a.ts']));
+    check('untouched files stay untouched',
+      after['src/b.ts'] === files['src/b.ts'] && after['package.json'] === files['package.json'], '');
+
+    // A clean adapter still applies (the rollback path must not break the happy path).
+    const okAdapter = {
+      adapterId: 'ok-test', templateId: 'zaui-x', appliesTo: { revision: REV },
+      patches: [{ id: 'p1', kind: 'replace', file: 'src/a.ts', find: 'original-a', replace: 'patched-a', expectedCount: 1, preconditions: [] }],
+    };
+    const applied = applyAdapterAtomic(appDir, okAdapter);
+    check('a clean adapter applies and reports its patches',
+      applied.length === 1 && fs.readFileSync(path.join(appDir, 'src/a.ts'), 'utf8').includes('patched-a'),
+      JSON.stringify(applied));
+    note('registry↔adapter agreement checked in both directions; apply is all-or-nothing');
+  },
+
+  // The default scaffold flow must be green for every template the ranker can auto-select.
+  // Qualification runs under the simulator; run.mjs used to reach it only via --verify-sim, so a
+  // template that needs a Zalo host was verified in one environment and built in another and the
+  // user's plain scaffold stopped at render. Runs the WHOLE pipeline, no simulator flag.
+  async 'official-template-default-flow'({ ws, check, note }) {
+    const registry = readJsonIfExists(path.join(LAB_ROOT, 'skill', 'create-zmp-app', 'catalog', 'templates.json'));
+    const AUTO_STATES = new Set(['render-qualified', 'interaction-qualified', 'release-supported']);
+    const autoScaffoldable = (t) => AUTO_STATES.has(t.qualification?.state)
+      && !!t.source?.revision && t.qualification?.testedRevision === t.source.revision;
+    // Only the host-requiring ones: they are the templates the old flow silently broke, and each
+    // adds ~60s of install+build. The others are covered by official-template-golden.
+    const targets = (registry?.templates ?? [])
+      .filter((t) => autoScaffoldable(t) && t.qualification?.runtime?.requiresZaloHost === true);
+    if (!targets.length) return 'blocked: no auto-scaffoldable template declares requiresZaloHost';
+
+    for (const t of targets) {
+      const caseWs = path.join(ws, t.id);
+      fs.mkdirSync(caseWs, { recursive: true });
+      // Exactly what a user gets: run.mjs, explicit template id, NO simulator flag.
+      const res = spawnSync(process.execPath, [
+        path.join(SKILL_SCRIPTS, 'run.mjs'), '--workspace', caseWs,
+        '--brief', `tạo app từ ${t.id}`, '--app-id', TEST_APP_ID, '--template', `official:${t.id}`,
+      ], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+      const lastJson = (() => {
+        const lines = (res.stdout || '').split('\n').filter(Boolean);
+        for (let i = lines.length - 1; i >= 0; i--) {
+          try { return JSON.parse(lines[i]); } catch { /* not json */ }
+        }
+        return null;
+      })();
+      check(`${t.id}: default run.mjs exits 0 with no simulator flag`, res.status === 0,
+        `exit ${res.status}: ${JSON.stringify(lastJson)} ${(res.stderr || '').slice(-300)}`);
+      if (res.status !== 0) continue;
+
+      const runId = lastJson?.runId;
+      const input = readJsonIfExists(path.join(caseWs, 'runs', runId ?? 'x', 'input.json'));
+      check(`${t.id}: renderProvider pinned to simulator from the registry, not from a flag`,
+        input?.renderProvider === 'simulator', JSON.stringify(input?.renderProvider));
+      const result = readJsonIfExists(path.join(caseWs, 'runs', runId ?? 'x', 'result.json'));
+      check(`${t.id}: result passes and records the simulator provider`,
+        result?.status === 'pass' && result?.provider === 'simulator',
+        JSON.stringify({ status: result?.status, provider: result?.provider }));
+      const gates = readJsonIfExists(path.join(caseWs, 'runs', runId ?? 'x', 'evidence', 'gates.json'))?.gates ?? [];
+      check(`${t.id}: rendered under sim serving (runtime marker gate present and passing)`,
+        gates.some((g) => g.id === 'sim_runtime_marker') && gates.filter((g) => g.id === 'sim_runtime_marker').every((g) => g.status === 'pass'),
+        JSON.stringify(gates.filter((g) => g.id.startsWith('sim_')).map((g) => [g.id, g.status])));
+      fs.rmSync(caseWs, { recursive: true, force: true });   // each template is ~200MB installed
+    }
+    note(`default-flow verified for: ${targets.map((t) => t.id).join(', ')}`);
+  },
+
+  // Mandate 42 §3.4: zaui-lucky-wheel@8c692b9 embedded an App Secret and called the Zalo Graph
+  // endpoint from the browser, and its register form caught every error, showed a "success"
+  // snackbar and filled a hardcoded fake phone number. The pinned adapter must remove the
+  // server-side call, mock ONLY under the DX simulator marker (labelled), and fail closed
+  // everywhere else — including inside a real Zalo host, which is indistinguishable from the
+  // simulator by URL, hostname or user-agent. Both directions are run for real, on one build.
+  async 'lucky-wheel-phone-fail-closed'({ ws, check, note }) {
+    const TEMPLATE_ID = 'zaui-lucky-wheel';
+    const registry = readJsonIfExists(path.join(LAB_ROOT, 'skill', 'create-zmp-app', 'catalog', 'templates.json'));
+    const profile = (registry?.templates ?? []).find((t) => t.id === TEMPLATE_ID);
+    if (!profile?.qualification?.adapterId) {
+      return `blocked: ${TEMPLATE_ID} has no adapterId in the registry — qualify it first`;
+    }
+
+    const boot = runScript(ws, 'bootstrap', [
+      '--brief', 'tạo app vòng quay may mắn', '--app-id', TEST_APP_ID, '--template', `official:${TEMPLATE_ID}`,
+    ]);
+    check('bootstrap scaffolds the template', boot.code === 0, `exit ${boot.code}: ${(boot.stderr || boot.stdout).slice(-400)}`);
+    const runId = boot.lastJson?.runId;
+    if (!runId) return;
+
+    const adapterEvidence = readJsonIfExists(path.join(ws, 'runs', runId, 'evidence', 'adapter.json'));
+    check('bootstrap applied the pinned adapter and recorded it',
+      adapterEvidence?.adapterId === profile.qualification.adapterId
+        && adapterEvidence?.upstreamRevision === profile.source.revision
+        && (adapterEvidence?.patches ?? []).length > 0,
+      JSON.stringify(adapterEvidence));
+
+    // The security property, checked on the tree the user actually gets.
+    const srcFiles = [];
+    const stack = [path.join(ws, 'app', 'src')];
+    while (stack.length) {
+      const dir = stack.pop();
+      for (const e of fs.existsSync(dir) ? fs.readdirSync(dir, { withFileTypes: true }) : []) {
+        const full = path.join(dir, e.name);
+        if (e.isDirectory()) { if (!['www', 'dist', 'node_modules'].includes(e.name)) stack.push(full); }
+        else if (/\.(ts|tsx|js|jsx)$/.test(e.name)) srcFiles.push(full);
+      }
+    }
+    const offenders = srcFiles.filter((f) => /graph\.zalo\.me|secret_key\s*[:=]|app_secret\s*[:=]|private_key\s*[:=]/i
+      .test(fs.readFileSync(f, 'utf8')));
+    check('client source carries no server-side endpoint and no secret literal', offenders.length === 0,
+      JSON.stringify(offenders.map((f) => path.relative(ws, f))));
+
+    for (const step of ['install', 'build']) {
+      const r = runScript(ws, step, ['--run-id', runId]);
+      check(`${step} exits 0`, r.code === 0, `exit ${r.code}: ${(r.stderr || r.stdout).slice(-400)}`);
+      if (r.code !== 0) return;
+    }
+
+    // Drive the built app twice through the SHIPPED sim serving code (not a copy of it).
+    const { chromium } = await import('playwright-core');
+    const { openRun } = await import(pathToFileURL(path.join(SKILL_SCRIPTS, 'lib', 'run-context.mjs')).href);
+    const { resolveWorkspace } = await import(pathToFileURL(path.join(SKILL_SCRIPTS, 'lib', 'paths.mjs')).href);
+    const { buildSimManifest, setupSimContext, simUrl } = await import(pathToFileURL(path.join(SKILL_SCRIPTS, 'sim', 'intercept.mjs')).href);
+    const wsObj = resolveWorkspace(['--workspace', ws]);
+    const manifest = buildSimManifest(openRun(path.join(ws, 'runs'), runId), wsObj, { decision: 'accept' });
+    const SIM_UA = 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36 Zalo android/24112050';
+
+    // `suppressMarker` reproduces a REAL Zalo host: same hostname, same path, same shim, same
+    // working SDK — only the DX marker is absent. That is the exact situation a mock must never
+    // leak into, and no URL/UA check could tell it apart.
+    const drive = async ({ suppressMarker }) => {
+      const browser = await chromium.launch({ channel: 'chrome', headless: true });
+      const graphRequests = [];
+      try {
+        const context = await browser.newContext({
+          viewport: { width: 390, height: 844 }, userAgent: SIM_UA, ignoreHTTPSErrors: true,
+        });
+        await setupSimContext(context, manifest);
+        if (suppressMarker) {
+          // Accessor with no setter: the injected inline script is a classic (sloppy-mode)
+          // script, so its assignment is a silent no-op and the marker stays undefined.
+          await context.addInitScript(() => {
+            Object.defineProperty(window, '__ZMP_DX_RUNTIME__', { get: () => undefined, configurable: false });
+          });
+        }
+        const page = await context.newPage();
+        page.on('request', (r) => { if (/graph\.zalo\.me/.test(r.url())) graphRequests.push(r.url()); });
+        await page.goto(simUrl(manifest.appId), { waitUntil: 'load', timeout: 30000 });
+        await page.waitForSelector('#app', { state: 'attached', timeout: 15000 });
+        const markerSeen = await page.evaluate(() => window.__ZMP_DX_RUNTIME__?.mode ?? null);
+        const phoneInput = page.locator('input[type="tel"]').first();
+        await phoneInput.click({ timeout: 10000 });          // triggers the autofill request
+        await page.waitForTimeout(1500);
+        const out = {
+          markerSeen,
+          phoneValue: await phoneInput.inputValue(),
+          simBadge: await page.locator('[data-testid="phone-sim-badge"]').count(),
+          backendRequired: await page.locator('[data-testid="phone-backend-required"]').count(),
+          bodyText: (await page.locator('body').innerText()).slice(0, 4000),
+        };
+        await phoneInput.fill('0912345678');                  // manual input must stay usable
+        out.manualValue = await phoneInput.inputValue();
+        out.graphRequests = graphRequests;
+        await context.close();
+        return out;
+      } finally {
+        await browser.close();
+      }
+    };
+
+    const sim = await drive({ suppressMarker: false });
+    const expectedMock = manifest.simConfig?.persona?.phoneNumber ?? '0000000000';
+    check('simulator: marker visible to the app', sim.markerSeen === 'simulator', JSON.stringify(sim.markerSeen));
+    check('simulator: phone filled with the mock number', sim.phoneValue === expectedMock,
+      JSON.stringify({ got: sim.phoneValue, expected: expectedMock }));
+    check('simulator: "dữ liệu giả lập" badge is shown', sim.simBadge === 1 && /GIẢ LẬP/.test(sim.bodyText),
+      JSON.stringify({ badge: sim.simBadge }));
+    check('simulator: no real Graph request', sim.graphRequests.length === 0, JSON.stringify(sim.graphRequests));
+
+    const prod = await drive({ suppressMarker: true });
+    check('production-like: marker really is absent', prod.markerSeen === null, JSON.stringify(prod.markerSeen));
+    check('production-like: phone field left EMPTY — no mock, no invented number',
+      prod.phoneValue === '' && !prod.bodyText.includes(expectedMock),
+      JSON.stringify({ value: prod.phoneValue }));
+    check('production-like: backend-required notice shown, simulator badge not shown',
+      prod.backendRequired === 1 && prod.simBadge === 0 && /nhập số điện thoại thủ công/.test(prod.bodyText),
+      JSON.stringify({ backendRequired: prod.backendRequired, simBadge: prod.simBadge }));
+    check('production-like: manual input still usable', prod.manualValue === '0912345678', JSON.stringify(prod.manualValue));
+    check('production-like: no real Graph request', prod.graphRequests.length === 0, JSON.stringify(prod.graphRequests));
+
+    const verify = runScript(ws, 'verify', ['--run-id', runId]);
+    const result = readJsonIfExists(path.join(ws, 'runs', runId, 'result.json'));
+    const warn = (result?.warnings ?? []).find((w) => w.code === 'PHONE_BACKEND_REQUIRED');
+    check('verify wrote a structured warning separating preview from production feature',
+      !!warn && warn.blockingForPreview === false && warn.blockingForProductionFeature === true
+        && warn.affectedFeature === 'phone-number-autofill' && warn.fallback === 'manual-input'
+        && typeof warn.guide === 'string' && warn.source === adapterEvidence.adapterId,
+      `verify exit ${verify.code}: ${JSON.stringify(result?.warnings)}`);
+    check('the guide the warning points at exists',
+      !!warn && fs.existsSync(path.join(LAB_ROOT, 'skill', 'create-zmp-app', warn.guide)), warn?.guide);
+    note(`adapter ${adapterEvidence?.adapterId} · patches ${(adapterEvidence?.patches ?? []).join(', ')}`);
+  },
+
+  // Mandate 42 §3.2: the DX runtime marker is the ONLY thing separating simulator from
+  // production, because the simulator deliberately serves from the real hostname and path.
+  // Both directions are the contract: present under sim serving, absent everywhere else.
+  async 'sim-runtime-marker'({ ws, check, note }) {
+    const missing = simDepsMissing();
+    if (missing.length) return `blocked: ${missing.join('; ')}`;
+    const runId = simBuildPipeline(ws, check);
+    if (!runId) return;
+    const gatesOf = () => readJsonIfExists(path.join(ws, 'runs', runId, 'evidence', 'gates.json'))?.gates ?? [];
+    const domOf = () => readJsonIfExists(path.join(ws, 'runs', runId, 'evidence', 'dom.json'))?.viewports ?? {};
+
+    const sim = runScript(ws, 'render', ['--run-id', runId, '--provider', 'simulator', '--sim-decision', 'accept']);
+    check('render (simulator) exits 0', sim.code === 0, `exit ${sim.code}: ${(sim.stderr || sim.stdout).slice(-400)}`);
+    const simMarkerGates = gatesOf().filter((g) => g.id === 'sim_runtime_marker');
+    check('sim_runtime_marker passes on every viewport',
+      simMarkerGates.length === 3 && simMarkerGates.every((g) => g.status === 'pass'),
+      JSON.stringify(simMarkerGates));
+    const simDom = Object.values(domOf());
+    check('marker read back from the page is schemaVersion 1 / mode simulator',
+      simDom.length === 3 && simDom.every((v) => v.dxRuntime?.schemaVersion === 1 && v.dxRuntime?.mode === 'simulator' && v.dxRuntime?.hasMockData),
+      JSON.stringify(simDom.map((v) => v.dxRuntime)));
+
+    const plain = runScript(ws, 'render', ['--run-id', runId]);
+    check('render (no simulator) exits 0', plain.code === 0, `exit ${plain.code}: ${(plain.stderr || plain.stdout).slice(-400)}`);
+    const plainMarkerGates = gatesOf().filter((g) => g.id === 'no_sim_runtime_marker');
+    check('no_sim_runtime_marker passes on every viewport — nothing leaked',
+      plainMarkerGates.length === 3 && plainMarkerGates.every((g) => g.status === 'pass'),
+      JSON.stringify(plainMarkerGates));
+    check('no sim_runtime_marker gate in a non-simulator run', !gatesOf().some((g) => g.id === 'sim_runtime_marker'),
+      JSON.stringify(gatesOf().map((g) => g.id)));
+    check('marker absent from the page in a non-simulator run',
+      Object.values(domOf()).every((v) => v.dxRuntime === null),
+      JSON.stringify(Object.values(domOf()).map((v) => v.dxRuntime)));
+
+    // Serve-time only: the built artefact on disk must never carry the marker, or a deploy
+    // would ship a page that believes it is running in a simulator.
+    const outDir = readJsonIfExists(path.join(ws, 'runs', runId, 'evidence', 'build-info.json'))?.outDir ?? 'dist';
+    const distIndex = path.join(ws, 'app', outDir, 'index.html');
+    check('built index.html on disk contains no marker',
+      fs.existsSync(distIndex) && !fs.readFileSync(distIndex, 'utf8').includes('__ZMP_DX_RUNTIME__'), distIndex);
+    note('marker is injected in memory by scripts/sim/intercept.mjs, never written to dist');
+  },
 
   async 'sim-accept'({ ws, check }) {
     const missing = simDepsMissing();
@@ -1242,29 +1597,48 @@ process.exit(9);
     check('zaui-fashion is the only v0.3.1 release-supported template',
       supported.length === 1 && supported[0].id === 'zaui-fashion', JSON.stringify(supported.map((e) => e.id)));
 
-    const args = ['--brief', 'tạo app cà phê dùng mẫu có sẵn', '--app-id', TEST_APP_ID];
-    const byBrief = runScript(ws, 'bootstrap', args);
+    // The case is about the SUPPORT GATE, not about any one template: it must keep working as
+    // templates get qualified. Pick the probe id from the registry at run time — the first
+    // still-unqualified template whose brief is known to route to it. Hard-coding zaui-coffee
+    // silently turned this case green-then-wrong the day coffee reached render-qualified.
+    const registry = readJsonIfExists(path.join(LAB_ROOT, 'skill', 'create-zmp-app', 'catalog', 'templates.json'));
+    const AUTO_STATES = new Set(['render-qualified', 'interaction-qualified', 'release-supported']);
+    const autoScaffoldable = (id) => {
+      const t = (registry?.templates ?? []).find((x) => x.id === id);
+      return !!t && AUTO_STATES.has(t.qualification?.state)
+        && !!t.source?.revision && t.qualification?.testedRevision === t.source.revision;
+    };
+    // brief → the template it routes to; every entry needs a corpus case proving the routing.
+    const PROBES = [
+      { id: 'zaui-uni', brief: 'tạo app cho trường đại học' },
+      { id: 'zaui-market', brief: 'tạo app siêu thị tạp hoá' },
+      { id: 'zaui-menu', brief: 'tạo app menu quét mã tại bàn' },
+    ];
+    const probe = PROBES.find((p) => !autoScaffoldable(p.id));
+    if (!probe) return 'blocked: every probe template in this case is now auto-scaffoldable — add a still-unqualified probe';
+
+    const byBrief = runScript(ws, 'bootstrap', ['--brief', `${probe.brief} dùng mẫu có sẵn`, '--app-id', TEST_APP_ID]);
     // plan 34 D34-7: cần user chọn template là ASK-USER → exit 2, không còn exit 3.
     check('unsupported keyword route exits 2 before scaffold', byBrief.code === 2,
       `exit ${byBrief.code}: ${byBrief.stderr.slice(-300)}`);
     check('unsupported route returns actionable options',
       byBrief.lastJson?.status === 'needs_template_choice'
         && Array.isArray(byBrief.lastJson?.options)
-        && byBrief.lastJson.options.some((o) => o.id === 'zaui-coffee' && typeof o.why === 'string'),
+        && byBrief.lastJson.options.some((o) => o.id === probe.id && typeof o.why === 'string'),
       JSON.stringify(byBrief.lastJson));
     check('unsupported route creates no app and no fetch temp dir',
       !fs.existsSync(path.join(ws, 'app'))
         && !fs.readdirSync(ws).some((name) => name.startsWith('.official-tpl-')), '');
 
     const explicit = runScript(ws, 'bootstrap', [
-      '--brief', 'tạo app cà phê', '--app-id', TEST_APP_ID, '--template', 'official:zaui-coffee',
+      '--brief', probe.brief, '--app-id', TEST_APP_ID, '--template', `official:${probe.id}`,
     ]);
     check('explicit unsupported id is also blocked before fetch',
-      explicit.code === 2 && explicit.lastJson?.blocked?.id === 'zaui-coffee'
+      explicit.code === 2 && explicit.lastJson?.blocked?.id === probe.id
         && (explicit.lastJson?.blocked?.supported ?? []).includes('zaui-fashion')
         && !fs.existsSync(path.join(ws, 'app')),
       `exit ${explicit.code}: ${JSON.stringify(explicit.lastJson)}`);
-    note('public official catalog: zaui-fashion only; unsupported ids never fetch or mutate app/');
+    note(`public official catalog: zaui-fashion only; unsupported probe "${probe.id}" never fetches or mutates app/`);
   },
 
   'golden'({ ws, check }) {

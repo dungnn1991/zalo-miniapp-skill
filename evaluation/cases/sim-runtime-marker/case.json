@@ -1,0 +1,8 @@
+{
+  "caseId": "sim-runtime-marker",
+  "title": "Runtime marker của simulator phải fail-closed — có trong sim serving, tuyệt đối không rò ra ngoài",
+  "expectation": {
+    "exitCode": 0,
+    "description": "Simulator cố ý serve từ đúng hostname/path thật (h5.zdn.vn/zapps/<appId>) để zmp-sdk nhận đúng môi trường, nên URL/hostname/user-agent KHÔNG phân biệt được sim với production. window.__ZMP_DX_RUNTIME__ là tín hiệu duy nhất. Case chứng minh cả hai chiều: dưới sim serving marker tồn tại đúng schemaVersion=1 mode=simulator và gate sim_runtime_marker pass; dưới render thường marker không tồn tại và gate no_sim_runtime_marker pass. Marker chỉ sống trong bộ nhớ lúc serve — không được lọt vào dist trên đĩa."
+  }
+}

@@ -19,8 +19,9 @@
     ],
     "requiredJobs": [
       "menu.view"
-    ]
+    ],
+    "minOptions": 2
   },
   "source": "plan 34 §6.2 (constraint) + registry constraints.requiredInputs",
-  "note": "zaui-mmenu khai backendRequiredForPreview + requiredInputs=[VITE_API_URL]. Thiếu API URL thì kể cả khi được promote cũng KHÔNG auto-scaffold — phải hỏi. Hôm nay state=discovered nên là lab."
+  "note": "zaui-mmenu khai backendRequiredForPreview + requiredInputs=[VITE_API_URL] nên KHÔNG bao giờ được auto-scaffold khi thiếu API URL. Brief nói rõ \"dùng mmenu\" — đó là intent tường minh của user, nên câu trả lời đúng là DỪNG LẠI HỎI: nêu mmenu cần backend, đề xuất zaui-coffee dựng được ngay, để user chốt. Sửa 2026-08-23: có lúc tôi đổi kỳ vọng sang auto:coffee vì ranker im lặng đổi template — owner bác, đúng: đổi thầm template người dùng đã gọi đích danh là trả lời một câu hỏi khác. Ranker nay có nhánh 3b-bis (briefNamesTemplate + use-cue). Guard cho đường ra lệnh --template official:<id> vẫn nằm ở case anh em constraint-mmenu-explicit-no-api-url (decision=stop)."
 }

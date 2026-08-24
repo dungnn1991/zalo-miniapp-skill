@@ -5,6 +5,6 @@
     "exitCode": 0,
     "findingCategory": null,
     "findingSlugHint": null,
-    "description": "Catalog public chỉ có releaseSupported template đã verified + pin commit SHA. Prompt/flag trỏ zaui-coffee (known nhưng unsupported) phải exit 3 needs_template_choice, chỉ liệt kê zaui-fashion và không fetch/scaffold app/."
+    "description": "Catalog public chỉ có releaseSupported template đã verified + pin commit SHA. Probe template được CHỌN TỪ REGISTRY lúc chạy (template đầu tiên chưa auto-scaffoldable trong danh sách PROBES) chứ không hardcode: hardcode zaui-coffee làm case này xanh-mà-sai đúng ngày coffee đạt render-qualified. Prompt/flag trỏ probe đó phải exit 2 needs_template_choice, chỉ liệt kê template đã support, và không fetch/scaffold app/."
   }
 }

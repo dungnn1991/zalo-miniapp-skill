@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "tool": "qualify-template",
   "templateId": "zaui-egovernment",
-  "startedAt": "2026-08-22T18:14:11.924Z",
-  "workspace": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-egovernment-8HFbp3",
-  "runId": "qualify-zaui-egovernment-2026-08-22T18-14-11Z",
+  "startedAt": "2026-08-23T06:46:19.278Z",
+  "workspace": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-egovernment-CnAEXD",
+  "runId": "qualify-zaui-egovernment-2026-08-23T06-46-19Z",
   "registryPath": "/Users/dungnn/Project/DX/labs/miniapp-bootstrap-poc/skill/create-zmp-app/catalog/templates.json",
   "license": {
     "packageJsonLicense": "UNLICENSED",
@@ -462,11 +462,157 @@
   },
   "buildInfo": {
     "outDir": "src/www",
-    "builtAt": "2026-08-22T18:14:36.127Z"
+    "builtAt": "2026-08-23T06:46:43.589Z"
   },
   "residualIdentifiers": {
     "blocking": [],
     "informational": []
+  },
+  "noHostOracle": {
+    "exitCode": 0,
+    "gates": {
+      "gates": [
+        {
+          "id": "react_mount",
+          "status": "pass",
+          "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "mount_not_empty",
+          "status": "pass",
+          "detail": "children=1 textLen=355",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "no_sim_runtime_marker",
+          "status": "pass",
+          "detail": "no window.__ZMP_DX_RUNTIME__ outside the simulator",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "no_horizontal_overflow",
+          "status": "pass",
+          "detail": "scrollWidth=390 innerWidth=390",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "cta_not_clipped",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "screenshot",
+          "status": "pass",
+          "detail": "mobile-390x844.png",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "interaction_add_to_cart",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "no_fatal_console_error",
+          "status": "pass",
+          "detail": "0 error/pageerror event(s)",
+          "viewport": "mobile-390x844"
+        },
+        {
+          "id": "react_mount",
+          "status": "pass",
+          "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "mount_not_empty",
+          "status": "pass",
+          "detail": "children=1 textLen=355",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "no_sim_runtime_marker",
+          "status": "pass",
+          "detail": "no window.__ZMP_DX_RUNTIME__ outside the simulator",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "no_horizontal_overflow",
+          "status": "pass",
+          "detail": "scrollWidth=360 innerWidth=360",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "cta_not_clipped",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "screenshot",
+          "status": "pass",
+          "detail": "mobile-360x800.png",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "no_fatal_console_error",
+          "status": "pass",
+          "detail": "0 error/pageerror event(s)",
+          "viewport": "mobile-360x800"
+        },
+        {
+          "id": "react_mount",
+          "status": "pass",
+          "detail": "#app, #root, [data-testid=\"app-root\"] attached",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "mount_not_empty",
+          "status": "pass",
+          "detail": "children=1 textLen=355",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "no_sim_runtime_marker",
+          "status": "pass",
+          "detail": "no window.__ZMP_DX_RUNTIME__ outside the simulator",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "no_horizontal_overflow",
+          "status": "pass",
+          "detail": "scrollWidth=1280 innerWidth=1280",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "cta_not_clipped",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "screenshot",
+          "status": "pass",
+          "detail": "wide-1280x800.png",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "interaction_add_to_cart",
+          "status": "skipped",
+          "detail": "profile official-template: no lab markers",
+          "viewport": "wide-1280x800"
+        },
+        {
+          "id": "no_fatal_console_error",
+          "status": "pass",
+          "detail": "0 error/pageerror event(s)",
+          "viewport": "wide-1280x800"
+        }
+      ]
+    },
+    "consoleExcerpt": null
   },
   "oracleGates": {
     "gates": [
@@ -479,7 +625,13 @@
       {
         "id": "mount_not_empty",
         "status": "pass",
-        "detail": "children=1 textLen=355",
+        "detail": "children=1 textLen=435",
+        "viewport": "mobile-390x844"
+      },
+      {
+        "id": "sim_runtime_marker",
+        "status": "pass",
+        "detail": "window.__ZMP_DX_RUNTIME__ schemaVersion=1 mode=simulator",
         "viewport": "mobile-390x844"
       },
       {
@@ -491,7 +643,7 @@
       {
         "id": "cta_not_clipped",
         "status": "skipped",
-        "detail": "profile official-template: no lab markers",
+        "detail": "profile simulator-official: no lab markers",
         "viewport": "mobile-390x844"
       },
       {
@@ -503,7 +655,7 @@
       {
         "id": "interaction_add_to_cart",
         "status": "skipped",
-        "detail": "profile official-template: no lab markers",
+        "detail": "profile simulator-official: no lab markers",
         "viewport": "mobile-390x844"
       },
       {
@@ -521,7 +673,13 @@
       {
         "id": "mount_not_empty",
         "status": "pass",
-        "detail": "children=1 textLen=355",
+        "detail": "children=1 textLen=435",
+        "viewport": "mobile-360x800"
+      },
+      {
+        "id": "sim_runtime_marker",
+        "status": "pass",
+        "detail": "window.__ZMP_DX_RUNTIME__ schemaVersion=1 mode=simulator",
         "viewport": "mobile-360x800"
       },
       {
@@ -533,7 +691,7 @@
       {
         "id": "cta_not_clipped",
         "status": "skipped",
-        "detail": "profile official-template: no lab markers",
+        "detail": "profile simulator-official: no lab markers",
         "viewport": "mobile-360x800"
       },
       {
@@ -557,7 +715,13 @@
       {
         "id": "mount_not_empty",
         "status": "pass",
-        "detail": "children=1 textLen=355",
+        "detail": "children=1 textLen=435",
+        "viewport": "wide-1280x800"
+      },
+      {
+        "id": "sim_runtime_marker",
+        "status": "pass",
+        "detail": "window.__ZMP_DX_RUNTIME__ schemaVersion=1 mode=simulator",
         "viewport": "wide-1280x800"
       },
       {
@@ -569,7 +733,7 @@
       {
         "id": "cta_not_clipped",
         "status": "skipped",
-        "detail": "profile official-template: no lab markers",
+        "detail": "profile simulator-official: no lab markers",
         "viewport": "wide-1280x800"
       },
       {
@@ -581,7 +745,7 @@
       {
         "id": "interaction_add_to_cart",
         "status": "skipped",
-        "detail": "profile official-template: no lab markers",
+        "detail": "profile simulator-official: no lab markers",
         "viewport": "wide-1280x800"
       },
       {
@@ -589,15 +753,22 @@
         "status": "pass",
         "detail": "0 error/pageerror event(s)",
         "viewport": "wide-1280x800"
+      },
+      {
+        "id": "sim_bridge_log_written",
+        "status": "pass",
+        "detail": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-egovernment-CnAEXD/runs/qualify-zaui-egovernment-2026-08-23T06-46-19Z/evidence/bridge-log.jsonl"
       }
     ]
   },
+  "oracleProfile": "simulator-official",
+  "consoleExcerpt": null,
   "screenshots": [
     "mobile-360x800.png",
     "mobile-390x844.png",
     "wide-1280x800.png"
   ],
-  "screenshotsPath": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-egovernment-8HFbp3/runs/qualify-zaui-egovernment-2026-08-22T18-14-11Z/evidence",
+  "screenshotsPath": "/var/folders/7g/d12cyk194_b6wwt6rrq0ppyw0000gn/T/zmp-qualify-zaui-egovernment-CnAEXD/runs/qualify-zaui-egovernment-2026-08-23T06-46-19Z/evidence",
   "externalRequirements": [
     {
       "kind": "env-var",
@@ -610,19 +781,20 @@
     {
       "kind": "env-var",
       "name": "VITE_MINI_APP_ID",
-      "neededForFirstPreview": true,
+      "neededForFirstPreview": false,
       "sites": [
         "src/constants/common.ts:3"
-      ]
+      ],
+      "note": "fallback sau `window.APP_ID ||` — host (và harness lúc serve) đã định nghĩa window.APP_ID nên nhánh này không chạy ở preview đầu"
     }
   ],
   "derivedState": "candidate",
   "quarantineReason": null,
   "promotion": {
-    "requested": true,
+    "requested": false,
     "eligible": false,
     "blockedBy": [
-      "blocking gate \"external_dependency\" is fail: first_preview_self_contained: first preview needs the user to supply: VITE_BASE_URL (env-var, src/constants/common.ts:1), VITE_MINI_APP_ID (env-var, src/constants/common.ts:3)"
+      "blocking gate \"external_dependency\" is fail: first_preview_self_contained: first preview needs the user to supply: VITE_BASE_URL (env-var, src/constants/common.ts:1)"
     ],
     "targetState": "release-supported",
     "applied": false
@@ -747,14 +919,19 @@
       "detail": "react mount + non-empty content + no horizontal overflow + no fatal console error on 3 viewports",
       "checks": [
         {
+          "id": "browser_oracle_no_host",
+          "status": "pass",
+          "detail": "app also renders clean with no Zalo host at all"
+        },
+        {
           "id": "browser_oracle",
           "status": "pass",
-          "detail": "15 oracle gate(s) passed across 3 viewports (profile official-template)"
+          "detail": "19 oracle gate(s) passed across 3 viewports (profile simulator-official)"
         },
         {
           "id": "oracle_coverage",
           "status": "warn",
-          "detail": "profile official-template skipped: cta_not_clipped, interaction_add_to_cart — no interaction evidence, so the highest evidence-backed rung is render-qualified"
+          "detail": "profile simulator-official skipped: cta_not_clipped, interaction_add_to_cart — no interaction evidence, so the highest evidence-backed rung is render-qualified"
         }
       ]
     },
@@ -762,12 +939,12 @@
       "id": "external_dependency",
       "blocking": true,
       "status": "fail",
-      "detail": "first_preview_self_contained: first preview needs the user to supply: VITE_BASE_URL (env-var, src/constants/common.ts:1), VITE_MINI_APP_ID (env-var, src/constants/common.ts:3)",
+      "detail": "first_preview_self_contained: first preview needs the user to supply: VITE_BASE_URL (env-var, src/constants/common.ts:1)",
       "checks": [
         {
           "id": "first_preview_self_contained",
           "status": "fail",
-          "detail": "first preview needs the user to supply: VITE_BASE_URL (env-var, src/constants/common.ts:1), VITE_MINI_APP_ID (env-var, src/constants/common.ts:3)"
+          "detail": "first preview needs the user to supply: VITE_BASE_URL (env-var, src/constants/common.ts:1)"
         },
         {
           "id": "no_failed_remote_calls_at_runtime",
@@ -790,7 +967,7 @@
       ]
     }
   ],
-  "finishedAt": "2026-08-22T18:14:39.665Z",
-  "durationMs": 27741,
-  "exitCode": 4
+  "finishedAt": "2026-08-23T06:46:50.950Z",
+  "durationMs": 31671,
+  "exitCode": 1
 }

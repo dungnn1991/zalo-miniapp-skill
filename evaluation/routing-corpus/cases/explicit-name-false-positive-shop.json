@@ -1,0 +1,24 @@
+{
+  "id": "explicit-name-false-positive-shop",
+  "group": "explicit-override",
+  "brief": "dùng app cho shop quần áo",
+  "blocking": true,
+  "expected": {
+    "decisionWhenSupported": "auto",
+    "decisionWhenUnsupported": "lab",
+    "acceptedTemplateIds": [
+      "zaui-fashion"
+    ],
+    "mustNotSelect": [
+      "zaui-shop"
+    ],
+    "requiredDomains": [
+      "commerce.fashion"
+    ],
+    "requiredJobs": [
+      "product.browse"
+    ]
+  },
+  "source": "review vòng 3 (P1) — probe do owner đo",
+  "note": "Cùng lỗi với explicit-name-false-positive-menu: \"dùng … shop quần áo\" bị đọc là yêu cầu zaui-shop. Cue \"dùng\" cách tên \"shop\" hai từ nên luật adjacency loại nó ra, và brief về thời trang phải dựng zaui-fashion."
+}

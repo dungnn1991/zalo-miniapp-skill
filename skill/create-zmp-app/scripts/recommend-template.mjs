@@ -211,7 +211,38 @@ export function extractIntent(brief, { registry, taxonomy }) {
     }
   }
   // Primary domain = most distinct phrases, then the most specific (longest) phrase, then id.
-  domains.sort((a, b) => b.strength - a.strength || b.longest - a.longest || a.id.localeCompare(b.id));
+  //
+  // …except a SUBORDINATE domain never outranks a more specific one (taxonomy
+  // `subordinateDomains`). Two different reasons, same handling:
+  //   campaign.loyalty  — a feature layer (points, vouchers, minigames) sitting on top of some
+  //                       industry; it is the subject of the app only when no industry is named.
+  //   commerce.general  — defined as "bán lẻ nói chung, chưa rõ ngành hàng", so by construction
+  //                       it cannot rank alongside commerce.fashion or commerce.grocery.
+  // Measured 2026-08-23 without this rule: "app cà phê có tích điểm thành viên" scored
+  // zaui-lucky-wheel above zaui-coffee, and "bán đồng phục bác sĩ" tied zaui-shop with
+  // zaui-fashion and fell back to lab.
+  const subordinate = new Set(taxonomy.subordinateDomains ?? []);
+  const hasSpecificDomain = domains.some((d) => !subordinate.has(d.id));
+  const rank = (d) => (hasSpecificDomain && subordinate.has(d.id) ? 1 : 0);
+  domains.sort((a, b) => rank(a) - rank(b)
+    || b.strength - a.strength || b.longest - a.longest || a.id.localeCompare(b.id));
+
+  // SIBLING domains tied on evidence strength are ALL primary. Ranking fnb.restaurant 4 and
+  // fnb.coffee 10 because "đồ uống" is two characters longer than "đồ ăn" is an implementation
+  // artifact, not a signal — and that manufactured 6-point margin was enough to push
+  // "làm app bán đồ ăn đồ uống" into auto-select instead of asking.
+  //
+  // Restricted to siblings (same family prefix, `fnb.*`) on purpose. ACROSS families the more
+  // specific industry legitimately wins: "coffee shop" hits fnb.coffee and commerce.general with
+  // one phrase each, but that is one noun phrase naming one business, not two competing claims —
+  // treating it as a tie handed zaui-shop a full primary-domain score.
+  const familyOf = (id) => String(id).split('.')[0];
+  const topRank = domains.length ? rank(domains[0]) : 0;
+  const topStrength = domains.length ? domains[0].strength : 0;
+  const topFamily = domains.length ? familyOf(domains[0].id) : null;
+  const primaryDomainIds = domains
+    .filter((d) => rank(d) === topRank && d.strength === topStrength && familyOf(d.id) === topFamily)
+    .map((d) => d.id);
 
   const phrasesFor = (id, table, descriptions) => {
     const desc = descriptions?.[id];
@@ -233,6 +264,9 @@ export function extractIntent(brief, { registry, taxonomy }) {
   return {
     normalized: normText,
     primaryDomain: domains[0]?.id ?? null,
+    // Every domain that scores at the primary weight — usually one, more when the brief gives
+    // two industries exactly the same evidence.
+    primaryDomainIds,
     domains,
     jobs,
     capabilities,
@@ -241,6 +275,61 @@ export function extractIntent(brief, { registry, taxonomy }) {
     optInRequested: optInPhrases().some((ph) => matchNormalized(normText, ph)),
     taxonomyVersion: taxonomy.version ?? null,
   };
+}
+
+// Cues that turn a product name in prose into an instruction ("dùng mmenu…", "set up the mmenu
+// template…"). Without one, a bare name is just a word: "menu", "shop" and "restaurant" are all
+// template names AND ordinary vocabulary, and treating every mention as a command would make the
+// ranker ask a question on almost every brief.
+const USE_CUES = Object.freeze(['dung', 'su dung', 'xai', 'use', 'set up']);
+// Words that mark the following token as a TEMPLATE name rather than a feature.
+const TEMPLATE_MARKERS = Object.freeze(['template', 'mau']);
+
+/**
+ * Does the brief name THIS template as a product, with an instruction cue ATTACHED to the name?
+ *
+ * The name is the registry id minus the `zaui-` prefix (separators normalized) — exactly the
+ * string a user types: "mmenu", "lucky wheel", "egovernment".
+ *
+ * Adjacency is the whole point. An earlier version accepted a cue anywhere in the brief plus the
+ * name anywhere else, and read "sử dụng app cho quán cà phê có menu" as a request for zaui-menu
+ * and "dùng app cho shop quần áo" as a request for zaui-shop — both then answered with a question
+ * instead of building the obvious template. Accepted shapes:
+ *
+ *   dùng mmenu…            dùng/sử dụng/xài/use/set up  [the] [template|mẫu]  <name>
+ *   dùng template mmenu…   same, with the marker spelled out
+ *   mẫu mmenu / template mmenu
+ *   mmenu template
+ *   zaui-mmenu             the exact registry id, which needs no cue at all
+ *
+ * Extra guard for names that are also ordinary product vocabulary ("menu" is a job phrase):
+ * those need the explicit template marker or the `zaui-` id. "dùng menu QR cho quán" is a user
+ * describing a feature, not naming a template.
+ */
+export function briefNamesTemplate(intent, profile) {
+  const bare = normalizeVi(String(profile.id).replace(/^zaui-/, '').replace(/[-_]+/g, ' ').trim());
+  if (bare.length < 4) return false;                       // too short to be distinctive
+  const text = intent.normalized;
+  const esc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const NAME = esc(bare);
+  const B = '(?:^|[^a-z0-9])';
+  const E = '(?:$|[^a-z0-9])';
+
+  // The exact registry id is unambiguous on its own.
+  if (new RegExp(`${B}zaui[ -]${NAME}${E}`).test(text)) return true;
+
+  const markers = TEMPLATE_MARKERS.map(esc).join('|');
+  const markerThenName = new RegExp(`${B}(?:${markers})\\s+${NAME}${E}`).test(text)
+    || new RegExp(`${B}${NAME}\\s+(?:${markers})${E}`).test(text);
+  if (markerThenName) return true;
+
+  // A name that doubles as ordinary vocabulary needs the marker above; nothing else counts.
+  const generic = Object.values(JOB_PHRASES).some((phrases) => phrases.some((ph) => normalizeVi(ph) === bare))
+    || Object.values(CAPABILITY_PHRASES).some((phrases) => phrases.some((ph) => normalizeVi(ph) === bare));
+  if (generic) return false;
+
+  const cues = USE_CUES.map(esc).join('|');
+  return new RegExp(`${B}(?:${cues})\\s+(?:the\\s+)?(?:(?:${markers})\\s+)?${NAME}${E}`).test(text);
 }
 
 // --- Hard filter (runs BEFORE scoring is allowed to decide anything) -------------------
@@ -281,11 +370,14 @@ function scoreProfile(profile, intent, opts) {
   let domainScoreHits = 0;
 
   const declaredDomains = profile.intent?.domains ?? [];
+  // A domain scores the primary weight when it is in the primary TIER — normally one domain,
+  // more when the brief gives two sibling domains identical evidence (see extractIntent).
+  const primaryIds = new Set(intent.primaryDomainIds ?? (intent.primaryDomain ? [intent.primaryDomain] : []));
   for (const d of intent.domains) {
     if (!declaredDomains.includes(d.id)) continue;
     matchedSignals++;
     domainScoreHits++;
-    const primary = d.id === intent.primaryDomain;
+    const primary = primaryIds.has(d.id);
     const w = primary ? WEIGHTS.domainPrimary : WEIGHTS.domainSecondary;
     score += w;
     reasons.push(`domain${primary ? '' : '-secondary'}:${d.id} ${fmt(w)} (brief: ${quote(d.hits)})`);
@@ -533,10 +625,19 @@ export function rankTemplates(brief, opts = {}) {
   const semantic = scored.filter((c) => c.score > 0 && !c.vetoed
     && (!intent.primaryDomain || c.domainMatched));
   const eligible = semantic.filter((c) => c.eligible);
-  // A question is only useful between options the same decision can act on: if anything is
-  // scaffoldable today we choose among those, otherwise we clarify the product flow among
-  // the semantic candidates (and say they are not release-supported yet).
-  const tierAll = eligible.length ? eligible : semantic;
+  // Ranking is SEMANTIC; the hard filter decides what can be acted on, and the two must not be
+  // collapsed. Until 2026-08-23 the tier was `eligible.length ? eligible : semantic`, so as soon
+  // as one template in a domain got qualified every better-matching-but-unqualified rival
+  // vanished from the margin computation — and the report then claimed a huge margin for a weaker match.
+  // Measured the day zaui-bistro was promoted: "app đặt bàn trước cho nhà hàng" scored
+  // zaui-restaurant 17 (it is the only template declaring job table.reserve) and zaui-bistro 10,
+  // and the ranker auto-selected bistro "margin 10" — a template with no table booking at all.
+  // Same shape broke DoD #3 ("app nhà hàng" must ask one classifying question).
+  //
+  // The tier is therefore every semantic candidate. Eligibility comes back in below, where it
+  // belongs: 3a only asks when at least one option in the tier is actionable today, and 3b
+  // refuses to substitute a different template when the best match itself cannot be built.
+  const tierAll = semantic;
 
   if (!tierAll.length) {
     selection.mode = 'lab';
@@ -579,8 +680,46 @@ export function rankTemplates(brief, opts = {}) {
     return { selection, templateOptions: buildOptions(tier, taxonomy), blocked: null, candidates: scored, intent };
   }
 
-  // 3b. Best semantic candidate exists but nothing passed the hard filter.
-  if (!eligible.length) {
+  // 3b-bis. The brief NAMES a template that cannot be built today.
+  //
+  // MUST run before 3b. When the named template is also the top semantic candidate — which is
+  // the normal case, since naming it scores it — 3b's "best match is blocked → lab" fired first
+  // and swallowed the whole branch: "dùng mmenu làm app gọi món" answered `lab` and never
+  // mentioned mmenu. Explicit intent is more specific than the generic fallback, so it decides
+  // first.
+  //
+  // `--template official:<id>` is the command channel and already stops before any mutation. But
+  // a user can also name a product in prose — "dùng mmenu làm app gọi món cho chuỗi trà sữa" —
+  // and silently scaffolding zaui-coffee instead answers a question they did not ask. Say what
+  // is wrong with the one they named, and offer the buildable alternative as a choice.
+  //
+  // Deliberately narrow, because a bare product name is a common word ("shop", "menu",
+  // "restaurant"): the brief must contain the template's OWN name AND a use-cue.
+  const namedBlocked = scored.filter((c) => !c.eligible && briefNamesTemplate(intent, c.profile));
+  if (namedBlocked.length) {
+    // The alternative to offer: the best candidate that can actually be built today. There may
+    // be none, and that is still a choice worth showing — the named template plus "or lab".
+    const fallback = tierAll.find((c) => c.eligible) ?? null;
+    const tier = [...namedBlocked, ...(fallback ? [fallback] : [])].slice(0, 3);
+    selection.mode = 'choice';
+    selection.selectedId = null;
+    selection.confidence = 'medium';
+    selection.alternatives = alternativesOf(scored.filter((c) => c.matched));
+    selection.reasons = [
+      ...namedBlocked.map((c) => `brief gọi đích danh "${c.id}" nhưng ${c.rejectedBecause}`),
+      'user đã nêu tên template cụ thể — đổi thầm sang template khác là trả lời một câu hỏi khác',
+      fallback
+        ? `${fallback.id} dựng được ngay và có thể là lựa chọn thay thế — hỏi một câu để user chốt`
+        : 'chưa có template nào dựng được cho brief này — hỏi để user chọn lab shell hay chờ template',
+    ];
+    return { selection, templateOptions: buildOptions(tier, taxonomy), blocked: null, candidates: scored, intent };
+  }
+
+  // 3b. The best semantic match itself cannot be built today. Never silently substitute a
+  // lower-scoring template that happens to be qualified — say which one fits and why it is
+  // blocked, then fall back to the lab shell (or ask, when the user explicitly wanted a
+  // template).
+  if (!top.eligible) {
     if (intent.optInRequested) {
       // User nói rõ "dùng mẫu có sẵn": im lặng dựng lab là bỏ qua ý định của họ.
       const tier = [top, ...tierAll.filter((c) => c.id !== top.id)].slice(0, 3);

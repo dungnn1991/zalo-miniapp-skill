@@ -236,6 +236,58 @@
     },
     "templateSelection": {
       "$ref": "./template-selection.schema.json"
+    },
+    "warnings": {
+      "type": "array",
+      "description": "Cảnh báo có cấu trúc từ template adapter (mandate 42 §3.5). Khác insights: insights nói \"run này gặp vấn đề gì\", warnings nói \"app dựng ra còn thiếu gì trước production\". Bốn semantics bắt buộc tách rời: preview có dùng được không (blockingForPreview), feature nào cần backend trước production (blockingForProductionFeature + affectedFeature), fallback hiện tại là gì (fallback), và đọc hướng dẫn ở đâu (guide).",
+      "items": {
+        "type": "object",
+        "required": [
+          "code",
+          "blockingForPreview",
+          "blockingForProductionFeature",
+          "affectedFeature",
+          "fallback",
+          "guide",
+          "message"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Mã ổn định, vd PHONE_BACKEND_REQUIRED"
+          },
+          "blockingForPreview": {
+            "type": "boolean",
+            "description": "Preview đầu có bị chặn không"
+          },
+          "blockingForProductionFeature": {
+            "type": "boolean",
+            "description": "Feature có cần thêm việc trước production không"
+          },
+          "affectedFeature": {
+            "type": "string"
+          },
+          "fallback": {
+            "type": "string",
+            "description": "Hành vi hiện tại khi feature chưa sẵn sàng, vd manual-input"
+          },
+          "guide": {
+            "type": "string",
+            "description": "Đường dẫn tài liệu trong skill"
+          },
+          "message": {
+            "type": "string"
+          },
+          "source": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "adapterId đã sinh ra cảnh báo này"
+          }
+        }
+      }
     }
   }
 }

@@ -297,8 +297,28 @@ const discovery = results.filter((r) => !r.c.blocking);
 const bFail = blocking.filter((r) => !r.ok);
 const dFail = discovery.filter((r) => !r.ok);
 
+// A discovery case is exploratory ONLY while its failure stays theoretical. The moment the
+// ranker actually auto-selects a template it can build, the failure stops being a note about
+// future coverage and becomes a description of what the skill will really do to a user's brief.
+//
+// Measured 2026-08-23, the day zaui-lucky-wheel was promoted: "app cà phê có tích điểm thành
+// viên", "app tạp hoá có thanh toán và tích điểm khách hàng" and "app bán voucher du lịch giá
+// rẻ" all auto-selected zaui-lucky-wheel — three silent wrong scaffolds, and the release gate
+// stayed green because discovery is informational. That is the hole this closes: an
+// unsafe-and-live discovery failure gates the suite exactly like a blocking one.
+//
+// `choice` and `lab` outcomes stay informational: they ask or fall back, they do not build the
+// wrong thing.
+const unsafeAutoRoute = (r) => r.mode === 'auto'
+  && r.sel?.selectedId != null
+  && r.sel?.revision != null
+  && autoScaffoldable(r.sel.selectedId);
+const dLive = dFail.filter(unsafeAutoRoute);
+
 table(showAll ? blocking : bFail, showAll ? 'BLOCKING (all)' : 'BLOCKING failures');
-table(showAll ? discovery : dFail, showAll ? 'DISCOVERY (all, informational)' : 'DISCOVERY failures (informational — do not gate the suite)');
+table(dLive, 'DISCOVERY failures that AUTO-SCAFFOLD a release-supported template (these gate the suite)');
+table(showAll ? discovery : dFail.filter((r) => !unsafeAutoRoute(r)),
+  showAll ? 'DISCOVERY (all, informational)' : 'DISCOVERY failures (informational — do not gate the suite)');
 
 function acc(rows) {
   const s = rows.filter((r) => r.scored);
@@ -317,16 +337,18 @@ for (const r of blocking) {
 console.log('\n--- routing corpus ------------------------------------------------------------');
 console.log(`registry ${registry.registryVersion} · taxonomy ${registry.taxonomyVersion} · auto-scaffoldable today: ${registry.templates.filter((t) => autoScaffoldable(t.id)).map((t) => t.id).join(', ') || '(none)'}`);
 console.log(`blocking : ${blocking.length - bFail.length}/${blocking.length} pass · top-1 ${bAcc.hit}/${bAcc.scored}${bAcc.pct === null ? '' : ` (${bAcc.pct.toFixed(1)}%)`} · gate top-1 >= 90%`);
-console.log(`discovery: ${discovery.length - dFail.length}/${discovery.length} pass · top-1 ${dAcc.hit}/${dAcc.scored}${dAcc.pct === null ? '' : ` (${dAcc.pct.toFixed(1)}%)`} · informational`);
+console.log(`discovery: ${discovery.length - dFail.length}/${discovery.length} pass · top-1 ${dAcc.hit}/${dAcc.scored}${dAcc.pct === null ? '' : ` (${dAcc.pct.toFixed(1)}%)`} · informational except unsafe auto-routes`);
+console.log(`unsafe   : ${dLive.length} discovery failure(s) auto-scaffold a release-supported template · gate 0`);
 console.log(`by group : ${Object.entries(byGroup).map(([g, v]) => `${g} ${v.pass}/${v.total}`).join(' · ')}`);
 
 console.log(JSON.stringify({
   suite: 'routing-corpus',
-  status: bFail.length ? 'fail' : 'pass',
+  status: bFail.length || dLive.length ? 'fail' : 'pass',
   registryVersion: registry.registryVersion,
   blocking: { total: blocking.length, pass: blocking.length - bFail.length, fail: bFail.length, top1: bAcc },
   discovery: { total: discovery.length, pass: discovery.length - dFail.length, fail: dFail.length, top1: dAcc },
-  failing: bFail.map((r) => r.c.id),
+  unsafeAutoRoutes: dLive.map((r) => ({ id: r.c.id, selected: r.sel?.selectedId })),
+  failing: [...bFail, ...dLive].map((r) => r.c.id),
 }));
 
-process.exit(bFail.length ? 1 : 0);
+process.exit(bFail.length || dLive.length ? 1 : 0);

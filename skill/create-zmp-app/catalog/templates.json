@@ -75,9 +75,14 @@
         "adapterId": null,
         "evidence": {
           "qualificationResult": "catalog/qualification/zaui-fashion-d59cfad.json",
-          "runId": "qualify-zaui-fashion-2026-08-22T18-05-30Z"
+          "runId": "qualify-zaui-fashion-2026-08-23T08-11-05Z"
         },
-        "note": null
+        "note": "qualification factory pass đủ 7 blocking gate tại d59cfad — evidence catalog/qualification/zaui-fashion-d59cfad.json",
+        "runtime": {
+          "verifiedProvider": "simulator",
+          "oracleProfile": "simulator-official",
+          "requiresZaloHost": false
+        }
       }
     },
     {
@@ -87,7 +92,7 @@
         "owner": "Zalo-MiniApp",
         "repository": "zaui-coffee",
         "defaultBranch": "main",
-        "revision": null,
+        "revision": "2d3d5e85c283b6079aa16b51591ccf11a11e693b",
         "headObserved": "2d3d5e85c283b6079aa16b51591ccf11a11e693b",
         "portalListed": true,
         "observedAt": "2026-08-22",
@@ -118,7 +123,10 @@
           "milk tea",
           "quán nước"
         ],
-        "negativeSignals": []
+        "negativeSignals": [
+          "máy pha cà phê",
+          "phụ kiện pha chế"
+        ]
       },
       "capabilities": [
         "search",
@@ -133,11 +141,19 @@
         "capabilityAdapters": []
       },
       "qualification": {
-        "state": "candidate",
-        "testedRevision": null,
-        "adapterId": null,
-        "evidence": null,
-        "note": "chưa chạy qualification factory"
+        "state": "release-supported",
+        "testedRevision": "2d3d5e85c283b6079aa16b51591ccf11a11e693b",
+        "adapterId": "zaui-coffee-react-router-direct-dep",
+        "evidence": {
+          "qualificationResult": "catalog/qualification/zaui-coffee-2d3d5e8.json",
+          "runId": "qualify-zaui-coffee-2026-08-23T08-11-30Z"
+        },
+        "note": "qualification factory pass đủ 7 blocking gate tại 2d3d5e8 — evidence catalog/qualification/zaui-coffee-2d3d5e8.json",
+        "runtime": {
+          "verifiedProvider": "simulator",
+          "oracleProfile": "simulator-official",
+          "requiresZaloHost": false
+        }
       }
     },
     {
@@ -147,7 +163,7 @@
         "owner": "Zalo-MiniApp",
         "repository": "zaui-bistro",
         "defaultBranch": "main",
-        "revision": null,
+        "revision": "5079a416c895254d6a6bf4c56e44b6a2718dc177",
         "headObserved": "5079a416c895254d6a6bf4c56e44b6a2718dc177",
         "portalListed": true,
         "observedAt": "2026-08-22",
@@ -195,11 +211,19 @@
         "capabilityAdapters": []
       },
       "qualification": {
-        "state": "candidate",
-        "testedRevision": null,
-        "adapterId": null,
-        "evidence": null,
-        "note": "chưa chạy qualification factory"
+        "state": "release-supported",
+        "testedRevision": "5079a416c895254d6a6bf4c56e44b6a2718dc177",
+        "adapterId": "zaui-bistro-upstream-fixes",
+        "evidence": {
+          "qualificationResult": "catalog/qualification/zaui-bistro-5079a41.json",
+          "runId": "qualify-zaui-bistro-2026-08-23T08-11-55Z"
+        },
+        "note": "qualification factory pass đủ 7 blocking gate tại 5079a41 — evidence catalog/qualification/zaui-bistro-5079a41.json",
+        "runtime": {
+          "verifiedProvider": "simulator",
+          "oracleProfile": "simulator-official",
+          "requiresZaloHost": true
+        }
       }
     },
     {
@@ -241,8 +265,10 @@
         "search"
       ],
       "constraints": {
-        "backendRequiredForPreview": false,
-        "requiredInputs": [],
+        "backendRequiredForPreview": true,
+        "requiredInputs": [
+          "VITE_API_URL"
+        ],
         "themeAdapter": null,
         "capabilityAdapters": []
       },
@@ -251,7 +277,7 @@
         "testedRevision": null,
         "adapterId": null,
         "evidence": null,
-        "note": "chưa chạy qualification factory"
+        "note": "qualification factory đã chạy tại b9c2ac9 và FAIL gate: external_dependency — evidence catalog/qualification/zaui-menu-b9c2ac9.json"
       }
     },
     {
@@ -261,7 +287,7 @@
         "owner": "Zalo-MiniApp",
         "repository": "zaui-market",
         "defaultBranch": "main",
-        "revision": null,
+        "revision": "2659835c48e0eac4ef328d6aa4583a2d6bf6f4f6",
         "headObserved": "2659835c48e0eac4ef328d6aa4583a2d6bf6f4f6",
         "portalListed": true,
         "observedAt": "2026-08-22",
@@ -295,7 +321,12 @@
           "thực phẩm",
           "đi chợ"
         ],
-        "negativeSignals": []
+        "negativeSignals": [
+          "tồn kho",
+          "quản lý kho",
+          "nhân viên kho",
+          "đặt chỗ"
+        ]
       },
       "capabilities": [
         "search",
@@ -309,11 +340,19 @@
         "capabilityAdapters": []
       },
       "qualification": {
-        "state": "candidate",
-        "testedRevision": null,
-        "adapterId": null,
-        "evidence": null,
-        "note": "chưa chạy qualification factory"
+        "state": "release-supported",
+        "testedRevision": "2659835c48e0eac4ef328d6aa4583a2d6bf6f4f6",
+        "adapterId": "zaui-market-upstream-fixes",
+        "evidence": {
+          "qualificationResult": "catalog/qualification/zaui-market-2659835.json",
+          "runId": "qualify-zaui-market-2026-08-23T08-12-17Z"
+        },
+        "note": "qualification factory pass đủ 7 blocking gate tại 2659835 — evidence catalog/qualification/zaui-market-2659835.json",
+        "runtime": {
+          "verifiedProvider": "simulator",
+          "oracleProfile": "simulator-official",
+          "requiresZaloHost": true
+        }
       }
     },
     {
@@ -388,9 +427,14 @@
         "adapterId": "zaui-doctor-upstream-fixes",
         "evidence": {
           "qualificationResult": "catalog/qualification/zaui-doctor-d6e5997.json",
-          "runId": "qualify-zaui-doctor-2026-08-22T18-12-36Z"
+          "runId": "qualify-zaui-doctor-2026-08-23T08-12-40Z"
         },
-        "note": "chưa chạy qualification factory"
+        "note": "qualification factory pass đủ 7 blocking gate tại d6e5997 — evidence catalog/qualification/zaui-doctor-d6e5997.json",
+        "runtime": {
+          "verifiedProvider": "simulator",
+          "oracleProfile": "simulator-official",
+          "requiresZaloHost": false
+        }
       }
     },
     {
@@ -440,8 +484,10 @@
         "profile"
       ],
       "constraints": {
-        "backendRequiredForPreview": false,
-        "requiredInputs": [],
+        "backendRequiredForPreview": true,
+        "requiredInputs": [
+          "VITE_API_BASE_URL"
+        ],
         "themeAdapter": null,
         "capabilityAdapters": []
       },
@@ -450,7 +496,7 @@
         "testedRevision": null,
         "adapterId": null,
         "evidence": null,
-        "note": "chưa chạy qualification factory"
+        "note": "qualification factory đã chạy tại 573893d và FAIL gate: external_dependency — evidence catalog/qualification/zaui-uni-573893d.json"
       }
     },
     {
@@ -498,8 +544,10 @@
         "search"
       ],
       "constraints": {
-        "backendRequiredForPreview": false,
-        "requiredInputs": [],
+        "backendRequiredForPreview": true,
+        "requiredInputs": [
+          "VITE_BASE_URL"
+        ],
         "themeAdapter": null,
         "capabilityAdapters": []
       },
@@ -508,7 +556,7 @@
         "testedRevision": null,
         "adapterId": null,
         "evidence": null,
-        "note": "chưa chạy qualification factory"
+        "note": "qualification factory đã chạy tại c362040 và FAIL gate: external_dependency — evidence catalog/qualification/zaui-egovernment-c362040.json"
       }
     },
     {
@@ -518,7 +566,7 @@
         "owner": "Zalo-MiniApp",
         "repository": "zaui-lucky-wheel",
         "defaultBranch": "main",
-        "revision": null,
+        "revision": "8c692b938727b4c6c38e866e4d6683cf1bdd4ed0",
         "headObserved": "8c692b93",
         "portalListed": true,
         "observedAt": "2026-08-22",
@@ -545,8 +593,9 @@
           "lucky wheel",
           "minigame",
           "trúng thưởng",
-          "tích điểm",
-          "voucher"
+          "tích điểm thành viên",
+          "chương trình tích điểm",
+          "đổi quà"
         ],
         "negativeSignals": []
       },
@@ -561,11 +610,19 @@
         "capabilityAdapters": []
       },
       "qualification": {
-        "state": "candidate",
-        "testedRevision": null,
-        "adapterId": null,
-        "evidence": null,
-        "note": "chưa chạy qualification factory"
+        "state": "release-supported",
+        "testedRevision": "8c692b938727b4c6c38e866e4d6683cf1bdd4ed0",
+        "adapterId": "zaui-lucky-wheel-client-side-graph-removal",
+        "evidence": {
+          "qualificationResult": "catalog/qualification/zaui-lucky-wheel-8c692b9.json",
+          "runId": "qualify-zaui-lucky-wheel-2026-08-23T08-13-02Z"
+        },
+        "note": "qualification factory pass đủ 7 blocking gate tại 8c692b9 — evidence catalog/qualification/zaui-lucky-wheel-8c692b9.json",
+        "runtime": {
+          "verifiedProvider": "simulator",
+          "oracleProfile": "simulator-official",
+          "requiresZaloHost": true
+        }
       }
     },
     {
