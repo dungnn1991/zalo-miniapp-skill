@@ -60,17 +60,26 @@ ensure-login (exit 2) → spawn `zmp login` → gửi một ảnh QR đã crop �
 3. Khi QR vừa hiện ổn định, dùng khả năng visual capture của host để chụp cửa sổ terminal,
    crop đủ toàn bộ QR cùng viền trống rồi gửi **một ảnh** cho user. Đây là đường relay ưu tiên
    trên chat/Remote vì giữ nguyên hình học QR và tránh serialize terminal động thành text.
-4. **Không stream raw PTY, spinner hoặc các lần ANSI redraw** lên chat/Remote. Chúng có thể
+4. Trong cùng tin nhắn gửi ảnh QR, agent gợi ý cách quét phù hợp với bề mặt user đang dùng;
+   đây chỉ là hướng dẫn thao tác, không phải thêm một điểm dừng xin xác nhận:
+   - **Đang dùng máy tính:** trên điện thoại mở Zalo → mục quét QR, rồi quét mã đang hiển thị
+     trên màn hình máy tính.
+   - **Đang dùng agent qua app điện thoại:** nếu bề mặt hỗ trợ, gửi ảnh QR ở dạng user có thể
+     tải/lưu vào thư viện ảnh. Nếu không, hướng dẫn user capture màn hình có đủ mã QR và lưu
+     ảnh vào thư viện. Sau đó mở Zalo → màn hình quét QR → chọn ảnh/thư viện ảnh → chọn ảnh QR
+     vừa lưu để Zalo nhận diện.
+   Nếu không xác định được bề mặt, nêu ngắn gọn cả hai cách thay vì hỏi thêm user.
+5. **Không stream raw PTY, spinner hoặc các lần ANSI redraw** lên chat/Remote. Chúng có thể
    biến một QR hiện tức thì trên máy thành hàng nghìn dòng lặp và truyền rất chậm. Nếu host
    không chụp được ảnh, strip ANSI rồi gửi đúng một khối QR tĩnh một lần; không relay liên tục.
-5. Giữ process login chạy nhưng agent ngừng poll terminal, đợi user báo đã quét rồi mới đọc
+6. Giữ process login chạy nhưng agent ngừng poll terminal, đợi user báo đã quét rồi mới đọc
    trạng thái một lần. Cửa sổ ~2 phút (CLI tự poll mỗi 2s, tối đa 60 lần); agent không đọc hay
    can thiệp auth response.
-6. Thấy `Login Success!` → CLI đã tự ghi `ZMP_TOKEN` vào `app/.env`. Không mở/đọc file để
+7. Thấy `Login Success!` → CLI đã tự ghi `ZMP_TOKEN` vào `app/.env`. Không mở/đọc file để
    "kiểm tra" giá trị.
-7. Timeout/QR hết hạn → hỏi user có muốn hiện QR mới không rồi mới chạy lại `zmp login`;
+8. Timeout/QR hết hạn → hỏi user có muốn hiện QR mới không rồi mới chạy lại `zmp login`;
    không tự loop.
-8. Chạy lại `ensure-login` để xác nhận — xác nhận **duy nhất** bằng key-existence (exit 0).
+9. Chạy lại `ensure-login` để xác nhận — xác nhận **duy nhất** bằng key-existence (exit 0).
    Không bao giờ xác nhận bằng cách đọc giá trị token. Không lưu QR đăng nhập vào repo hoặc
    run evidence lâu dài.
 

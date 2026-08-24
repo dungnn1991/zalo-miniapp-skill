@@ -286,15 +286,25 @@ testing với mô tả "bản kiểm thử sprint 3"`), pass it as `--desc "<tex
    terminal and crop the complete QR with its quiet margin. Send that image to the user
    **once**. A screenshot faithfully preserves the CLI's QR and is the preferred relay on
    chat/Remote surfaces.
-3. **Never stream the live raw PTY, spinner, or repeated ANSI redraws through chat/Remote.**
+3. In the same message as the QR image, give the user the matching Zalo scan hint; this is
+   guidance, not another approval stop:
+   - **Using a computer:** on the phone, open Zalo's QR scanner and scan the QR shown on the
+     computer screen.
+   - **Using the agent from a phone:** when the surface supports it, make the QR image
+     downloadable/saveable to the phone's photo library. Otherwise tell the user to capture
+     a screenshot that includes the complete QR and save it to the photo library. Then open
+     Zalo's QR scanner, choose the image/photo-library option, and select that saved image.
+   If the access surface is unknown, show both short options instead of asking a separate
+   question.
+4. **Never stream the live raw PTY, spinner, or repeated ANSI redraws through chat/Remote.**
    They can expand one locally instant QR into thousands of repeated lines and make delivery
    extremely slow. If visual capture is unavailable, strip ANSI and send one static QR block
    once; do not continuously relay terminal output.
-4. Keep the login process alive, stop polling from the agent side, and wait for the user to
+5. Keep the login process alive, stop polling from the agent side, and wait for the user to
    say the QR was scanned. Then inspect the terminal once for "Login Success!". The window is
    ~2 minutes; the CLI owns its polling and auth response. On timeout, ask whether to show a
    fresh QR — no silent retry loop.
-5. Re-run `ensure-login` to confirm. Confirmation is **key-existence only** — NEVER confirm by
+6. Re-run `ensure-login` to confirm. Confirmation is **key-existence only** — NEVER confirm by
    reading the `ZMP_TOKEN` value. Do not persist the login QR in repo/run evidence.
 
 **Deploy guardrails (hard stops)**

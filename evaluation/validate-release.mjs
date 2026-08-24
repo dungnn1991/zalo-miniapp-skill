@@ -45,6 +45,14 @@ check('QR login relay prefers one cropped image and forbids raw PTY streaming',
     && !qrRelayDocs.includes('Relay the QR output verbatim')
     && !qrRelayDocs.includes('Relay nguyên văn khối QR'),
   'QR relay contract regressed to live/raw terminal streaming');
+check('QR login relay explains both computer and phone-app scan paths',
+  skillText.includes('Using a computer:')
+    && skillText.includes('Using the agent from a phone:')
+    && skillText.includes('photo library')
+    && deployWorkflowText.includes('Đang dùng máy tính:')
+    && deployWorkflowText.includes('Đang dùng agent qua app điện thoại:')
+    && deployWorkflowText.includes('thư viện ảnh'),
+  'QR relay guidance must cover direct scanning on a computer and saved-image scanning on a phone');
 
 let openai = null;
 try { openai = YAML.parse(read('skill/create-zmp-app/agents/openai.yaml')); } catch (err) {
