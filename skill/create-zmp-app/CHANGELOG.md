@@ -4,7 +4,7 @@ Mọi thay đổi đáng kể của skill. Version = `package.json` + git tag `v
 Thay đổi phát sinh từ finding formal phải gắn id; expected/actual/lifecycle nằm trong
 `feedback/findings.jsonl`, decision và regression nằm trong `feedback/improvements.jsonl`.
 
-## [Unreleased]
+## [0.4.1] — 2026-08-24
 
 ### Added
 - Khi gửi QR của `zmp login`, agent gợi ý cách quét phù hợp: quét trực tiếp bằng Zalo trên
