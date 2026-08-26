@@ -117,3 +117,36 @@ Nguồn: [Quota 30 ngày](https://miniapp.zaloplatforms.com/community/8602851583
 - [Import zmp-sdk từ Cocos Creator](https://miniapp.zaloplatforms.com/community/7810205955052888783/cach-import-zmp-sdk-tu-cocos-creator) — đã chưng cất: `troubleshooting.md` §13 (Official: FSI #18).
 - [Không tạo được shortcut trên một số thiết bị Android](https://miniapp.zaloplatforms.com/community/7989788639453340237/khong-the-tao-phim-tat-cho-mini-app-tren-mot-so-thiet-bi-android) — user phải tự cấp quyền "Home screen shortcuts" cho Zalo.
 - [Không cut/copy/paste được trong Extension](https://miniapp.zaloplatforms.com/community/8458734196847901647/khong-the-cut-copy-paste-noi-dung-ben-trong-extension) — hạn chế iframe VSCode trên macOS; workaround: bôi đen rồi dùng menu **Edit > Copy/Cut/Paste** (Official: FSI #11).
+
+## 9. Phát hành: quy trình xét duyệt + tiêu chí (guidance-only)
+
+Skill **không thực hiện** bước phát hành (production release ngoài scope — SKILL.md); mục này
+để agent trả lời đúng khi user hỏi "làm sao đưa app lên Live".
+
+**Quy trình** (trên Mini App Center — https://mini.zalo.me/developers):
+
+1. **Quản lý phiên bản → Danh sách phiên bản**: chỉ bản ở trạng thái **Testing** gửi xét
+   duyệt được (deploy Testing: `deploy-workflow.md`).
+2. Gửi yêu cầu xét duyệt theo hướng dẫn → trạng thái đổi thành **Chờ xét duyệt**; Zalo Team
+   review theo chính sách Zalo Mini App.
+3. Bản **Đã duyệt** → bấm **Publish** để phân phối tới người dùng (thành bản Live).
+
+**Tiêu chí kiểm duyệt** (tóm tắt official — bản đầy đủ:
+[Thỏa Thuận Chương Trình Zalo Mini App](https://mini.zalo.me/documents/zalo-mini-app-developer-program-agreement/)):
+
+- Tên/Logo/Mô tả thể hiện đúng tính năng, nhất quán, không vi phạm bản quyền/nội dung cấm;
+  loại dịch vụ đúng danh mục đã đăng ký; tính năng người dùng thấy phải khớp mô tả.
+- Không điều hướng sang liên kết bên thứ ba, không khuyến khích chia sẻ/tải app riêng, không
+  quảng cáo — kiếm tiền, không mua bán vật phẩm ảo/nội dung kỹ thuật số — khi chưa có chấp
+  thuận từ Zalo.
+- Không nội dung sai lệch/gian lận/lừa đảo/giả mạo/bị pháp luật cấm; tuyệt đối không mã độc
+  hoặc dẫn link chứa mã độc.
+- Hoạt động ổn định, không crash (không gây crash Zalo); đạt chuẩn performance/thời gian tải;
+  UI/UX theo tiêu chuẩn Zalo
+  ([Design Guidelines](https://docs.zaloplatforms.com/docs/MA/intro/zalo-mini-program-design-guidelines.md)).
+- Đảm bảo quyền riêng tư và bảo mật; định danh người dùng theo chuẩn Authentication của Zalo.
+
+Liên quan trực tiếp khi chuẩn bị xét duyệt: §4 (chính sách Checkout SDK — lý do từ chối có
+thật), §5 (đăng ký quyền trước khi release), §3 (app bị tắt tìm kiếm và cách xin mở lại).
+
+Nguồn: [`intro/public-mini-program.md`](https://docs.zaloplatforms.com/docs/MA/intro/public-mini-program.md) — fetch 2026-08-26.
