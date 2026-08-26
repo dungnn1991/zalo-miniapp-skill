@@ -380,6 +380,9 @@ slash-command|codex-skill|natural-language|harness`.
 - `references/permissions.md` — 4 nhóm quyền, quyền nào Zalo duyệt / cần user consent, quy
   trình xin quyền trên Mini App Center; hai tầng quyền (đăng ký cho Mini App vs consent
   runtime) và ranh giới môi trường live/dev-testing.
+- `references/convert-web-app.md` — guidance chuyển web app có sẵn thành Mini App (zmp init
+  deploy-only, root `#app`, public path CDN, `polyfillModulePreload` iOS, base
+  `/zapps/<id>`, khai assets app-config, CORS server); ngoài scope thực thi của skill.
 - `references/portal-routing.md` — how live Portal docs are discovered/routed; no-bundle,
   no-fallback policy; `portal-sources.json` shape.
 - `references/app-contract.md` — the 8 `data-testid` markers, `__APP_NAME__` token, variants,
