@@ -69,6 +69,8 @@ vụ tích hợp) — chỉ **người dùng thường** bị. Tức là test b�
 không chứng minh được gì; phải xin quyền trước khi release. Gate `permission_registry_hint`
 của verify nhắc khi detect các API này trong code.
 Nguồn: [Lỗi chỉ user thường bị](https://miniapp.zaloplatforms.com/community/8746968970844796879/loi-chi-xay-ra-voi-nguoi-dung-binh-thuong-con-developer-admin-thi-khong-bi) — Hồng Phát, crawl 2026-08-21 · Official: FSI #7.
+Nhóm quyền, bảng ai-phải-cho-phép và quy trình 6 bước xin quyền trên Mini App Center:
+`permissions.md`.
 
 > **Làm rõ cơ chế (platform team, 2026-08-21):** enforcement là theo **môi trường**, không
 > theo role: các flow xin quyền KHÔNG chạy trên bản Development/Testing — chỉ khi app **GO
