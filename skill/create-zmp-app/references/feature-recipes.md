@@ -269,6 +269,45 @@ API đầy đủ: `setItem` / `getItem` / `getStorageInfo` / `removeItem` / `cle
 thật phải thử trên Zalo (Device Mode hoặc bản deploy). Build + verify qua `run.mjs
 --existing` như mọi recipe.
 
+## Recipe 5 — Yêu cầu theo dõi Official Account (`followOA`)
+
+**Trigger mẫu:** "thêm nút quan tâm OA", "xin follow OA", "widget theo dõi Official Account".
+
+**Nguồn:** official
+[`intro/best-practices/widget-follow-oa.md`](https://docs.zaloplatforms.com/docs/MA/intro/best-practices/widget-follow-oa.md)
+(fetch 2026-08-26).
+
+**Điều kiện tiên quyết (official):**
+
+1. **OA đã được liên kết** với Ứng Dụng của bạn (Zalo App).
+2. Mini App **được cấp quyền** dùng API "Yêu cầu theo dõi Official Account" — trang official
+   hướng dẫn gửi yêu cầu cấp quyền trong phần cài đặt Mini App. Lưu ý: bảng quyền official
+   lại xếp quyền này mức "Mặc định" (`permissions.md` §2) — nếu `followOA` fail, kiểm tra mục
+   Quyền Mini App trên Mini App Center trước khi debug code.
+
+**Flow:** UI đặt nút "Theo dõi"/"Quan tâm" → onClick gọi `followOA` → ứng dụng Zalo hiển thị
+thông báo để user xác nhận (consent thuộc về user, app không tự follow được).
+
+```jsx
+import { followOA } from "zmp-sdk/apis";
+
+followOA({
+  id: "<ID Official Account>",
+  success: (res) => {},
+  fail: (err) => {}
+});
+```
+
+**Quy tắc đi kèm:**
+
+- Gọi khi user chủ động bấm — không auto-popup lúc mở app (cùng nguyên tắc xin-đúng-ngữ-cảnh,
+  `permissions.md` §4).
+- `id` là ID của Official Account — không phải Mini App ID hay Zalo App ID.
+
+**Cách verify:** `followOA` nằm ngoài mock registry của simulator → trong sim fail rõ theo
+design; verify trên Zalo thật (Device Mode hoặc bản deploy) với OA đã liên kết. Build +
+verify qua `run.mjs --existing` như mọi recipe.
+
 ## Recipe tiếp theo
 
 Thêm recipe mới vào file này khi user yêu cầu tính năng lặp lại (thanh toán Checkout SDK,
