@@ -121,6 +121,19 @@ function selectDocs(links, topics) {
         // Local build/render guidance only — never login/deploy docs (guardrail).
         pick((l) => l.slugPath === 'devtools/cli/intro.md' || /devtools\/cli\/start\.md$/.test(l.slugPath));
         break;
+      case 'permissions':
+        pick((l) => l.slugPath === 'intro/request-permission.md');
+        break;
+      case 'best-practices':
+        // Head: authen-user (best practice hay cần nhất), rồi các trang best-practices còn lại.
+        pick((l) => l.slugPath === 'intro/best-practices/authen-user.md');
+        pick(
+          (l) =>
+            l.slugPath.startsWith('intro/best-practices/') &&
+            l.slugPath !== 'intro/best-practices/authen-user.md',
+          4
+        );
+        break;
       default:
         // Generic fallback for explicit --topics values: substring on slug or title.
         pick(
