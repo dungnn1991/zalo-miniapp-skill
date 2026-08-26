@@ -4,6 +4,34 @@ Mọi thay đổi đáng kể của skill. Version = `package.json` + git tag `v
 Thay đổi phát sinh từ finding formal phải gắn id; expected/actual/lifecycle nằm trong
 `feedback/findings.jsonl`, decision và regression nằm trong `feedback/improvements.jsonl`.
 
+## [0.5.0] — 2026-08-26
+
+Đợt tích hợp Portal docs "Bắt đầu/Best Practices" + App ID guidance (DX note 51; mọi nguồn
+official fetch 2026-08-26).
+
+### Added
+- `references/app-id-provisioning.md` + nhánh `app_id_missing` (SKILL.md, bootstrap.mjs):
+  hướng dẫn user tự lấy Mini App ID qua 2 hệ thống Zalo For Developers → Mini App Center;
+  skill vẫn không provisioning hộ (eval `app-id-missing` pass).
+- `references/permissions.md`: 4 nhóm quyền, mức duyệt (Mặc định / Zalo / Zalo + user
+  consent), quy trình xin quyền 6 bước trên Mini App Center.
+- `references/convert-web-app.md`: guidance chuyển web app có sẵn thành Mini App.
+- `operations.md` §9: quy trình phát hành + tiêu chí kiểm duyệt official (guidance-only).
+- `feature-recipes.md`: Recipe 2 fullscreen/`actionBarHidden` (mặc định template = action bar
+  host — quyết định DX 51, `app-contract.md` §7 mới) · Recipe 3 điều hướng & deeplink ·
+  Recipe 4 cache Native Storage · Recipe 5 follow OA; Recipe 1 thêm nhánh định danh với
+  backend riêng (`graph.zalo.me/v2.0/me` + `appsecret_proof`).
+- `troubleshooting.md` §12 xem/tải PDF, §13 import zmp-sdk từ Cocos Creator; sample CORS
+  server Node/Nginx trong §1.
+- `portal-fetch.mjs`: topic rule `permissions` + `best-practices` (verify live 2026-08-26,
+  6/6 doc fetched).
+
+### Changed
+- Gắn nguồn official "Các lỗi kỹ thuật thường gặp" (ký hiệu FSI #N) song song nguồn community
+  trong `troubleshooting.md` + `operations.md` — 21/21 mục official đã map đủ chỗ đứng.
+- Recipe 1: sửa khuyến nghị storage theo official — localStorage chỉ hợp lệ ở browser/sim,
+  Zalo thật dùng `nativeStorage` (bỏ tên API `setStorage`/`getStorage` không có trong docs).
+
 ## [0.4.1] — 2026-08-24
 
 ### Added
