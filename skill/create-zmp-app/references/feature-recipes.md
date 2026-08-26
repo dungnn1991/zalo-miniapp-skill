@@ -77,10 +77,11 @@ báo từ chối thân thiện (đừng auto-retry); lỗi khác → message chu
   vô cớ, đúng best practice "chỉ khởi tạo yêu cầu khi cần thiết, giải thích rõ lý do").
 - Deny (`-201`) là trạng thái hợp lệ: UI xử lý đẹp, không loop hỏi lại; gợi ý
   `openPermissionSetting` khi user muốn đổi ý.
-- Storage: v1 dùng `localStorage` (chạy được ở mọi môi trường kể cả sim). Nâng cấp sau:
-  `setStorage`/`getStorage` của zmp-sdk (Native Storage — bền hơn trong Zalo, nhưng thuộc
-  nhóm phải đăng ký ở Quản lý quyền khi lên Live, và **sim hiện chưa mock** → gọi trong sim
-  sẽ fail rõ; đừng dùng khi user cần test sim).
+- Storage: v1 dùng `localStorage` cho nhánh cache — **chỉ hợp lệ ở browser/sim**: official
+  ghi rõ LocalStorage/SessionStorage/Cookie **không được hỗ trợ trong Zalo Mini App**
+  (Recipe 4, nguồn `cache-data.md` fetch 2026-08-26). Bản chạy Zalo thật chuyển sang
+  `nativeStorage` (`setItem`/`getItem` — Recipe 4); quyền Native Storage phải đăng ký khi lên
+  Live, và **sim hiện chưa mock** → gọi trong sim sẽ fail rõ; đừng dùng khi user cần test sim.
 - Nhớ ranh giới môi trường (operations.md §5): form cấp quyền THẬT chỉ áp dụng khi app LIVE
   cho mọi user; bản dev/testing không có form — vì vậy **verify flow này bằng simulator**
   (mock đúng hành vi live) trước khi gửi xét duyệt.
@@ -217,6 +218,56 @@ nhắn chia sẻ, menu tuỳ chỉnh OA, Mini App Store, thanh tìm kiếm Zalo.
 **Cách verify:** các API điều hướng nằm **ngoài mock registry** của simulator — gọi trong sim
 fail rõ theo design; flow chéo app/deeplink phải thử trên **Zalo thật** (Device Mode hoặc bản
 deploy). Sau khi sửa code vẫn build + verify qua `run.mjs --existing` như mọi recipe.
+
+## Recipe 4 — Cache dữ liệu (Native Storage, không phải localStorage)
+
+**Trigger mẫu:** "lưu dữ liệu local", "cache profile/giỏ hàng", "app nhớ lựa chọn của user".
+
+**Nguồn:** official
+[`intro/best-practices/cache-data.md`](https://docs.zaloplatforms.com/docs/MA/intro/best-practices/cache-data.md)
++ [`intro/best-practices/call-restful-api.md`](https://docs.zaloplatforms.com/docs/MA/intro/best-practices/call-restful-api.md)
++ nhóm API `api/native-storage/*` (fetch 2026-08-26).
+
+**Fact chốt từ official:** trong Zalo Mini App, các API mặc định của trình duyệt
+**LocalStorage / SessionStorage / Cookie không được hỗ trợ**. Cache dùng **Native Storage**
+(`nativeStorage`, cơ chế sync): mỗi app tối đa **5MB**, đầy thì **dữ liệu cũ nhất tự bị xoá**.
+Truyền thông tin xác thực lên server bằng **Header, không dùng Cookie** (Recipe 1 phần
+backend, `phone-number-backend.md`).
+
+**Code mẫu (theo sample official):**
+
+```js
+import { nativeStorage } from "zmp-sdk/apis";
+
+const saveLocation = async (location) => {
+  const locations = await loadLocations();
+  locations.push(location);
+  try {
+    nativeStorage.setItem("recentLocations", locations);
+  } catch (error) {
+    console.log("Failed to save recentLocations:", error);
+  }
+  return locations;
+};
+```
+
+API đầy đủ: `setItem` / `getItem` / `getStorageInfo` / `removeItem` / `clear`.
+
+**Quy tắc đi kèm:**
+
+- **Quyền:** "Sử dụng native storage" thuộc nhóm cần **Zalo duyệt** (`permissions.md` §2,
+  `operations.md` §5) — đăng ký trước khi release; thiếu thì chỉ user thường bị lỗi còn
+  account dev "chạy ngon".
+- **Ranh giới môi trường:** `nativeStorage` nằm ngoài mock registry của simulator → trong
+  sim/browser fail rõ theo design. Code đa môi trường nên bọc một storage adapter nhỏ: Zalo
+  thật dùng `nativeStorage`, browser/sim fallback `localStorage` (chỉ phục vụ dev/preview —
+  không phải hành vi production).
+- Đầy 5MB là trạng thái bình thường (evict oldest) — không dùng làm nơi lưu duy nhất cho dữ
+  liệu quan trọng; thứ cần bền đưa về backend.
+
+**Cách verify:** logic cache verify được ở sim qua nhánh fallback; hành vi `nativeStorage`
+thật phải thử trên Zalo (Device Mode hoặc bản deploy). Build + verify qua `run.mjs
+--existing` như mọi recipe.
 
 ## Recipe tiếp theo
 
