@@ -153,6 +153,71 @@ thanh điều hướng mặc định của Zalo, sau đó custom lại header c�
 user xem header mới. Browser harness không có action bar host thật nên không thấy khác biệt
 phần host — safe-area/notch thật phải xem trên thiết bị (Device Mode hoặc app live).
 
+## Recipe 3 — Điều hướng & deeplink (mở app từ ngoài, giữa các Mini App, webview)
+
+**Trigger mẫu:** "tạo link mở app", "deeplink", "mở mini app khác", "nhận param khi mở app",
+"mở website trong app", "tạo shortcut ra màn hình".
+
+**Nguồn:** official
+[`intro/best-practices/interact-with-zalo-app.md`](https://docs.zaloplatforms.com/docs/MA/intro/best-practices/interact-with-zalo-app.md)
++ [`intro/intro/entry-point-access.md`](https://docs.zaloplatforms.com/docs/MA/intro/intro/entry-point-access.md)
+(fetch 2026-08-26); API nhóm `api/routing/*`.
+
+**1. Mở app từ NGOÀI Zalo (web/SMS/email):** link theo đúng cấu trúc official
+
+```text
+https://zalo.me/s/{miniAppId}/?key=value
+```
+
+— user bấm là được điều hướng thẳng vào Mini App trong Zalo; `?key=value` là param tuỳ biến.
+Hoặc cho user quét mã QR của app (quét từ camera, QR Scanner của Zalo, hoặc bấm thẳng QR trong
+tin nhắn Zalo). Đây cũng là dạng URL mà deploy-workflow parse sau deploy; bản live không kèm
+`env` (`operations.md` §5).
+
+**2. Nhận param trong app:** `getRouteParams()` (nhóm routing) trả các param được gửi đến
+trang hiện tại — dùng cho campaign tracking hoặc mở thẳng một màn hình cụ thể.
+
+**3. Mở Mini App khác từ Mini App:**
+
+```js
+import { openMiniApp } from "zmp-sdk/apis";
+
+openMiniApp({
+  appId: "<Mini App ID đích>",
+  params: { key: "value" },
+  success: () => {},
+  fail: (error) => { console.log(error); }
+});
+```
+
+Quyền "Yêu cầu mở Mini App" = Mặc định (`permissions.md` §2). Chiều ngược lại có
+`sendDataToPreviousMiniApp` gửi dữ liệu về app trước đó.
+
+**4. Mở website trong app (webview):**
+
+```js
+import { openWebview } from "zmp-sdk/apis";
+
+openWebview({ url: "https://…", success: () => {}, fail: (error) => {} });
+```
+
+Riêng link PDF qua webview có hành vi platform-specific — xem `troubleshooting.md` §12.
+
+**5. Các entry point user vào app (để thiết kế luồng):** QR, Shortcut màn hình
+(`createShortcut` — quyền cần Zalo duyệt theo `permissions.md` §2; một số máy Android user
+phải tự cấp "Home screen shortcuts" cho Zalo — `operations.md` §8), từ Mini App khác, tin
+nhắn chia sẻ, menu tuỳ chỉnh OA, Mini App Store, thanh tìm kiếm Zalo.
+
+**Quy tắc đi kèm:**
+
+- Không tự bịa scheme khác `https://zalo.me/s/…` — đây là cấu trúc official cho điều hướng
+  từ ngoài.
+- App bị tắt tìm kiếm trên Store thì deeplink/QR vẫn hoạt động (`operations.md` §3).
+
+**Cách verify:** các API điều hướng nằm **ngoài mock registry** của simulator — gọi trong sim
+fail rõ theo design; flow chéo app/deeplink phải thử trên **Zalo thật** (Device Mode hoặc bản
+deploy). Sau khi sửa code vẫn build + verify qua `run.mjs --existing` như mọi recipe.
+
 ## Recipe tiếp theo
 
 Thêm recipe mới vào file này khi user yêu cầu tính năng lặp lại (thanh toán Checkout SDK,
