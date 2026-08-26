@@ -96,6 +96,9 @@ Cách chọn template nằm ở
 | Deploy Development/Testing | [Deploy workflow](./skill/create-zmp-app/references/deploy-workflow.md) |
 | Tra lỗi build, runtime và CORS | [Troubleshooting](./skill/create-zmp-app/references/troubleshooting.md) |
 | Vận hành, quyền và môi trường | [Operations](./skill/create-zmp-app/references/operations.md) |
+| Lấy Mini App ID (2 hệ thống) | [App ID provisioning](./skill/create-zmp-app/references/app-id-provisioning.md) |
+| Nhóm quyền, mức duyệt, quy trình xin quyền | [Permissions](./skill/create-zmp-app/references/permissions.md) |
+| Chuyển web app có sẵn thành Mini App | [Convert web app](./skill/create-zmp-app/references/convert-web-app.md) |
 | Thay đổi theo phiên bản | [Changelog](./skill/create-zmp-app/CHANGELOG.md) |
 
 ## Phát triển skill
