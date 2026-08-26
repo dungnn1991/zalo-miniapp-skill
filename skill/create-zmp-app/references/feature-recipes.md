@@ -88,6 +88,21 @@ báo từ chối thân thiện (đừng auto-retry); lỗi khác → message chu
 - Cần số điện thoại/vị trí: cùng pattern với `scope.userPhonenumber`/`scope.userLocation`,
   nhưng hai API đó trả **token decode server-side** (xem sim-mock-data notes + FAQ 22).
 
+**Định danh với hệ thống backend riêng** (mức sâu hơn — official
+[`best-practices/authen-user.md`](https://docs.zaloplatforms.com/docs/MA/intro/best-practices/authen-user.md),
+fetch 2026-08-26): khi app phải đăng nhập vào tài khoản trên HỆ THỐNG CỦA BẠN, không chỉ hiển
+thị profile:
+
+1. Client: `getAccessToken()` (zmp-sdk) → gửi access token về server của bạn.
+2. Server: gọi Zalo Open API `GET https://graph.zalo.me/v2.0/me` với headers `access_token` +
+   **`appsecret_proof`** = HMAC-SHA256(access_token, app_secret) — bắt buộc từ 01/01/2024
+   (sai/thiếu → signature `invalid-appsecret-proof`); query `fields=id,name,picture,...`.
+3. `id` trả về là mã định danh user, **duy nhất theo từng Zalo App** → tạo tài khoản mới hoặc
+   map vào tài khoản sẵn có; cấp session token riêng (khuyến nghị JWT) truyền qua **Header**,
+   không Cookie (Recipe 4). App Secret luôn ở server, không bao giờ trong client
+   (`phone-number-backend.md`). Hệ thống định danh bằng số điện thoại: 2 case UX hợp lệ +
+   decode token — `phone-number-backend.md`.
+
 **Cách verify sau khi tích hợp:** app lab template → `run.mjs --verify-sim` (accept + deny) +
 `--preview-sim` cho user tự bấm; app official template → build + verify browser profile, rồi
 `preview.mjs --sim --sim-decision manual` để user bấm nút thật và thấy bottomsheet mock.

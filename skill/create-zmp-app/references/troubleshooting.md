@@ -26,7 +26,10 @@
     (`https://h5.zdn.vn` khi gọi từ Mini App; `http://localhost:3000` khi dev localhost).
   - URL gọi API: **✅** `https://my-server.com/api` · **❌** `http://...` (không https),
     `https://118.63.103.143:443` (IP trần) — Mini App chạy trong Secure Context.
-- Nguồn: [Network Error](https://miniapp.zaloplatforms.com/community/282604656005284416/network-error) — Hồng Phát, crawl 2026-08-21 · Official: FSI #1.
+  - **Sample cấu hình server (official):** Node/Express dùng package `cors` với
+    `origin: "https://h5.zdn.vn"`; Nginx: `add_header 'Access-Control-Allow-Origin'
+    'https://h5.zdn.vn' always;` trong block `location`.
+- Nguồn: [Network Error](https://miniapp.zaloplatforms.com/community/282604656005284416/network-error) — Hồng Phát, crawl 2026-08-21 · Official: FSI #1 · [Call API](https://docs.zaloplatforms.com/docs/MA/intro/best-practices/call-restful-api.md) (official, fetch 2026-08-26).
 
 ## 2. Minified React error #N
 
