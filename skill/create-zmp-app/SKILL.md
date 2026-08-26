@@ -66,7 +66,10 @@ value is extracted from it as the prompt App ID, but it is never stripped from t
    the only sanctioned overwrite is re-running with `--confirm-app-id` after the user
    explicitly chose the prompt ID (see needs_input handling).
 5. Neither present → `needs_input`: exit `2` and ask the user for the Mini App ID they created
-   on Zalo Developers. No scaffold, no install, no build until it is supplied.
+   on Zalo Developers. No scaffold, no install, no build until it is supplied. If the user does
+   not have an ID or does not know where to get one, walk them through
+   `references/app-id-provisioning.md` (Zalo For Developers → Mini App Center) — guidance only;
+   never create the app or the ID for them.
 
 After binding, `APP_ID` is written into `app/.env` by key-level upsert, read back, and
 exact-compared; a mismatch is a hard fail (`app_id_not_persisted`).
@@ -328,7 +331,10 @@ If the pipeline exits `2`: read `runs/<runId>/result.json` → `needsInput.quest
 user exactly that (missing App ID, or which ID to keep on conflict), and wait. Then resume by
 re-running the same `run.mjs` command with the extra flag:
 
-- **Missing App ID** — re-run with the user's answer as `--app-id`.
+- **Missing App ID** — re-run with the user's answer as `--app-id`. If the user does not have
+  an ID or does not know where to get one, walk them through
+  `references/app-id-provisioning.md` (Zalo For Developers → Mini App Center) first, then wait
+  for the ID.
 - **Conflict, user chooses the prompt ID** — re-run with `--app-id <id> --confirm-app-id <id>`
   (same value, byte-for-byte). `--confirm-app-id` is the user's explicit authorization for
   bootstrap to overwrite the conflicting `app/.env` value (key-level upsert, still read-back
@@ -368,6 +374,15 @@ slash-command|codex-skill|natural-language|harness`.
 ## References
 
 - `references/feature-recipes.md` — recipe tích hợp tính năng theo chuẩn Portal (đăng nhập user Zalo...).
+- `references/app-id-provisioning.md` — hướng dẫn user tự lấy Mini App ID qua 2 hệ thống
+  (Zalo For Developers → Mini App Center) khi `app_id_missing`; skill chỉ hướng dẫn, không
+  provisioning hộ.
+- `references/permissions.md` — 4 nhóm quyền, quyền nào Zalo duyệt / cần user consent, quy
+  trình xin quyền trên Mini App Center; hai tầng quyền (đăng ký cho Mini App vs consent
+  runtime) và ranh giới môi trường live/dev-testing.
+- `references/convert-web-app.md` — guidance chuyển web app có sẵn thành Mini App (zmp init
+  deploy-only, root `#app`, public path CDN, `polyfillModulePreload` iOS, base
+  `/zapps/<id>`, khai assets app-config, CORS server); ngoài scope thực thi của skill.
 - `references/portal-routing.md` — how live Portal docs are discovered/routed; no-bundle,
   no-fallback policy; `portal-sources.json` shape.
 - `references/app-contract.md` — the 8 `data-testid` markers, `__APP_NAME__` token, variants,

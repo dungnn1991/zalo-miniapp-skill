@@ -39,6 +39,8 @@ kèm slug quan sát được ngày 2026-08-20:
 | `app-config` | slug path kết thúc bằng `/app-config.md` | `devtools/app-config.md` |
 | `zaui` | `zaui/overview/installation.md` + component docs `zaui/<group>/<Component>.md` cho đúng các component template import (`App`, `Page`, `Button`, `BottomNavigation`, `Icon` — xem `app-contract.md`) | `zaui/overview/installation.md`, `zaui/layout/App.md`, `zaui/layout/Page.md`, `zaui/form/Button.md`, `zaui/layout/BottomNavigation.md`, `zaui/display/Icon.md` |
 | `devtools` | `devtools/cli/intro.md` hoặc `devtools/cli/start.md` — chỉ local build/render, **không bao giờ** chọn doc login/deploy | `devtools/cli/intro.md` |
+| `permissions` | slug path đúng bằng `intro/request-permission.md` (thêm 2026-08-26, plan51 — không thuộc default topics) | `intro/request-permission.md` (quan sát 2026-08-26) |
+| `best-practices` | head `intro/best-practices/authen-user.md`, rồi tối đa 4 trang `intro/best-practices/*` khác (thêm 2026-08-26, plan51 — không thuộc default topics) | `authen-user`, `widget-follow-oa`, `call-restful-api`, `interact-with-zalo-app`, `cache-data` (quan sát 2026-08-26) |
 
 Cap tổng: **≤ 8 doc**, chọn head-first: mỗi topic được đảm bảo doc **đầu tiên** của nó trước
 (theo thứ tự topic), phần còn lại (chủ yếu ZaUI components theo thứ tự import) nối tiếp sau,
@@ -46,8 +48,11 @@ dedupe theo URL rồi cắt từ đuôi. Với default topics, kết quả là 8
 (`getting-started`, `app-config`, ZaUI installation, `devtools/cli/intro`) + 4 component đầu
 (`App`, `Page`, `Button`, `BottomNavigation`); `zaui/display/Icon.md` là doc bị cắt.
 
-`--topics <csv>` thay thế default. Topic ngoài bốn nhóm trên match generic theo substring của
-slug/title (tối đa 2 doc mỗi topic) — dùng cho thử nghiệm, không phải contract.
+`--topics <csv>` thay thế default. Topic ngoài các nhóm có rule ở trên match generic theo
+substring của slug/title (tối đa 2 doc mỗi topic) — dùng cho thử nghiệm, không phải contract.
+Nội dung ổn định của `permissions`/`best-practices` đã được chưng cất sẵn vào
+`permissions.md` + `feature-recipes.md` (Recipe 1/3/4/5); hai topic này dùng khi cần bản
+sống mới nhất từ Portal.
 
 Không fetch native API docs (`api/...`) — app POC chưa dùng native API (plan §7, §8).
 

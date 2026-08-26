@@ -824,7 +824,8 @@ async function main() {
         reason: 'app_id_missing',
         question:
           'Cần Mini App ID của app đã tạo trên Zalo Developers. Cung cấp ID (giữ nguyên dạng chuỗi, ' +
-          'kể cả số 0 ở đầu) rồi chạy lại với --app-id. SKILL không tự tạo, không đoán và không lấy ID từ account.',
+          'kể cả số 0 ở đầu) rồi chạy lại với --app-id. SKILL không tự tạo, không đoán và không lấy ID từ account. ' +
+          'Chưa có ID? Làm theo references/app-id-provisioning.md (Zalo For Developers → Mini App Center).',
         promptAppId: null,
         projectAppId: null,
       },

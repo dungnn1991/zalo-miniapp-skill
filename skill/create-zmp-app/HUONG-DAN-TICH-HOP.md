@@ -93,5 +93,6 @@ hỏi (App ID, chọn mẫu, xác nhận deploy). Hết — mọi lệnh/kiểm 
 ## Tài liệu
 
 - `SKILL.md` — contract đầy đủ (workflow, guardrails, exit codes) mà agent tuân theo.
-- `references/` — troubleshooting, vận hành, deploy, simulator, mock data.
+- `references/` — troubleshooting, vận hành + phát hành, quyền, lấy App ID, recipe tính năng,
+  convert web app, deploy, simulator, mock data.
 - `config.json` — mọi fact khoá (markers, catalog mẫu, zmp-cli, simulator).

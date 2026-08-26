@@ -100,6 +100,9 @@ the scaffold mechanics.
 | Development/Testing deployment | [Deploy workflow](./skill/create-zmp-app/references/deploy-workflow.md) |
 | Build, runtime, and CORS troubleshooting | [Troubleshooting](./skill/create-zmp-app/references/troubleshooting.md) |
 | Permissions and environment operations | [Operations](./skill/create-zmp-app/references/operations.md) |
+| Getting a Mini App ID (2 systems) | [App ID provisioning](./skill/create-zmp-app/references/app-id-provisioning.md) |
+| Permission groups, approval levels, request flow | [Permissions](./skill/create-zmp-app/references/permissions.md) |
+| Converting an existing web app | [Convert web app](./skill/create-zmp-app/references/convert-web-app.md) |
 | Version history | [Changelog](./skill/create-zmp-app/CHANGELOG.md) |
 
 ## Skill development

@@ -85,7 +85,17 @@ Không thêm token khác.
 Template thêm/bớt component import → cập nhật danh sách này (và routing rule tương ứng) trong
 cùng một thay đổi.
 
-## 7. Ngoài phạm vi (vòng này)
+## 7. `app-config.json` — action bar: mặc định dùng host
+
+Quyết định 2026-08-26 (DX note 51 §0): template lab **giữ action bar của host Zalo** làm mặc
+định — `headerTitle`/`headerColor`/`textColor`/`leftButton`/`statusBar: "normal"` như
+`assets/template/app-config.json` hiện tại; **không** bật `actionBarHidden`. Fullscreen/custom
+header là **opt-in** theo Recipe 2 (`feature-recipes.md`) khi user yêu cầu. Template hiện còn
+header tự vẽ (marker `appHeader`) chạy dưới action bar host; việc thu gọn về một tầng tiêu đề
+đang để mở (DX note 51 §4-B4), không đổi trong đợt này. Field reference chính thức:
+`devtools/app-config.md` (portal-fetch topic `app-config`).
+
+## 8. Ngoài phạm vi (vòng này)
 
 - Native/device APIs: permission, identity, phone, location, camera, media.
 - Provisioning app, production release. (*Phase 2:* login gate + deploy Development/Testing
