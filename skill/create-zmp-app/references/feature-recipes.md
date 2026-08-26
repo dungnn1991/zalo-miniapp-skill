@@ -91,6 +91,68 @@ báo từ chối thân thiện (đừng auto-retry); lỗi khác → message chu
 `--preview-sim` cho user tự bấm; app official template → build + verify browser profile, rồi
 `preview.mjs --sim --sim-decision manual` để user bấm nút thật và thấy bottomsheet mock.
 
+## Recipe 2 — Fullscreen / ẩn action bar host, tự vẽ header (`actionBarHidden`)
+
+**Trigger mẫu:** "làm app full màn hình", "ẩn thanh điều hướng của Zalo", "custom header",
+"header riêng bị đè bởi tiêu đề Zalo".
+
+**Nguồn:** [`devtools/app-config.md`](https://docs.zaloplatforms.com/docs/MA/devtools/app-config.md)
+(fetch 2026-08-26) — mẹo official nguyên văn: *"set `actionBarHidden: true` để làm trong suốt
+thanh điều hướng mặc định của Zalo, sau đó custom lại header của ứng dụng"*; đối chiếu
+`zmp-blank-templates` branch `vite-5-typescript` (đọc 2026-08-26).
+
+**Mặc định của template lab (quyết định 2026-08-26, DX note 51):** DÙNG action bar của host
+(`app-contract.md` §7) — chỉ áp recipe này khi user yêu cầu fullscreen/custom.
+
+**Các bước:**
+
+1. `app-config.json` → block `app`:
+
+   ```jsonc
+   {
+     "app": {
+       "title": "…",                            // giữ — field bắt buộc duy nhất
+       "actionBarHidden": true,                 // ẩn thanh điều hướng host (default false)
+       "statusBar": "transparent",              // icon status bar nổi trên app (hoặc "hidden")
+       "hideIOSSafeAreaBottom": true,           // bỏ dải safe-area dưới trên iOS (tuỳ chọn)
+       "hideAndroidBottomNavigationBar": false, // chỉ bật khi thật sự cần
+       "textColor": { "light": "black", "dark": "white" } // màu icon status bar theo theme Zalo
+     }
+   }
+   ```
+
+   `headerTitle`/`headerColor`/`leftButton` chỉ có tác dụng với action bar host — đã ẩn thì bỏ
+   đi cho sạch. Dạng object `{light, dark}` của `headerColor`/`textColor` cần Zalo iOS ≥
+   22.03.01.r2 / Android ≥ 21.09.01; bản cũ hơn tự dùng giá trị `light`.
+
+2. `index.html`: viewport thêm `viewport-fit=cover` để app vẽ được vào vùng notch/safe-area:
+
+   ```html
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+   ```
+
+3. Header tự vẽ (template lab đã có sẵn component `Header`): đệm safe-area để không đè icon
+   status bar, và từ đây header này đảm nhận tiêu đề/nút back — chọn MỘT tầng tiêu đề:
+
+   ```css
+   .app-header { padding-top: env(safe-area-inset-top); }
+   ```
+
+4. Tương thích: `actionBarHidden`/`statusBar: "transparent"`/`hide*` cần API ≥ 2.25.0, Zalo ≥
+   23.02.01.r2 (bảng official) — user Zalo quá cũ vẫn thấy action bar như thường; đừng thiết
+   kế phụ thuộc tuyệt đối vào việc nó biến mất.
+
+**Quy tắc đi kèm:**
+
+- KHÔNG bật `actionBarHidden` mặc định cho mọi app — chỉ khi user yêu cầu (quyết định DX 51).
+- Chỉ cần đổi title/màu ĐỘNG mà vẫn giữ action bar host: dùng nhóm API View
+  (`setNavigationBarTitle` / `setNavigationBarColor` / `setNavigationBarLeftButton` — quyền
+  Mặc định theo `permissions.md` §2) thay vì ẩn cả thanh.
+
+**Cách verify:** build + render lại qua `run.mjs --existing`, screenshot viewport mobile cho
+user xem header mới. Browser harness không có action bar host thật nên không thấy khác biệt
+phần host — safe-area/notch thật phải xem trên thiết bị (Device Mode hoặc app live).
+
 ## Recipe tiếp theo
 
 Thêm recipe mới vào file này khi user yêu cầu tính năng lặp lại (thanh toán Checkout SDK,
