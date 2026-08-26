@@ -3,6 +3,8 @@
 > **Attribution:** Chưng cất từ chuyên mục FAQ công khai của **Hồng Phát (Supporter)** —
 > https://miniapp.zaloplatforms.com/community (crawl **2026-08-21**, bản lưu:
 > `DX/community-faq-best-practice/`), cộng kinh nghiệm thật của lab. Mỗi mục ghi link nguồn.
+> Đối chiếu official: [Các lỗi kỹ thuật thường gặp](https://docs.zaloplatforms.com/docs/MA/intro/getting-started/frequently-solved-issues.md)
+> (fetch **2026-08-26**) — ký hiệu **FSI #N** dưới đây trỏ mục N của trang đó.
 > Match log tự động: dùng `references/error-signatures.json` trước; file này để đọc sâu.
 
 ## 1. Network Error / CORS (lỗi phổ biến nhất)
@@ -24,7 +26,7 @@
     (`https://h5.zdn.vn` khi gọi từ Mini App; `http://localhost:3000` khi dev localhost).
   - URL gọi API: **✅** `https://my-server.com/api` · **❌** `http://...` (không https),
     `https://118.63.103.143:443` (IP trần) — Mini App chạy trong Secure Context.
-- Nguồn: [Network Error](https://miniapp.zaloplatforms.com/community/282604656005284416/network-error) — Hồng Phát, crawl 2026-08-21.
+- Nguồn: [Network Error](https://miniapp.zaloplatforms.com/community/282604656005284416/network-error) — Hồng Phát, crawl 2026-08-21 · Official: FSI #1.
 
 ## 2. Minified React error #N
 
@@ -33,7 +35,7 @@
   component không hợp lệ...). Bản production minify đã map nội dung lỗi thành mã số.
 - **Fix:** mở link trong chính thông báo lỗi để đọc message đầy đủ của mã đó, rồi sửa đúng chỗ
   vi phạm.
-- Nguồn: [Minified React error](https://miniapp.zaloplatforms.com/community/8963145051577348815/minified-react-error-ma-loi) — Hồng Phát, crawl 2026-08-21.
+- Nguồn: [Minified React error](https://miniapp.zaloplatforms.com/community/8963145051577348815/minified-react-error-ma-loi) — Hồng Phát, crawl 2026-08-21 · Official: FSI #2.
 
 ## 3. Lỗi ES2015 khi build
 
@@ -45,7 +47,7 @@
   1. Nâng target trong `vite.config.js`/`.ts` (build.target `esnext`) — đổi lại **giảm tương
      thích thiết bị cũ**.
   2. Thay thư viện cùng mục đích: `fetch` thay `axios`, ZaUI Components thay `mui/material`...
-- Nguồn: [Lỗi ES2015](https://miniapp.zaloplatforms.com/community/8242558116182457551/loi-es2015) — Hồng Phát, crawl 2026-08-21.
+- Nguồn: [Lỗi ES2015](https://miniapp.zaloplatforms.com/community/8242558116182457551/loi-es2015) — Hồng Phát, crawl 2026-08-21 · Official: FSI #16.
 
 ## 4. Build xong nhưng deploy fail: "output folder www was not found"
 
@@ -76,7 +78,7 @@
 - **Fix:** interactive → login lại theo QR flow của skill (`references/deploy-workflow.md` §3).
   CI/CD → soát 3 điểm trên; có thể test lệnh `npx zmp-developer-token ...` ngay trên máy cá
   nhân thay vì chỉ debug trên runner. **Không retry mù.**
-- Nguồn: [Lỗi CI/CD](https://miniapp.zaloplatforms.com/community/8170499422582570959/loi-ci-cd) — Hồng Phát, crawl 2026-08-21.
+- Nguồn: [Lỗi CI/CD](https://miniapp.zaloplatforms.com/community/8170499422582570959/loi-ci-cd) — Hồng Phát, crawl 2026-08-21 · Official: FSI #15 (kèm mẹo test `npx zmp-developer-token` trên máy cá nhân thay vì chỉ debug trên runner).
 
 ## 6. Cannot find module '@vitejs/plugin-react-refresh'
 
@@ -86,7 +88,7 @@
 - **Fix:** trong `vite.config.js`/`.ts`, đổi `import reactRefresh from
   "@vitejs/plugin-react-refresh"` + `reactRefresh()` → `import react from
   "@vitejs/plugin-react"` + `react()`.
-- Nguồn: [plugin-react-refresh](https://miniapp.zaloplatforms.com/community/8530792890447788239/cannot-find-module-vitejs-plugin-react-refresh) — Hồng Phát, crawl 2026-08-21.
+- Nguồn: [plugin-react-refresh](https://miniapp.zaloplatforms.com/community/8530792890447788239/cannot-find-module-vitejs-plugin-react-refresh) — Hồng Phát, crawl 2026-08-21 · Official: FSI #12.
 
 ## 7. Ảnh hiển thị ở localhost nhưng chết trên CDN
 
@@ -101,7 +103,7 @@
   import coffee from "./coffee.jpg";
   <img src={coffee} />
   ```
-- Nguồn: [Hình ảnh không hiển thị](https://miniapp.zaloplatforms.com/community/9035203745110127567/hinh-anh-khong-hien-thi) — Hồng Phát, crawl 2026-08-21.
+- Nguồn: [Hình ảnh không hiển thị](https://miniapp.zaloplatforms.com/community/9035203745110127567/hinh-anh-khong-hien-thi) — Hồng Phát, crawl 2026-08-21 · Official: FSI #3.
 
 ## 8. "The file size is too large." khi deploy
 
@@ -111,7 +113,7 @@
   splitting** (blog "Giảm kích thước Zalo Mini App và tối ưu hoá thời gian tải" trên
   mini.zalo.me, link trong FAQ nguồn). Preflight gate `size_limit` của pipeline chặn sớm case
   này ngay ở build.
-- Nguồn: [File size too large](https://miniapp.zaloplatforms.com/community/8098440729049792207/the-file-size-is-too-large) — Hồng Phát, crawl 2026-08-21.
+- Nguồn: [File size too large](https://miniapp.zaloplatforms.com/community/8098440729049792207/the-file-size-is-too-large) — Hồng Phát, crawl 2026-08-21 · Official: FSI #14.
 
 ## 9. API gọi "thành công" nhưng không có dữ liệu khi dev
 
@@ -122,7 +124,7 @@
   skill này cũng vậy: verify UI/render, không verify data flow host-specific.
 - **Fix:** dùng **Chế độ Device** — Mini App chạy trong Zalo thật nhưng load code từ server hot
   reload trên máy dev → gọi được API thật, nhận dữ liệu thật.
-- Nguồn: [API không có dữ liệu khi dev](https://miniapp.zaloplatforms.com/community/9179321132242792911/api-duoc-goi-thanh-cong-nhung-khong-co-du-lieu-khi-dev) — Hồng Phát, crawl 2026-08-21.
+- Nguồn: [API không có dữ liệu khi dev](https://miniapp.zaloplatforms.com/community/9179321132242792911/api-duoc-goi-thanh-cong-nhung-khong-co-du-lieu-khi-dev) — Hồng Phát, crawl 2026-08-21 · Official: FSI #5.
 
 ---
 
@@ -172,3 +174,34 @@ resolve: { alias: { "@": new URL("./src", import.meta.url).pathname } }
 ```
 
 Với config CommonJS thì dùng `path.resolve(__dirname, "src")`.
+
+## 12. Xem/tải file PDF trên Mini App
+
+- **Bối cảnh:** `openWebview` mở được link PDF, nhưng hành vi phụ thuộc platform và header
+  `Content-Disposition` của link:
+
+| Link PDF | Android | iOS |
+|---|---|---|
+| `Content-Disposition: inline` hoặc không có header | Tải file, webview hiện trang trắng | Xem trực tiếp trên webview |
+| `Content-Disposition: attachment` | Tải file, webview hiện trang trắng | Không tải file, webview báo "Không tải được dữ liệu…" |
+
+- **Khuyến nghị official:** hạn chế design flow tải file; render PDF như một thành phần UI
+  bằng thư viện JS, và dùng đúng **`react-pdf@5.x`** — các bản mới hơn có vấn đề tương thích
+  với lượng lớn thiết bị cũ.
+- Nguồn: Official: FSI #17 · [FAQ PDF](https://miniapp.zaloplatforms.com/community/8314616809715236303/xem-tai-file-pdf-tren-mini-app) — crawl 2026-08-21.
+
+## 13. Import `zmp-sdk` từ Cocos Creator (Mini Game)
+
+- **Triệu chứng:** project Cocos Creator không import được `zmp-sdk` theo cách thông thường —
+  cơ chế import thư viện của Cocos khác Mini App thường.
+- **Fix:** đổi cú pháp import:
+
+  ```ts
+  import "reflect-metadata";
+  import sdk, { SDKCreator } from "zmp-sdk";
+
+  (sdk["default"] as SDKCreator).getAccessToken();
+  ```
+
+  hoặc tải `zmp-sdk` từ CDN.
+- Nguồn: Official: FSI #18 · [FAQ Cocos](https://miniapp.zaloplatforms.com/community/7810205955052888783/cach-import-zmp-sdk-tu-cocos-creator) — crawl 2026-08-21.
