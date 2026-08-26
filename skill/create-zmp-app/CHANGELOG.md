@@ -30,7 +30,8 @@ official fetch 2026-08-26).
 - Gắn nguồn official "Các lỗi kỹ thuật thường gặp" (ký hiệu FSI #N) song song nguồn community
   trong `troubleshooting.md` + `operations.md` — 21/21 mục official đã map đủ chỗ đứng.
 - Recipe 1: sửa khuyến nghị storage theo official — localStorage chỉ hợp lệ ở browser/sim,
-  Zalo thật dùng `nativeStorage` (bỏ tên API `setStorage`/`getStorage` không có trong docs).
+  Zalo thật dùng `nativeStorage` sync; họ async `setStorage`/`getStorage`/... là API lỗi
+  thời (Recipe 4 ghi chú migrate — user xác nhận + typings zmp-sdk 2.53.0, 2026-08-26).
 
 ## [0.4.1] — 2026-08-24
 

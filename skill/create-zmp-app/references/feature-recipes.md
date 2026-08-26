@@ -268,6 +268,14 @@ const saveLocation = async (location) => {
 
 API đầy đủ: `setItem` / `getItem` / `getStorageInfo` / `removeItem` / `clear`.
 
+**Họ API async cũ — lỗi thời:** `zmp-sdk` vẫn export luồng storage **bất đồng bộ** viết riêng
+cho Mini App thời kỳ đầu (`setStorage` / `getStorage` / `removeStorage` / `clearStorage` /
+`getStorageInfo`, Promise-based). `getStorageInfo` gắn hẳn
+`@deprecated Use nativeStorage.getStorageInfo() instead` trong typings `zmp-sdk@2.53.0`, và
+cả họ đã rút khỏi Portal docs hiện hành (docs chỉ còn nhóm sync `api/native-storage/*`).
+Code mới dùng `nativeStorage` sync; gặp code cũ dùng họ async → khuyến nghị migrate
+(user xác nhận 2026-08-26; đối chiếu typings + llms index cùng ngày).
+
 **Quy tắc đi kèm:**
 
 - **Quyền:** "Sử dụng native storage" thuộc nhóm cần **Zalo duyệt** (`permissions.md` §2,
