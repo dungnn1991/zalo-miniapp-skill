@@ -4,6 +4,32 @@ Mọi thay đổi đáng kể của skill. Version = `package.json` + git tag `v
 Thay đổi phát sinh từ finding formal phải gắn id; expected/actual/lifecycle nằm trong
 `feedback/findings.jsonl`, decision và regression nằm trong `feedback/improvements.jsonl`.
 
+## [0.5.1] — 2026-08-27
+
+Fix slice từ đợt test độc lập trên Codex (DX file 52/53) — hai bug harness được tái hiện
+độc lập trước khi sửa.
+
+### Fixed
+- **finding_1af0dc0de583** — host URL contract áp cho MỌI app có appId, không riêng
+  official/existing: lab app mang `ZMPRouter` (đúng routing guard 0.5.0) trước đây bị serve
+  ở root không inject `window.APP_ID` → production basename `/zapps/<id>` không match,
+  `react_mount` fail cả 3 viewport (cùng app pass ở simulator). `resolveServeContext` giờ
+  đặt `hostPrefix`/inject theo appId; `isOfficial` chỉ còn quyết oracle profile. Regression:
+  case `lab-router-render`.
+- **finding_75259b2e870f** — mọi đường dừng trước verify của `run.mjs` để lại `result.json`:
+  stage fail giữa chừng (vd render exit 1) trước đây kết thúc run không ghi gì. `stopAt` giờ
+  ghi fallback schema-shaped khi stage chưa tự ghi (đủ field cho cả `validateResult` của
+  verify.mjs; provider theo cờ sim rồi tới `input.json.renderProvider` — đúng cho template
+  requiresZaloHost; exit 2 phòng thủ map `needs_input`); bootstrap needs_input/conflict giữ
+  nguyên result tự ghi, nhánh deploy fail giữ nguyên result thật của verify (không clobber).
+  Regression: case `render-fail-result-json`.
+
+### Changed
+- Ghi rõ bookkeeping provider (P3, DX file 53): `input.json.renderProvider` là default lúc
+  bootstrap, provider thật nằm ở `result.json.provider` — chú thích trong `run.mjs` +
+  `simulator-workflow.md`.
+- Behavioral suite 37 → **39 case** (hai regression case mới); README EN/VI cập nhật số.
+
 ## [0.5.0] — 2026-08-26
 
 Đợt tích hợp Portal docs "Bắt đầu/Best Practices" + App ID guidance (DX note 51; mọi nguồn

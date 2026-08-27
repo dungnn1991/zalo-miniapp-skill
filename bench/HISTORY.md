@@ -17,3 +17,4 @@ mở từng file). Kết quả bench động (tốn tiền, chạy tay) dán và
 |---|---|---|---|---|---|---|---|
 | 2026-08-24 | 0.4.1 | 146 | 7563 | 39637 | — | — | backfill từ tag v0.4.1 |
 | 2026-08-27 | 0.5.0 | 146 | 8072 | 48752 | +509 (+6.7%) | +9115 (+23.0%) | plan51 Portal docs + App ID guidance + guardrail subpath (PR #10, #12) |
+| 2026-08-27 | 0.5.1 | 146 | 8072 | 48841 | +0 (+0.0%) | +89 (+0.2%) | v0.5.1 fix harness (BUG-1 subpath lab, BUG-2 result.json) từ test độc lập Codex |
