@@ -78,9 +78,16 @@ export function resolveServeContext(ctx, ws) {
   const input = ctx.readJson('input.json');
   const src = input?.template?.source;
   // 'existing' (app ngoài, không có scaffold manifest — bootstrap --existing) dùng chung
-  // đường generic với official template: host URL contract + oracle profile không đòi lab
-  // markers. Chỉ app scaffold từ LAB template (source 'lab' hoặc input cũ không có template)
-  // mới chịu bộ 8 marker gates.
+  // đường generic với official template: oracle profile không đòi lab markers. Chỉ app
+  // scaffold từ LAB template (source 'lab' hoặc input cũ không có template) mới chịu bộ 8
+  // marker gates.
+  //
+  // v0.5.1 (finding BUG-1, DX file 53): host URL contract áp cho MỌI app có appId, không
+  // riêng official/existing. Routing guard 0.5.0 hướng agent dùng ZMPRouter khi tích hợp
+  // điều hướng vào lab app; ZMPRouter production basename = `/zapps/${window.APP_ID}` nên
+  // serve lab app ở root là router không match gì → react_mount fail (repro 2026-08-27:
+  // browser fail / simulator pass trên cùng một app). isOfficial giờ CHỈ quyết oracle
+  // profile, không quyết serve context nữa.
   const isOfficial = src === 'official' || src === 'existing';
   const appId = input?.miniAppId ?? null;
   return {
@@ -88,7 +95,7 @@ export function resolveServeContext(ctx, ws) {
     distDir,
     isOfficial,
     appId,
-    hostPrefix: isOfficial && appId ? `/zapps/${appId}` : null,
+    hostPrefix: appId ? `/zapps/${appId}` : null,
   };
 }
 
@@ -199,7 +206,7 @@ async function main() {
   }
   const server = createStaticServer(distDir, {
     pathPrefix: hostPrefix,
-    injectAppId: isOfficial ? appId : null,
+    injectAppId: appId,
   });
   let child = null;
   let cleaned = false;
