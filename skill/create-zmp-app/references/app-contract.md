@@ -81,6 +81,10 @@ Không thêm token khác.
   API host-specific nào.
 - Dependency versions theo `config.json.dependencyPolicy`; không hardcode exact version
   của package Zalo trong template.
+- Template hiện là single-view, **chưa dùng router**. Feature integration thêm điều hướng
+  nhiều trang → bắt buộc `ZMPRouter` + `useNavigate` của zmp-ui (routing guard trong
+  SKILL.md; cơ chế subpath `/zapps/<id>`: `troubleshooting.md` §14) và cập nhật danh sách
+  import này.
 
 Template thêm/bớt component import → cập nhật danh sách này (và routing rule tương ứng) trong
 cùng một thay đổi.

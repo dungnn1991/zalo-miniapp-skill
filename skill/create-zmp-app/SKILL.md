@@ -262,6 +262,14 @@ sửa code app đã sinh — đây là ngoại lệ hợp lệ của rule "khôn
    giới: form quyền thật chỉ có khi app LIVE.
 3. Báo cáo: đã đổi file nào, theo recipe/nguồn nào, kết quả verify, bước tiếp theo.
 
+**Routing guard (bắt buộc khi sửa code app):** Mini App phải luôn nằm dưới subpath
+`/zapps/<MINI_APP_ID>/` — văng khỏi nó là **mọi** API zmp-sdk fail lỗi quyền (app ID trong
+path được platform dùng kiểm tra quyền). Vì vậy KHÔNG bao giờ đổi trang bằng
+`window.location.href`/`location.replace()`/`location.assign()`, `<a href="/...">` hay
+`history.pushState` với path tuyệt đối. Điều hướng nội bộ chỉ qua `ZMPRouter` + `useNavigate`
+của zmp-ui (basename tự prepend), hoặc router có `basename="/zapps/<APP_ID>"`; mở link ngoài
+bằng `openWebview`. Cơ chế + cách chẩn đoán: `references/troubleshooting.md` §14, Recipe 3.
+
 ## Deploy (Phase 2, opt-in)
 
 Deploy runs **only** when the user explicitly asks for it ("deploy", "đưa lên

@@ -25,6 +25,11 @@ official fetch 2026-08-26).
   server Node/Nginx trong §1.
 - `portal-fetch.mjs`: topic rule `permissions` + `best-practices` (verify live 2026-08-26,
   6/6 doc fetched).
+- Guardrail giữ subpath `/zapps/<MINI_APP_ID>/`: routing guard bắt buộc trong SKILL.md
+  (feature integration), troubleshooting §14 (cơ chế hai tầng, verify tận code
+  zmp-ui@1.11.14 ZMPRouter + zmp-sdk@2.53.0 getEnv), signature `sdk-permission-forbidden`
+  (-1403 fail-all vs chưa đăng ký quyền), cross-ref Recipe 3 + app-contract §6. Nguồn: FAQ
+  "lỗi quyền" (2026-08-27).
 
 ### Changed
 - Gắn nguồn official "Các lỗi kỹ thuật thường gặp" (ký hiệu FSI #N) song song nguồn community

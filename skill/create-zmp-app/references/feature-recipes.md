@@ -226,6 +226,11 @@ nhắn chia sẻ, menu tuỳ chỉnh OA, Mini App Store, thanh tìm kiếm Zalo.
 
 **Quy tắc đi kèm:**
 
+- **Giữ subpath `/zapps/<MINI_APP_ID>/` khi điều hướng NỘI BỘ** — không gán
+  `window.location.href`/`replace`/`assign`, không `<a href="/...">`, không `history.pushState`
+  tay: văng khỏi subpath là mọi API SDK fail lỗi quyền (`troubleshooting.md` §14). Chuyển
+  trang trong app qua `ZMPRouter`/`useNavigate` của zmp-ui (basename `/zapps/<APP_ID>` tự
+  prepend) hoặc router có `basename` đúng.
 - Không tự bịa scheme khác `https://zalo.me/s/…` — đây là cấu trúc official cho điều hướng
   từ ngoài.
 - App bị tắt tìm kiếm trên Store thì deeplink/QR vẫn hoạt động (`operations.md` §3).
