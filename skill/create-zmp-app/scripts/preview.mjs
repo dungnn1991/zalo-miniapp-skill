@@ -83,7 +83,7 @@ if (previewSim) {
 
 const server = createStaticServer(distDir, {
   pathPrefix: hostPrefix,
-  injectAppId: isOfficial ? appId : null,
+  injectAppId: appId,
 });
 await new Promise((resolve, reject) => {
   server.once('error', reject);

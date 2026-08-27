@@ -104,7 +104,7 @@ Cách chọn template nằm ở
 ## Phát triển skill
 
 Repo này chứa runtime skill và lab kiểm chứng. Release gate chạy metadata validator, routing
-corpus và bộ 37 case bằng:
+corpus và bộ 39 case bằng:
 
 ```bash
 npm test
