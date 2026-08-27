@@ -208,3 +208,35 @@ Với config CommonJS thì dùng `path.resolve(__dirname, "src")`.
 
   hoặc tải `zmp-sdk` từ CDN.
 - Nguồn: Official: FSI #18 · [FAQ Cocos](https://miniapp.zaloplatforms.com/community/7810205955052888783/cach-import-zmp-sdk-tu-cocos-creator) — crawl 2026-08-21.
+
+## 14. Lỗi quyền fail-all sau một lần chuyển trang — văng khỏi subpath `/zapps/<MINI_APP_ID>/`
+
+- **Triệu chứng:** app đang chạy bình thường, sau một redirect/chuyển trang thì **mọi** API
+  zmp-sdk fail (hay được báo là "lỗi quyền", nhất là trên bản Live/golive); kiểm tra
+  `location.href` thấy URL không còn giữ `/zapps/<MINI_APP_ID>/`.
+- **Cơ chế (hai tầng):** app ID nằm trong path được platform dùng để **kiểm tra quyền** khi
+  request đi xuống native — thiếu là fail (Supporter xác nhận trong FAQ nguồn: *"app ID sẽ
+  được dùng để kiểm tra quyền nên không được thiếu"*). Phía client, `zmp-sdk` nhận diện môi
+  trường mini app bằng `location.pathname.startsWith("/zapps")` (`getEnv.js`,
+  zmp-sdk@2.53.0) — văng subpath là SDK không còn coi đây là môi trường Mini App.
+- **Nguyên nhân điển hình:** gán `window.location.href` / `location.replace()` /
+  `location.assign()` với path tuyệt đối; `<a href="/...">`; `history.pushState` tay; và bẫy
+  kín nhất — **react-router thuần không set `basename`**: khi đó `navigate("/x")` đưa app về
+  `https://h5.zdn.vn/x` (người hỏi trong FAQ nguồn "đã dùng navigate của react-router-dom"
+  mà vẫn dính chính vì thiếu basename).
+- **Fix:**
+  - Điều hướng nội bộ: dùng `ZMPRouter` + `useNavigate` của **zmp-ui** — production (hoặc
+    `?env=TESTING*/DEVELOPMENT`) basename tự là `"/zapps/" + window.APP_ID`
+    (`ZMPRouter.js`, zmp-ui@1.11.14) và react-router tự prepend basename khi navigate;
+    HOẶC react-router thuần với `basename="/zapps/<APP_ID>"` (`convert-web-app.md` §2.5).
+  - Mở trang ngoài: `openWebview` (Recipe 3, `feature-recipes.md`) — không gán `location`.
+  - Debug nhanh: ở mọi thời điểm `location.pathname` phải bắt đầu bằng
+    `/zapps/<MINI_APP_ID>/`.
+- **Phân biệt ba lỗi "quyền" khác nhau:** (a) mục này — mất subpath, fail **tất cả** API sau
+  một điều hướng; (b) `-1403` do **chưa đăng ký quyền** cho Mini App trên Mini App Center —
+  chỉ user thường bị, theo từng API (`operations.md` §5, `permissions.md`); (c) *"Permission
+  denied. Please login again"* — token zmp-cli khi **deploy** (§5 file này).
+- Nguồn: [FAQ "lỗi quyền"](https://miniapp.zaloplatforms.com/community/2693757239265667790/loi-quyen)
+  — Supporter Nguyễn Ngọc Dũng + Hồng Phát, đọc 2026-08-27 · verify code: zmp-ui@1.11.14
+  `ZMPRouter.js` + zmp-sdk@2.53.0 `getEnv.js`/`constants.js` (đọc 2026-08-27) ·
+  [errorCode](https://docs.zaloplatforms.com/docs/MA/api/errorCode.md) (`-1403`).

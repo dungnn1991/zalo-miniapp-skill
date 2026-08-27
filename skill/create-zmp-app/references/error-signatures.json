@@ -132,6 +132,16 @@
       "fix": "Trỏ alias vào thư mục src thật của project: new URL(\"./src\", import.meta.url).pathname (config ESM .mts) hoặc path.resolve(__dirname, \"src\").",
       "source": "https://github.com/Zalo-MiniApp/zaui-doctor",
       "sourceTitle": "Quan sát trên zaui-doctor và zaui-bistro khi qualify template (2026-08-23)"
+    },
+    {
+      "id": "sdk-permission-forbidden",
+      "pattern": "You don'?t have permission to call this api|permission required!|no permission!",
+      "flags": "i",
+      "stage": "any",
+      "diagnosis": "API zmp-sdk bị chặn quyền (-1403). Hai nguyên nhân khác nhau: (1) quyền của API đó CHƯA được đăng ký cho Mini App trên Mini App Center — chỉ user thường bị, Developer/Admin không bị (operations.md §5); (2) app đã VĂNG KHỎI subpath /zapps/<MINI_APP_ID>/ sau một redirect (window.location.href/replace, <a href=\"/...\">, react-router thiếu basename) — khi đó MỌI API fail đồng loạt, không riêng API nào (troubleshooting.md §14).",
+      "fix": "Fail đồng loạt sau một lần chuyển trang → check location.href còn /zapps/<id>/ không; khôi phục điều hướng qua ZMPRouter/useNavigate (zmp-ui) hoặc set basename /zapps/<APP_ID>. Fail theo từng API cho user thường → đăng ký quyền trên Mini App Center (permissions.md §3).",
+      "source": "https://miniapp.zaloplatforms.com/community/2693757239265667790/loi-quyen",
+      "sourceTitle": "FAQ 'lỗi quyền' — mất subpath /zapps/<id> làm fail all API (đọc 2026-08-27)"
     }
   ]
 }
