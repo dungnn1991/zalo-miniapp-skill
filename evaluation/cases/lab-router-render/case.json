@@ -1,0 +1,11 @@
+{
+  "caseId": "lab-router-render",
+  "title": "v0.5.1 BUG-1 — lab app mang ZMPRouter phải render pass ở provider browser (host URL contract cho lab)",
+  "expectation": {
+    "exitCode": 0,
+    "resultStatus": "pass",
+    "findingCategory": null,
+    "findingSlugHint": null,
+    "description": "Scaffold lab, wrap app trong ZMPRouter + route thứ hai (đúng routing guard 0.5.0), run.mjs --existing phải pass; serve URL của provider browser phải nằm dưới /zapps/<appId>/ và inject window.APP_ID. Regression cho finding BUG-1 (DX file 53, repro 2026-08-27: browser fail / simulator pass trên cùng app)."
+  }
+}

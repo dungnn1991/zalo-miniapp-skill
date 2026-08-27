@@ -1,0 +1,11 @@
+{
+  "caseId": "render-fail-result-json",
+  "title": "v0.5.1 BUG-2 — run.mjs render-fail vẫn phải ghi result.json (fallback schema-shaped)",
+  "expectation": {
+    "exitCode": 1,
+    "resultStatus": "fail",
+    "findingCategory": null,
+    "findingSlugHint": null,
+    "description": "Scaffold lab, phá mount target (getElementById sai id), run.mjs --existing dừng ở render exit 1 và runs/<id>/result.json phải tồn tại với shape tối thiểu đúng schema (status fail, stage render, provider, gates[], findingIds[], timestamps). Regression cho finding BUG-2 (DX file 53)."
+  }
+}

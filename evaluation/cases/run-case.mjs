@@ -64,6 +64,9 @@ const CASE_DEPS = {
   'doctor-autoinstall': [],
   // v0.3.1 — P0 regressions: safe rerun, workspace=cwd, installer host targeting.
   'preserve-user-code': ['bootstrap', 'template'],
+  // v0.5.1 — harness regressions từ test độc lập Codex (DX file 53).
+  'lab-router-render': ['bootstrap', 'portal-fetch', 'template'],
+  'render-fail-result-json': ['bootstrap', 'portal-fetch', 'template'],
   'workspace-default-cwd': ['bootstrap', 'template'],
   'installer-hosts': [],
   'version-reporting': [],
@@ -288,6 +291,66 @@ const SCENARIOS = {
     check('verify exits 1', verify.code === 1, `exit ${verify.code}`);
     check('finding category template|app recorded', hasFinding(readFindings(ws), { category: 'template|app' }),
       JSON.stringify(readFindings(ws).map((f) => [f.category, f.expected])));
+  },
+
+  // v0.5.1 BUG-1 (DX file 53): lab app mang ZMPRouter (đúng routing guard 0.5.0) phải render
+  // pass ở provider browser — trước fix, lab bị serve ở root không inject window.APP_ID nên
+  // production basename /zapps/<id> không match gì và react_mount fail.
+  'lab-router-render'({ ws, check, note }) {
+    const boot = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--template', 'lab', '--app-id', TEST_APP_ID]);
+    check('bootstrap exits 0', boot.code === 0, `exit ${boot.code}: ${boot.stderr.slice(-300)}`);
+    const appTsx = path.join(ws, 'app', 'src', 'app.tsx');
+    const src = fs.existsSync(appTsx) ? fs.readFileSync(appTsx, 'utf8') : '';
+    const canPatch = src.includes('import { App } from "zmp-ui";') && src.includes('<App>') && src.includes('</App>');
+    check('template app.tsx has patch anchors', canPatch, 'friction: template drift — cannot wrap ZMPRouter');
+    if (!canPatch) return;
+    let patched = src.replace('import { App } from "zmp-ui";',
+      'import { AnimationRoutes, App, Route, ZMPRouter } from "zmp-ui";');
+    patched = patched.replace('<App>', '<App><ZMPRouter><AnimationRoutes><Route path="/" element={');
+    patched = patched.replace('</App>',
+      '} /><Route path="/about" element={<div data-testid="about-page">about</div>} /></AnimationRoutes></ZMPRouter></App>');
+    fs.writeFileSync(appTsx, patched);
+    note('wrapped app in ZMPRouter + second route (guardrail-compliant navigation)');
+    // --existing không đi cùng --template (guard bootstrap); template resolve từ app sẵn có.
+    const run = runScript(ws, 'run', ['--brief', 'tạo app bán quần áo', '--app-id', TEST_APP_ID, '--existing']);
+    check('run.mjs exits 0 with ZMPRouter in lab app', run.code === 0,
+      `exit ${run.code}: ${(run.stderr || run.stdout).slice(-400)}`);
+    check('final status pass', run.lastJson?.status === 'pass', JSON.stringify(run.lastJson));
+    const runId = run.lastJson?.runId;
+    if (!runId) return;
+    const events = fs.readFileSync(path.join(ws, 'runs', runId, 'events.jsonl'), 'utf8');
+    const serveLine = events.split('\n').find((l) => l.includes('server_start'));
+    check('browser serve URL is under /zapps/<appId>/ (host URL contract for lab)',
+      !!serveLine && serveLine.includes(`/zapps/${TEST_APP_ID}/`), serveLine ?? 'no server_start event');
+    const result = readJsonIfExists(path.join(ws, 'runs', runId, 'result.json'));
+    check('result.json status pass', result?.status === 'pass', JSON.stringify(result)?.slice(0, 200));
+  },
+
+  // v0.5.1 BUG-2 (DX file 53): mọi đường dừng của run.mjs phải để lại result.json — trước
+  // fix, render fail kết thúc run mà không ghi gì, mất khả năng chẩn đoán tự động.
+  'render-fail-result-json'({ ws, check, note }) {
+    const boot = runScript(ws, 'bootstrap', ['--brief', 'tạo app bán quần áo', '--template', 'lab', '--app-id', TEST_APP_ID]);
+    check('bootstrap exits 0', boot.code === 0, `exit ${boot.code}: ${boot.stderr.slice(-300)}`);
+    const entry = ['src/main.tsx', 'src/index.tsx'].map((p) => path.join(ws, 'app', p)).find((p) => fs.existsSync(p));
+    if (!entry) { check('mount entry found (src/main.tsx)', false, 'friction: template entry not found'); return; }
+    const src = fs.readFileSync(entry, 'utf8');
+    const broken = src.replace(/getElementById\(\s*(['"])[^'"]+\1\s*\)/, "getElementById('zz-nonexistent-root')");
+    if (broken === src) { check('mount target injectable', false, `friction: no getElementById in ${entry}`); return; }
+    fs.writeFileSync(entry, broken);
+    note(`broke mount target in ${path.relative(ws, entry)}`);
+    // --existing không đi cùng --template (guard bootstrap); template resolve từ app sẵn có.
+    const run = runScript(ws, 'run', ['--brief', 'tạo app bán quần áo', '--app-id', TEST_APP_ID, '--existing']);
+    check('run.mjs exits 1', run.code === 1, `exit ${run.code}`);
+    check('stoppedAt render', run.lastJson?.stoppedAt === 'render', JSON.stringify(run.lastJson));
+    const runId = run.lastJson?.runId;
+    if (!runId) return;
+    const result = readJsonIfExists(path.join(ws, 'runs', runId, 'result.json'));
+    check('result.json exists on render-fail path', !!result, 'result.json absent');
+    check('fallback result.json is schema-shaped fail (status/stage/provider/gates/findingIds/timestamps)',
+      result?.schemaVersion === '1.0' && result?.status === 'fail' && result?.stage === 'render'
+        && ['browser', 'simulator'].includes(result?.provider) && Array.isArray(result?.gates)
+        && Array.isArray(result?.findingIds) && !!result?.startedAt && !!result?.finishedAt,
+      JSON.stringify(result)?.slice(0, 300));
   },
 
   'portal-404'({ ws, check, note }) {
