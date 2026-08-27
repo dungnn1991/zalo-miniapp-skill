@@ -11,7 +11,7 @@ Contract này áp dụng cho **lab template**. Scaffold từ template chính th�
 
 ## 1. Tám marker `data-testid` (khóa)
 
-Render oracle (`evaluation/browser/runner.mjs`) đọc selector trực tiếp từ `config.json`
+Render oracle (`scripts/browser/runner.mjs`) đọc selector trực tiếp từ `config.json`
 (`markers`). Cả 8 marker phải hiện diện với bounding box khác 0 ở **mọi** viewport:
 
 | Key | Selector |

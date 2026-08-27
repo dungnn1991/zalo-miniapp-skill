@@ -63,7 +63,7 @@ Chỉ khi đã được phép probe live mới chạy agent với `MB_ENABLE_COR
 **Bước 2 — không có bước 2.** KHÔNG cần `pnpm install` thủ công: lần chạy đầu, doctor của
 skill tự cài dependency. Máy chỉ cần sẵn:
 
-- Node ≥ 20 và pnpm
+- Node ≥ 20 (pnpm khuyên dùng — không có sẽ tự fallback `npm`)
 - Google Chrome (skill dùng Chrome hệ thống, không tải browser riêng)
 - `zmp-cli` — chỉ cần khi deploy
 

@@ -1,5 +1,9 @@
 # Contract vòng implement plan 34 — template intelligence (slice 1)
 
+> **HISTORICAL (repo-hygiene 2026-08-27):** hợp đồng của vòng v0.3.2→v0.4.0, đã hoàn thành
+> và không còn hiệu lực điều phối. Contract sống hiện tại: `references/template-routing.md`
+> + `catalog/templates.json`. Giữ nguyên văn làm lịch sử, không sửa nội dung dưới đây.
+
 **Baseline:** v0.3.2 `d8c26e7`. **Mục tiêu slice này:** DoD của plan 34 —
 `tạo app phòng khám hỗ trợ đặt lịch, appId=…` tự chọn `zaui-doctor` mà không cần câu "dùng mẫu",
 với điều kiện doctor qua được qualification. Phần semantic envelope do agent sinh để vòng sau;

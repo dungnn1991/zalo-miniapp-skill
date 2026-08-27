@@ -2,7 +2,7 @@
 // Locked browser render oracle (lead-owned). Subagents build AROUND this, not inside it.
 //
 // Usage:
-//   node evaluation/browser/runner.mjs --url <http-url> --out <evidence-dir> [--config <lab.config.json>]
+//   node scripts/browser/runner.mjs --url <http-url> --out <evidence-dir> [--config <lab.config.json>]
 //
 // Reads viewports, markers and the interaction check from lab.config.json (single source of truth).
 // Writes into <evidence-dir>:

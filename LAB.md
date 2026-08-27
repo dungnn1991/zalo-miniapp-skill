@@ -1,6 +1,8 @@
 > **Tài liệu DEV/lab nội bộ** — ownership, locked interfaces, trạng thái từng phase.
 > Người dùng skill đọc [README.md](./README.md); tích hợp chi tiết đọc
 > [HUONG-DAN-TICH-HOP.md](./skill/create-zmp-app/HUONG-DAN-TICH-HOP.md).
+> Lịch sử vòng plan 34: [CONTRACT-plan34.md](./CONTRACT-plan34.md) (đã hoàn thành).
+> Đo token-budget theo release: [bench/README.md](./bench/README.md) + sổ [bench/HISTORY.md](./bench/HISTORY.md).
 
 # Lab `miniapp-bootstrap-poc`
 
@@ -95,7 +97,7 @@ Facts zmp-cli pin ở `skill/create-zmp-app/config.json` mục `zmpCli` (version
   trong Quản lý phiên bản với mode Testing, user có thể truyền mô tả riêng qua prompt.
   Output strip-ANSI + redact → `evidence/deploy.log`. Classify: fail + `authFailureMessage`
   → `needs_input`/`login_required` exit 2 (token hết hạn); fail khác → finding stage `deploy`
-  exit 1; success → parse URL scheme `h5.zdn.vn/zapps/` → `evidence/deploy.json`
+  exit 1; success → parse URL scheme `zalo.me/s/` → `evidence/deploy.json`
   (deploy-evidence.schema.json); không parse được URL → finding `deploy_output_unparseable`
   category `dependency`, exit 1 (log vẫn giữ).
 - `verify.mjs` khi run có deploy evidence/events: thêm gates `deploy_ok`,
@@ -131,18 +133,11 @@ Facts zmp-cli pin ở `skill/create-zmp-app/config.json` mục `zmpCli` (version
 
 ### Official templates (opt-in — Phase 2.5)
 
-User không chuyên có thể xin scaffold từ template chính thức của platform. **Không bắt buộc** —
-mặc định vẫn là lab template; chỉ kích hoạt khi prompt chứa opt-in phrase (skill/create-zmp-app/config.json
-`officialTemplates.optInPhrases`) hoặc `--template official:<id>` explicit.
-
-- Catalog discovery + keyword mapping + support policy + tarball URL pattern:
-  `skill/create-zmp-app/config.json` `officialTemplates` (nguồn: github.com/Zalo-MiniApp,
-  observed 2026-08-22). Chỉ entry `releaseSupported=true`, `verified=true` và pin commit SHA
-  được public route/scaffold. Match theo thứ tự catalog, specific trước generic. Opt-in
-  không match support set, hoặc match entry experimental → **exit 3** với stdout JSON cuối
-  `{"status":"needs_template_choice","catalog":[...]}` — agent dừng, hỏi user chọn id rồi
-  chạy lại với `--template official:<id>`; không tự đoán, không fallback âm thầm.
-  (Không đụng needsInput.reason enum của result schema — needs_input dành cho App ID/login.)
+> **Đã thay bởi plan 34 (2026-08-23):** routing giờ là `--template auto` mặc định với ranker
+> có điểm trên registry `catalog/templates.json`; ambiguity dừng exit 2 `needs_input`
+> (`needs_template_choice`). Contract sống: `references/template-routing.md` +
+> `catalog/templates.json` (registry duy nhất runtime dùng). Mô tả opt-in-phrase/exit-3 cũ
+> của Phase 2.5 chỉ còn trong log dated phía dưới — đừng code theo đoạn này nữa.
 - Scaffold: tarball codeload theo `revision` immutable (KHÔNG `zmp init` — interactive treo
   non-tty; KHÔNG git clone),
   strip top dir, set name trong package.json + zmp-cli.json, app title trong app-config.json;
