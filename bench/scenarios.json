@@ -1,0 +1,23 @@
+{
+  "model": "claude-opus-5",
+  "scenarios": [
+    {
+      "id": "S1-create-lab",
+      "heavy": true,
+      "prompt": "Dùng create-zmp-app tạo app bán quần áo, appId=1234567890",
+      "expectHint": "scaffold + install + build + verify pass; không deploy, không hỏi thêm"
+    },
+    {
+      "id": "S4-diagnose-cors",
+      "heavy": false,
+      "prompt": "App Zalo Mini App của tôi đang lỗi khi gọi API: \"Access to fetch at 'https://api.example.com' from origin 'https://h5.zdn.vn' has been blocked by CORS policy: Response to preflight request doesn't pass access control check\". Check giúp nguyên nhân và cách sửa, đừng tạo app mới.",
+      "expectHint": "chẩn đoán theo error-signatures (CORS), chỉ ra fix ở server; không scaffold"
+    },
+    {
+      "id": "S5-negative-knowledge",
+      "heavy": false,
+      "prompt": "Zalo Mini App là gì? Trả lời ngắn gọn.",
+      "expectHint": "KHÔNG trigger skill, không scaffold — đo thuế description luôn-có trong system prompt"
+    }
+  ]
+}
