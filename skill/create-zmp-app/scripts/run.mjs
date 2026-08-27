@@ -44,6 +44,7 @@ const wantPreviewSim = argv.includes('--preview-sim');
 const verifySim = argv.includes('--verify-sim');
 const simDecision = getArg(argv, 'sim-decision', 'accept');
 const desc = getArg(argv, 'desc');
+const RUN_STARTED_AT = new Date().toISOString();
 
 // ---- doctor: prerequisites, before any stage in any mode (user's machine may be fresh) ----
 function doctor({ needZmp }) {
@@ -109,7 +110,43 @@ function runStage(name, args) {
   return { code: res.status ?? 3, lastJson };
 }
 
+// Schema `stage` enum khác tên stage-script ở hai chỗ.
+const STAGE_TO_SCHEMA = { 'bootstrap': 'input', 'portal-fetch': 'portal', 'ensure-login': 'login' };
+
 function stopAt(stage, code, stageJson, runId) {
+  // v0.5.1 (finding BUG-2, DX file 53): mọi đường dừng phải để lại result.json cho chẩn
+  // đoán tự động — stage fail giữa chừng (vd render) trước đây không ghi gì. Chỉ ghi khi
+  // stage chưa tự ghi (bootstrap needs_input/conflict tự ghi result.json đầy đủ của nó);
+  // shape tối thiểu theo schemas/result.schema.json (additionalProperties: false).
+  if (runId) {
+    const resultPath = path.join(ws.runsDir, runId, 'result.json');
+    if (fs.existsSync(path.dirname(resultPath)) && !fs.existsSync(resultPath)) {
+      // Provider thật = cờ sim (nếu có) rồi tới input.json.renderProvider (template
+      // requiresZaloHost chọn simulator KHÔNG qua cờ) — cùng precedence với render.mjs.
+      let inputProvider = null;
+      try {
+        inputProvider = JSON.parse(fs.readFileSync(path.join(ws.runsDir, runId, 'input.json'), 'utf8')).renderProvider ?? null;
+      } catch { /* bootstrap chết trước khi ghi input.json */ }
+      const fallback = {
+        schemaVersion: '1.0',
+        runId,
+        // Phòng thủ: mọi đường exit 2 hiện tự ghi result.json (nên không tới đây), nhưng
+        // stage tương lai quên ghi thì đừng dán nhãn 'fail' cho một needs_input.
+        status: code === 2 ? 'needs_input' : 'fail',
+        stage: STAGE_TO_SCHEMA[stage] ?? stage,
+        provider: verifySim ? 'simulator' : (inputProvider ?? 'browser'),
+        appIdSource: null,
+        expectedAppId: null,
+        resolvedAppId: null,
+        appIdBound: false,
+        gates: [],
+        findingIds: [],
+        startedAt: RUN_STARTED_AT,
+        finishedAt: new Date().toISOString(),
+      };
+      try { fs.writeFileSync(resultPath, JSON.stringify(fallback, null, 2) + '\n'); } catch { /* best-effort — stdout JSON vẫn là contract chính */ }
+    }
+  }
   // Forward the stage's own JSON verbatim (needs_input question, conflict ids, ...).
   console.log(JSON.stringify({ runId: runId ?? stageJson?.runId ?? null, stoppedAt: stage, exitCode: code, ...stageJson }));
   process.exit(code);
@@ -121,6 +158,9 @@ const runId = boot.lastJson?.runId ?? null;
 if (boot.code !== 0 || boot.lastJson?.status !== 'ok') stopAt('bootstrap', boot.code, boot.lastJson, runId);
 
 // 2..6 fixed chain. --verify-sim switches render to the simulator provider (plan 28).
+// Lưu ý bookkeeping (P3, DX file 53): input.json.renderProvider ghi provider MẶC ĐỊNH từ
+// bootstrap; provider THẬT của run nằm ở result.json.provider (+ evidence/render-info.json,
+// source "flag") — khi --verify-sim hai giá trị này cố ý khác nhau, không phải bug.
 for (const stage of ['portal-fetch', 'install', 'build', 'render', 'verify']) {
   const args = ['--run-id', runId];
   if (stage === 'render' && verifySim) args.push('--provider', 'simulator', '--sim-decision', simDecision);
