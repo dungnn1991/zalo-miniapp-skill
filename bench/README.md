@@ -22,7 +22,21 @@ node bench/token-budget.mjs --api              # số chính xác qua count_toke
 ```
 
 Mặc định là ước lượng offline (length/3.4): số tuyệt đối xấp xỉ, nhưng cùng estimator ở cả
-hai ref nên **delta giữa hai release là tin được**. Ghi bảng delta vào ghi chú release.
+hai ref nên **delta giữa hai release là tin được**.
+
+### Sổ theo dõi tự động — `bench/HISTORY.md`
+
+Lịch sử tăng/giảm qua từng version nằm ở [`HISTORY.md`](./HISTORY.md) (tracked trong git —
+nhìn một file là thấy skill phình ra hay được tối ưu). Ghi sổ bằng:
+
+```bash
+node bench/token-budget.mjs --record --note "lý do chính của đợt thay đổi"
+```
+
+(idempotent — chạy lại thay row của version hiện tại, delta tự tính so với row trước).
+**Tự động hoá:** release-gate có check `bench token-budget history records current version` —
+đo lại từ working tree và so exact với row của version trong sổ; bump version mà quên
+`--record`, hoặc sửa skill sau khi đã ghi sổ, là CI đỏ với message chỉ đúng lệnh cần chạy.
 
 ## Tầng 2 — động (agent thật, tốn tiền, chạy có chủ đích)
 

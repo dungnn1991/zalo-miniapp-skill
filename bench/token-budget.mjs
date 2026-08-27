@@ -18,6 +18,9 @@
 //   node bench/token-budget.mjs --compare v0.4.1       # working tree vs ref (tag/commit)
 //   node bench/token-budget.mjs --compare v0.4.1 --json
 //   node bench/token-budget.mjs --api                  # đếm chính xác qua API
+//   node bench/token-budget.mjs --record [--note "…"]  # ghi/refresh row version hiện tại vào
+//                                                      # bench/HISTORY.md (sổ theo dõi, tracked;
+//                                                      # release-gate enforce row này khớp số)
 
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -34,6 +37,12 @@ const getArg = (name) => {
 const compareRef = typeof getArg('compare') === 'string' ? getArg('compare') : null;
 const asJson = argv.includes('--json');
 const useApi = argv.includes('--api');
+const doRecord = argv.includes('--record');
+const recordNote = typeof getArg('note') === 'string' ? getArg('note') : '';
+if (doRecord && useApi) {
+  console.error('--record chỉ dùng estimator offline (giữ số nhất quán với check của release-gate)');
+  process.exit(3);
+}
 
 const estimate = (text) => Math.ceil(text.length / 3.4);
 
@@ -125,8 +134,33 @@ const delta = (a, b) => {
 const cur = await snapshot(null);
 const base = compareRef ? await snapshot(compareRef) : null;
 
+if (doRecord) {
+  const t = totals(cur);
+  const version = JSON.parse(readTree(`${SKILL}/package.json`)).version;
+  const histPath = path.join(REPO, 'bench', 'HISTORY.md');
+  const lines = fs.readFileSync(histPath, 'utf8').split('\n');
+  const isRow = (l) => /^\| \d{4}-\d{2}-\d{2} \|/.test(l);
+  const kept = lines.filter((l) => !(isRow(l) && l.split('|')[2].trim() === version));
+  const prevRow = [...kept].reverse().find(isRow) ?? null;
+  const dRec = (curV, oldV) => {
+    if (oldV === null) return '—';
+    const d = curV - oldV;
+    return `${d >= 0 ? '+' : ''}${d}${oldV > 0 ? ` (${d >= 0 ? '+' : ''}${((d / oldV) * 100).toFixed(1)}%)` : ''}`;
+  };
+  const prev = prevRow
+    ? { trigger: Number(prevRow.split('|')[4]), ondemand: Number(prevRow.split('|')[5]) }
+    : { trigger: null, ondemand: null };
+  const today = new Date().toISOString().slice(0, 10);
+  const row = `| ${today} | ${version} | ${t.tax} | ${t.trigger} | ${t.ondemand} | ${dRec(t.trigger, prev.trigger)} | ${dRec(t.ondemand, prev.ondemand)} | ${recordNote || '—'} |`;
+  while (kept.length && kept[kept.length - 1].trim() === '') kept.pop();
+  kept.push(row, '');
+  fs.writeFileSync(histPath, kept.join('\n'));
+  console.log(`Đã ghi bench/HISTORY.md:\n${row}`);
+  process.exit(0);
+}
+
 if (asJson) {
-  console.log(JSON.stringify({ mode: useApi ? 'api-exact' : 'estimate', compareRef, current: cur, base }, null, 2));
+  console.log(JSON.stringify({ mode: useApi ? 'api-exact' : 'estimate', compareRef, totals: totals(cur), current: cur, base }, null, 2));
   process.exit(0);
 }
 
