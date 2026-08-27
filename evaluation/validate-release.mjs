@@ -76,6 +76,33 @@ check('Claude plugin and skill package versions match', plugin.version === skill
   `${plugin.version} != ${skillPkg.version}`);
 check('CHANGELOG has current version heading',
   changelog.includes(`## [${skillPkg.version}]`), `missing ## [${skillPkg.version}]`);
+{
+  // Sổ token-budget (bench/HISTORY.md) phải có row cho version hiện tại và khớp số đo lại
+  // từ working tree — track skill phình/teo qua release (bench/README.md). Estimator offline
+  // deterministic nên so sánh exact được.
+  let ok = false;
+  let detail = '';
+  const budget = spawnSync(process.execPath, ['bench/token-budget.mjs', '--json'], { cwd: ROOT, encoding: 'utf8' });
+  if (budget.status !== 0) {
+    detail = `token-budget --json exit ${budget.status}: ${(budget.stderr || '').slice(0, 160)}`;
+  } else {
+    try {
+      const t = JSON.parse(budget.stdout).totals;
+      const row = read('bench/HISTORY.md').split(/\r?\n/)
+        .find((l) => /^\| \d{4}-\d{2}-\d{2} \|/.test(l) && l.split('|')[2].trim() === skillPkg.version);
+      if (!row) {
+        detail = `bench/HISTORY.md không có row cho ${skillPkg.version} — chạy: node bench/token-budget.mjs --record`;
+      } else {
+        const c = row.split('|').map((s) => s.trim());
+        ok = Number(c[3]) === t.tax && Number(c[4]) === t.trigger && Number(c[5]) === t.ondemand;
+        if (!ok) detail = `row ${skillPkg.version} ghi ${c[3]}/${c[4]}/${c[5]}, đo lại ra ${t.tax}/${t.trigger}/${t.ondemand} — chạy lại: node bench/token-budget.mjs --record`;
+      }
+    } catch (err) {
+      detail = err.message;
+    }
+  }
+  check('bench token-budget history records current version', ok, detail);
+}
 let findings = [];
 let improvements = [];
 try {
