@@ -16,4 +16,4 @@ mở từng file). Kết quả bench động (tốn tiền, chạy tay) dán và
 | Ngày | Version | tax | trigger | ondemand | Δtrigger | Δondemand | Ghi chú |
 |---|---|---|---|---|---|---|---|
 | 2026-08-24 | 0.4.1 | 146 | 7563 | 39637 | — | — | backfill từ tag v0.4.1 |
-| 2026-08-27 | 0.5.0 | 146 | 7890 | 47510 | +327 (+4.3%) | +7873 (+19.9%) | plan51 Portal docs + App ID guidance (PR #10) |
+| 2026-08-27 | 0.5.0 | 146 | 8072 | 48752 | +509 (+6.7%) | +9115 (+23.0%) | plan51 Portal docs + App ID guidance + guardrail subpath (PR #10, #12) |
