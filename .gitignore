@@ -8,3 +8,6 @@ app/node_modules/
 evaluation/cases/**/workspace/
 node_modules/
 runs/
+
+# bench outputs (per-run raw data, not versioned)
+bench/results/
