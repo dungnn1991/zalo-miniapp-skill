@@ -198,6 +198,28 @@ check('both READMEs name the supported official template',
     `orphan: ${orphans.join(', ')} — thêm vào mục References của SKILL.md`);
 }
 {
+  // Hygiene gate 4 (round 2 slice A3, 2026-08-28): shipped package phải tự chứa — .md trong
+  // skill/create-zmp-app (trừ CHANGELOG lịch sử) không được link tương đối thoát package
+  // hay path máy cá nhân; nguồn ngoài repo ghi theo convention "Provenance (DX workspace,
+  // không ship cùng skill)".
+  const badMentions = [];
+  const walk = (dir) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (e.name === 'node_modules') continue;
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (e.name.endsWith('.md') && e.name !== 'CHANGELOG.md') {
+        const text = fs.readFileSync(p, 'utf8');
+        if (/\]\(\.\.\//.test(text)) badMentions.push(`${path.relative(ROOT, p)}: link ](../ thoát package`);
+        if (text.includes('/Users/')) badMentions.push(`${path.relative(ROOT, p)}: absolute path /Users/`);
+      }
+    }
+  };
+  walk(SKILL_DIR);
+  check('shipped package .md is self-contained (no escaping links / machine paths)',
+    badMentions.length === 0, badMentions.join('; '));
+}
+{
   // Hygiene gate 2 (repo-hygiene 2026-08-27): tập template release-supported trong README
   // phải khớp registry thật catalog/templates.json (cùng pattern đếm-lại-từ-nguồn như gate
   // case-count). Không đọc config.json officialTemplates — block đó deprecated từ plan 34.

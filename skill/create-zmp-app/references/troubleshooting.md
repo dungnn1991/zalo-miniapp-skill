@@ -1,8 +1,9 @@
 # Troubleshooting — lỗi dev/build/deploy thường gặp
 
 > **Attribution:** Chưng cất từ chuyên mục FAQ công khai của **Hồng Phát (Supporter)** —
-> https://miniapp.zaloplatforms.com/community (crawl **2026-08-21**, bản lưu:
-> `DX/community-faq-best-practice/`), cộng kinh nghiệm thật của lab. Mỗi mục ghi link nguồn.
+> https://miniapp.zaloplatforms.com/community (crawl **2026-08-21**; bản lưu:
+> `DX/community-faq-best-practice/` — DX workspace, không ship cùng skill), cộng kinh nghiệm
+> thật của lab. Mỗi mục ghi link nguồn.
 > Đối chiếu official: [Các lỗi kỹ thuật thường gặp](https://docs.zaloplatforms.com/docs/MA/intro/getting-started/frequently-solved-issues.md)
 > (fetch **2026-08-26**) — ký hiệu **FSI #N** dưới đây trỏ mục N của trang đó.
 > Match log tự động: dùng `references/error-signatures.json` trước; file này để đọc sâu.

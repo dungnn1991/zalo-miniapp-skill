@@ -2,8 +2,9 @@
 
 Reference cho pipeline opt-in `ensure-login → deploy → verify` (SKILL.md mục "Deploy (Phase 2,
 opt-in)"). **`config.json` mục `zmpCli` là authoritative** cho mọi fact về zmp-cli — bảng
-dưới chỉ chép lại để đọc nhanh; khi lệch nhau thì `config.json` thắng. Plan:
-`27-miniapp-deploy-phase2-plan-2026-08-20.md`. Scripts thuộc Subagent C; file này là contract
+dưới chỉ chép lại để đọc nhanh; khi lệch nhau thì `config.json` thắng. Provenance (DX
+workspace, không ship cùng skill): `27-miniapp-deploy-phase2-plan-2026-08-20.md`.
+Scripts thuộc Subagent C; file này là contract
 vận hành cho host agent.
 
 Điều kiện kích hoạt: user yêu cầu deploy **thẳng** ("deploy", "đưa lên development/testing")

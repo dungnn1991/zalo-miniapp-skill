@@ -1,8 +1,9 @@
 # Operations — vận hành, debug bản Live, chính sách xét duyệt
 
 > **Attribution:** Chưng cất từ chuyên mục FAQ công khai của **Hồng Phát (Supporter)** —
-> https://miniapp.zaloplatforms.com/community (crawl **2026-08-21**, bản lưu:
-> `DX/community-faq-best-practice/`), cộng fact đã pin của lab (`config.json` `zmpCli`).
+> https://miniapp.zaloplatforms.com/community (crawl **2026-08-21**; bản lưu:
+> `DX/community-faq-best-practice/` — DX workspace, không ship cùng skill), cộng fact đã pin
+> của lab (`config.json` `zmpCli`).
 > Đối chiếu official: [Các lỗi kỹ thuật thường gặp](https://docs.zaloplatforms.com/docs/MA/intro/getting-started/frequently-solved-issues.md)
 > (fetch **2026-08-26**) — ký hiệu **FSI #N** trỏ mục N của trang đó.
 > Lỗi build/deploy cụ thể: xem `troubleshooting.md` + `error-signatures.json`.
