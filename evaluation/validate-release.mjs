@@ -179,6 +179,13 @@ check('both READMEs name the supported official template',
   supported.every((entry) => readme.includes(entry.id) && readmeVi.includes(entry.id)),
   JSON.stringify(supported.map((entry) => entry.id)));
 {
+  // Hygiene gate 3 (round 2 slice A1, 2026-08-28): app/ là generated (LAB.md ownership) —
+  // sinh tại chỗ chạy pipeline, không được tracked; tái phạm = ai đó commit output máy sinh.
+  const trackedApp = spawnSync('git', ['ls-files', 'app'], { cwd: ROOT, encoding: 'utf8' });
+  check('generated app/ is not tracked', (trackedApp.stdout ?? '').trim() === '',
+    `tracked: ${(trackedApp.stdout ?? '').trim().split('\n').slice(0, 5).join(', ')} — git rm -r --cached app`);
+}
+{
   // Hygiene gate 1 (repo-hygiene 2026-08-27): no-orphan references — mọi file trong
   // references/ phải được SKILL.md trỏ tới, nếu không agent không bao giờ tìm thấy nó và
   // file sẽ mục thành bản chép lệch. Fail = thêm dòng vào mục References của SKILL.md

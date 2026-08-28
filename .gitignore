@@ -2,9 +2,7 @@
 !evaluation/cases/deploy-qr-parse/fixture/deploy.log
 .DS_Store
 .env
-app/.env
-app/dist/
-app/node_modules/
+/app/
 evaluation/cases/**/workspace/
 node_modules/
 runs/

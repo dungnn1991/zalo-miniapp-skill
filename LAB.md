@@ -18,7 +18,7 @@ Không login, không tạo/deploy app, không nhận credential. `APP_ID` không
 | `skill/create-zmp-app/SKILL.md`, `agents/openai.yaml`, `scripts/bootstrap.mjs`, `scripts/portal-fetch.mjs`, `references/portal-routing.md`, `references/app-contract.md` | **Subagent A** | SKILL core + Portal grounding |
 | `skill/create-zmp-app/assets/template/` (toàn bộ) | **Subagent B** | Mini App template duy nhất |
 | `scripts/install.mjs`, `build.mjs`, `render.mjs`, `verify.mjs`, `record-finding.mjs`, `references/finding-workflow.md`, `evaluation/cases/`, `feedback/` | **Subagent C** | Harness + feedback loop |
-| `app/`, `runs/` | generated | Không hand-edit; source là template/scripts |
+| `app/`, `runs/` | generated | Không hand-edit; source là template/scripts; sinh tại chỗ chạy pipeline — không tracked (hygiene round 2, 2026-08-28) |
 
 ## Locked interfaces
 
