@@ -178,6 +178,32 @@ check('README does not advertise all experimental official templates',
 check('both READMEs name the supported official template',
   supported.every((entry) => readme.includes(entry.id) && readmeVi.includes(entry.id)),
   JSON.stringify(supported.map((entry) => entry.id)));
+{
+  // Hygiene gate 1 (repo-hygiene 2026-08-27): no-orphan references — mọi file trong
+  // references/ phải được SKILL.md trỏ tới, nếu không agent không bao giờ tìm thấy nó và
+  // file sẽ mục thành bản chép lệch. Fail = thêm dòng vào mục References của SKILL.md
+  // hoặc chuyển file ra khỏi references/.
+  const refDir = path.join(SKILL_DIR, 'references');
+  const orphans = fs.readdirSync(refDir)
+    .filter((f) => f.endsWith('.md') || f.endsWith('.json'))
+    .filter((f) => !skillText.includes(`references/${f}`));
+  check('every references/ file is pointed to by SKILL.md', orphans.length === 0,
+    `orphan: ${orphans.join(', ')} — thêm vào mục References của SKILL.md`);
+}
+{
+  // Hygiene gate 2 (repo-hygiene 2026-08-27): tập template release-supported trong README
+  // phải khớp registry thật catalog/templates.json (cùng pattern đếm-lại-từ-nguồn như gate
+  // case-count). Không đọc config.json officialTemplates — block đó deprecated từ plan 34.
+  const registry = json('skill/create-zmp-app/catalog/templates.json');
+  const regList = Array.isArray(registry) ? registry : registry.templates;
+  const supportedIds = regList
+    .filter((t) => (t.qualification?.state ?? t.qualification) === 'release-supported')
+    .map((t) => String(t.id).replace(/^zaui-/, ''));
+  const missing = supportedIds.filter((n) => !readme.includes(n) || !readmeVi.includes(n));
+  check('both READMEs list every release-supported template from the registry',
+    supportedIds.length > 0 && missing.length === 0,
+    `registry supported=[${supportedIds.join(', ')}], thiếu trong README: ${missing.join(', ')}`);
+}
 const caseCount = fs.readdirSync(path.join(ROOT, 'evaluation', 'cases'), { withFileTypes: true })
   .filter((entry) => entry.isDirectory()
     && fs.existsSync(path.join(ROOT, 'evaluation', 'cases', entry.name, 'case.json'))).length;

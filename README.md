@@ -70,7 +70,7 @@ Common requests:
 The skill indexes the official [ZaUI Templates](https://miniapp.zaloplatforms.com/zaui-templates)
 catalog. Every brief is ranked automatically — no "use a template" phrase needed — but the skill
 only scaffolds revisions that have passed its own qualification gates, so installation, build,
-and rendering are reproducible. Version 0.4.0 qualifies six profiles: fashion, coffee, bistro,
+and rendering are reproducible. The catalog currently qualifies six profiles: fashion, coffee, bistro,
 market, doctor, and lucky-wheel. The live state remains in
 `skill/create-zmp-app/catalog/templates.json`; a brief with no qualified match gets the neutral
 starter and the report says which candidate was skipped and why.

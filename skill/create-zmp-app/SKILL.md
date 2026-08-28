@@ -417,5 +417,7 @@ slash-command|codex-skill|natural-language|harness`.
   into a number on its own: the token/App Secret split, the client↔backend contract, and what
   the skill does while no backend exists (labelled mock in the simulator, `backend-required`
   plus manual input everywhere else). Cited by the `PHONE_BACKEND_REQUIRED` result warning.
+- `references/finding-workflow.md` — no-silent-fix: mọi lỗi/workaround phát sinh phải thành
+  finding qua `record-finding.mjs` trước khi run kết thúc; lifecycle finding → improvement.
 - `config.json` — authoritative markers, viewports, variants, official-template catalog,
   dependency policy, zmp-cli facts, exit codes.
