@@ -11,8 +11,11 @@ Bump ở ĐẦU train theo review file 55 để sổ token 0.5.2 hấp thụ cá
 
 ### Changed
 - Slice A hygiene: `app/` root (generated) hết tracked + gate `app/ not tracked`;
-  `evaluation/clean-workspaces.sh` dọn disk workspace (dry-run mặc định); chuẩn hoá
-  provenance các mention DX-workspace trong references + gate cấm path thoát package.
+  `evaluation/clean-workspaces.sh` dọn disk workspace — HARDENED theo review độc lập
+  2026-08-28 ("ignored ≠ disposable"): abort khi target chứa file tracked, chỉ nhận
+  workspace có harness marker, retention (N mới nhất + run fail + run được findings tham
+  chiếu + `.keep`), quarantine 2 pha `.trash/` + `--purge-trash`, lock chống chạy chồng;
+  chuẩn hoá provenance các mention DX-workspace + gate cấm path thoát package.
 
 ## [0.5.1] — 2026-08-27
 
