@@ -179,6 +179,13 @@ check('both READMEs name the supported official template',
   supported.every((entry) => readme.includes(entry.id) && readmeVi.includes(entry.id)),
   JSON.stringify(supported.map((entry) => entry.id)));
 {
+  // Hygiene gate 3 (round 2 slice A1, 2026-08-28): app/ là generated (LAB.md ownership) —
+  // sinh tại chỗ chạy pipeline, không được tracked; tái phạm = ai đó commit output máy sinh.
+  const trackedApp = spawnSync('git', ['ls-files', 'app'], { cwd: ROOT, encoding: 'utf8' });
+  check('generated app/ is not tracked', (trackedApp.stdout ?? '').trim() === '',
+    `tracked: ${(trackedApp.stdout ?? '').trim().split('\n').slice(0, 5).join(', ')} — git rm -r --cached app`);
+}
+{
   // Hygiene gate 1 (repo-hygiene 2026-08-27): no-orphan references — mọi file trong
   // references/ phải được SKILL.md trỏ tới, nếu không agent không bao giờ tìm thấy nó và
   // file sẽ mục thành bản chép lệch. Fail = thêm dòng vào mục References của SKILL.md
@@ -189,6 +196,28 @@ check('both READMEs name the supported official template',
     .filter((f) => !skillText.includes(`references/${f}`));
   check('every references/ file is pointed to by SKILL.md', orphans.length === 0,
     `orphan: ${orphans.join(', ')} — thêm vào mục References của SKILL.md`);
+}
+{
+  // Hygiene gate 4 (round 2 slice A3, 2026-08-28): shipped package phải tự chứa — .md trong
+  // skill/create-zmp-app (trừ CHANGELOG lịch sử) không được link tương đối thoát package
+  // hay path máy cá nhân; nguồn ngoài repo ghi theo convention "Provenance (DX workspace,
+  // không ship cùng skill)".
+  const badMentions = [];
+  const walk = (dir) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (e.name === 'node_modules') continue;
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (e.name.endsWith('.md') && e.name !== 'CHANGELOG.md') {
+        const text = fs.readFileSync(p, 'utf8');
+        if (/\]\(\.\.\//.test(text)) badMentions.push(`${path.relative(ROOT, p)}: link ](../ thoát package`);
+        if (text.includes('/Users/')) badMentions.push(`${path.relative(ROOT, p)}: absolute path /Users/`);
+      }
+    }
+  };
+  walk(SKILL_DIR);
+  check('shipped package .md is self-contained (no escaping links / machine paths)',
+    badMentions.length === 0, badMentions.join('; '));
 }
 {
   // Hygiene gate 2 (repo-hygiene 2026-08-27): tập template release-supported trong README

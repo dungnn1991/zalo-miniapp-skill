@@ -4,6 +4,19 @@ Mọi thay đổi đáng kể của skill. Version = `package.json` + git tag `v
 Thay đổi phát sinh từ finding formal phải gắn id; expected/actual/lifecycle nằm trong
 `feedback/findings.jsonl`, decision và regression nằm trong `feedback/improvements.jsonl`.
 
+## [0.5.2] — 2026-08-27 (chưa phát hành — release train hygiene round 2, DX file 55)
+
+Bump ở ĐẦU train theo review file 55 để sổ token 0.5.2 hấp thụ các slice mà không đè row
+0.5.1 đã phát hành (bench/token-budget.mjs thêm guard từ chối đè version đã tag).
+
+### Changed
+- Slice A hygiene: `app/` root (generated) hết tracked + gate `app/ not tracked`;
+  `evaluation/clean-workspaces.sh` dọn disk workspace — HARDENED theo review độc lập
+  2026-08-28 ("ignored ≠ disposable"): abort khi target chứa file tracked, chỉ nhận
+  workspace có harness marker, retention (N mới nhất + run fail + run được findings tham
+  chiếu + `.keep`), quarantine 2 pha `.trash/` + `--purge-trash`, lock chống chạy chồng;
+  chuẩn hoá provenance các mention DX-workspace + gate cấm path thoát package.
+
 ## [0.5.1] — 2026-08-27
 
 Fix slice từ đợt test độc lập trên Codex (DX file 52/53) — hai bug harness được tái hiện

@@ -140,6 +140,14 @@ if (doRecord) {
   const histPath = path.join(REPO, 'bench', 'HISTORY.md');
   const lines = fs.readFileSync(histPath, 'utf8').split('\n');
   const isRow = (l) => /^\| \d{4}-\d{2}-\d{2} \|/.test(l);
+  // Guard (review file 55): version đã có git tag = row lịch sử ĐÃ PHÁT HÀNH — không đè.
+  // Bump version ở ĐẦU release train rồi mới --record; --force chỉ khi cố ý viết lại lịch sử.
+  const hasRow = lines.some((l) => isRow(l) && l.split('|')[2].trim() === version);
+  const isTagged = execFileSync('git', ['tag', '-l', `v${version}`], { cwd: REPO, encoding: 'utf8' }).trim() !== '';
+  if (hasRow && isTagged && !argv.includes('--force')) {
+    console.error(`--record: v${version} đã có git tag — không đè row đã phát hành. Bump version trước khi record (hoặc --force).`);
+    process.exit(3);
+  }
   const kept = lines.filter((l) => !(isRow(l) && l.split('|')[2].trim() === version));
   const prevRow = [...kept].reverse().find(isRow) ?? null;
   const dRec = (curV, oldV) => {

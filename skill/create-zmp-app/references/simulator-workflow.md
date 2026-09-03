@@ -5,7 +5,8 @@ tab khóa trong `config.json` (`sdkHostContract`, `simulatorDemo`) — file đó
 Mock data/error codes: `references/sim-mock-data.json` (curated từ Portal docs, có docSource
 từng API). Shim/serve thuộc harness (`scripts/sim/`).
 
-> **Đọc provider cho đúng (v0.5.1, DX file 53 P3):** `input.json.renderProvider` ghi provider
+> **Đọc provider cho đúng (v0.5.1 — provenance: file 53 P3, DX workspace, không ship cùng
+> skill):** `input.json.renderProvider` ghi provider
 > MẶC ĐỊNH lúc bootstrap; provider THẬT của run nằm ở `result.json.provider` (+
 > `evidence/render-info.json`, `source: "flag"`). Khi chạy `--verify-sim`, hai giá trị này
 > cố ý khác nhau — không phải bug.
