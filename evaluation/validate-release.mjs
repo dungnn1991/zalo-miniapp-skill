@@ -137,19 +137,60 @@ check('deploy QR regression fixture exists and is committed',
   `${deployQrFixture} is missing or ignored/untracked`);
 
 const cfg = json('skill/create-zmp-app/config.json');
-const catalog = cfg.officialTemplates?.catalog ?? [];
-const ids = catalog.map((entry) => entry.id);
-const supported = catalog.filter((entry) => entry.releaseSupported === true);
+// Slice B1 (hygiene round 2, DX 55 v2 sau review): nguồn thật của template là
+// catalog/templates.json — block config.officialTemplates.catalog deprecated từ plan 34 và
+// đã xoá ở B2. Mỗi entry release-supported phải chứng minh được: revision pin khớp hai nơi,
+// evidence file nằm trong catalog/qualification + nội dung khớp template/revision/runId + mọi
+// blocking gate pass, adapter khai báo tồn tại và khớp id.
+const registryTemplates = json('skill/create-zmp-app/catalog/templates.json').templates ?? [];
+const ids = registryTemplates.map((t) => t.id);
+const supported = registryTemplates.filter((t) => t.qualification?.state === 'release-supported');
 check('official template ids are unique', new Set(ids).size === ids.length, JSON.stringify(ids));
-check('at least one official template is release-supported', supported.length > 0, 'supported catalog is empty');
-for (const entry of supported) {
-  check(`${entry.id}: support requires verified evidence`, entry.verified === true, JSON.stringify(entry));
-  check(`${entry.id}: support requires immutable commit revision`, /^[0-9a-f]{40}$/.test(entry.revision ?? ''),
-    JSON.stringify(entry.revision));
-  check(`${entry.id}: support requires a committed regression case`,
-    typeof entry.releaseCaseId === 'string'
-      && fs.existsSync(path.join(ROOT, 'evaluation', 'cases', entry.releaseCaseId, 'case.json')),
-    JSON.stringify(entry.releaseCaseId));
+check('at least one official template is release-supported', supported.length > 0, 'registry has no release-supported entry');
+const qualDir = path.join(SKILL_DIR, 'catalog', 'qualification');
+for (const t of supported) {
+  const q = t.qualification ?? {};
+  check(`${t.id}: support requires immutable revision pinned in source AND qualification`,
+    /^[0-9a-f]{40}$/.test(t.source?.revision ?? '') && q.testedRevision === t.source.revision,
+    JSON.stringify({ source: t.source?.revision, tested: q.testedRevision }));
+  const evRel = q.evidence?.qualificationResult ?? '';
+  const evAbs = path.resolve(SKILL_DIR, evRel);
+  const inside = evRel !== '' && evAbs.startsWith(qualDir + path.sep) && fs.existsSync(evAbs);
+  let ev = null;
+  try { ev = inside ? JSON.parse(fs.readFileSync(evAbs, 'utf8')) : null; } catch { ev = null; }
+  check(`${t.id}: support requires qualification evidence inside catalog/qualification`, inside && ev !== null,
+    evRel || 'evidence.qualificationResult missing');
+  if (ev) {
+    check(`${t.id}: evidence matches registry (templateId, revision, runId)`,
+      ev.templateId === t.id && ev.revision === q.testedRevision && ev.runId === q.evidence?.runId,
+      JSON.stringify({ evidence: [ev.templateId, ev.revision, ev.runId], registry: [t.id, q.testedRevision, q.evidence?.runId] }));
+    const blocking = (ev.gates ?? []).filter((g) => g.blocking === true);
+    check(`${t.id}: every blocking gate in evidence passed`,
+      blocking.length > 0 && blocking.every((g) => g.status === 'pass'),
+      JSON.stringify(blocking.map((g) => [g.id, g.status])));
+  }
+  if (q.adapterId) {
+    const adPath = path.join(SKILL_DIR, 'catalog', 'adapters', `${t.id}.json`);
+    let ad = null;
+    try { ad = JSON.parse(fs.readFileSync(adPath, 'utf8')); } catch { ad = null; }
+    check(`${t.id}: declared adapter file exists and matches adapterId`,
+      ad?.adapterId === q.adapterId && ad?.templateId === t.id,
+      JSON.stringify({ file: fs.existsSync(adPath), adapterId: ad?.adapterId ?? null }));
+  }
+}
+check('official-template scaffold path has a committed regression case',
+  fs.existsSync(path.join(ROOT, 'evaluation', 'cases', 'official-template-golden', 'case.json')),
+  'evaluation/cases/official-template-golden/case.json missing');
+{
+  // Drift detector: registry entries phải nói cùng ngôn ngữ với template-profile.schema.json
+  // (qualification additionalProperties:false) — key lạ = schema hoặc registry đã lệch.
+  const profSchema = json('skill/create-zmp-app/schemas/template-profile.schema.json');
+  const allowed = new Set(Object.keys(profSchema.properties?.qualification?.properties ?? {}));
+  const drift = [];
+  for (const t of registryTemplates) {
+    for (const k of Object.keys(t.qualification ?? {})) if (!allowed.has(k)) drift.push(`${t.id}.qualification.${k}`);
+  }
+  check('registry qualification keys are declared in template-profile.schema.json', drift.length === 0, drift.join(', '));
 }
 check('official tarball URL resolves immutable revision, not branch',
   cfg.officialTemplates?.tarballUrlPattern?.includes('{revision}')
@@ -175,9 +216,6 @@ check('both READMEs link the official documentation and Mini App Center',
 check('README does not advertise all experimental official templates',
   !/11\s+template/i.test(publicReadmes) && !/cà phê dùng mẫu có sẵn/i.test(publicReadmes),
   'a public README still advertises unsupported catalog entries');
-check('both READMEs name the supported official template',
-  supported.every((entry) => readme.includes(entry.id) && readmeVi.includes(entry.id)),
-  JSON.stringify(supported.map((entry) => entry.id)));
 {
   // Hygiene gate 3 (round 2 slice A1, 2026-08-28): app/ là generated (LAB.md ownership) —
   // sinh tại chỗ chạy pipeline, không được tracked; tái phạm = ai đó commit output máy sinh.

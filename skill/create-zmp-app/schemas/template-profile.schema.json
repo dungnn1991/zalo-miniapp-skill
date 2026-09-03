@@ -65,6 +65,16 @@
         "testedRevision": { "type": ["string", "null"], "description": "Phải khớp source.revision thì evidence mới còn hiệu lực." },
         "adapterId": { "type": ["string", "null"], "description": "File trong catalog/adapters/; chỉ áp cho đúng id + đúng SHA." },
         "evidence": { "type": ["object", "null"], "description": "Trỏ tới qualification-result.json hoặc caseId." },
+        "runtime": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Môi trường đã verify ở qualification (mandate 42): provider, oracle profile, có cần Zalo host không.",
+          "properties": {
+            "verifiedProvider": { "type": "string", "enum": ["browser", "simulator"] },
+            "oracleProfile": { "type": "string" },
+            "requiresZaloHost": { "type": "boolean" }
+          }
+        },
         "note": { "type": ["string", "null"] }
       }
     }
