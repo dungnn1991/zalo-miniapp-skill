@@ -184,6 +184,14 @@
       "@types/react-dom": "^18.2.0"
     }
   },
+  "platformLimits": {
+    "bundleTotalBytes": 10485760,
+    "perFileBytes": 3145728,
+    "note": "Nhà duy nhất của giới hạn kích thước bản deploy (slice C2, DX 55). Portal ghi '10MB tổng / 3MB mỗi file'; enforce theo MiB (1 MiB = 1048576 bytes). insight.mjs scanSizeLimit đọc từ đây; troubleshooting.md / error-signatures chỉ trỏ về. Boundary test: evaluation/unit-size-limit.mjs.",
+    "sourceUrl": "https://miniapp.zaloplatforms.com/community/8098440729049792207/the-file-size-is-too-large",
+    "officialRef": "docs.zaloplatforms.com/docs/MA/intro/getting-started/frequently-solved-issues.md #14",
+    "observedAt": "2026-08-21"
+  },
   "exitCodes": {
     "0": "pass",
     "1": "gate_fail (finding recorded)",
@@ -202,6 +210,15 @@
     "tokenPolicy": "ZMP_TOKEN do zmp-cli sở hữu: lab không đọc giá trị, không ghi, không log; chỉ được key-existence scan",
     "apiDomain": "https://zmp-api.developers.zalo.me/",
     "deployedUrlScheme": "zalo.me/s/",
+    "deployQuota": {
+      "rollingWindowDays": 30,
+      "developmentLimit": 300,
+      "testingLimit": 60,
+      "note": "Nhà duy nhất của số quota deploy (slice C1, DX 55): operations.md / error-signatures chỉ trỏ về đây. Quota là cửa sổ TRƯỢT 30 ngày, không phải tháng lịch — message thật: 'You have reached your 30-day deployment limit'.",
+      "sourceUrl": "https://miniapp.zaloplatforms.com/community/8602851583980566991/you-have-reached-your-30-day-deployment-limit-please-try-again-later",
+      "officialRef": "docs.zaloplatforms.com/docs/MA/intro/getting-started/frequently-solved-issues.md #13",
+      "observedAt": "2026-08-21"
+    },
     "deployedUrlObserved": "https://zalo.me/s/<appId>/?env=DEVELOPMENT&version=zdev-... (real deploy 2026-08-20; h5.zdn.vn/zapps/ chỉ là CDN asset base, không phải app link)",
     "deployOutputIsQrOnly": "CLI 4.0.3 in URL chỉ dưới dạng QR sau 'View app at:' — cần decode (jsqr); dòng '- undefined' là bug hiển thị của CLI",
     "syncConfigRequired": "zmp sync-config dist/index.html BẮT BUỘC sau build, trước deploy -e (populate listSyncJS/listCSS trong app-config.json; sinh dist/inline.js)",
