@@ -91,8 +91,33 @@ báo từ chối thân thiện (đừng auto-retry); lỗi khác → message chu
 `--preview-sim` cho user tự bấm; app official template → build + verify browser profile, rồi
 `preview.mjs --sim --sim-decision manual` để user bấm nút thật và thấy bottomsheet mock.
 
+## Recipe 2 — Checkout theo môi trường + backend UAT
+
+**Trigger V1:** user yêu cầu rõ Checkout/thanh toán cho app đang tạo. Prompt recognition mở
+rộng chưa thuộc V1; agent map yêu cầu explicit sang `--capability checkout`.
+
+- Đọc `checkout-environments.md` trước để phản hồi đúng hành vi từng runtime và giữ rule không
+  silent fallback.
+- Đọc `checkout-client.md` trước khi thay đổi client/controller/gateway.
+- Đọc `checkout-simulator.md` trước khi verify hoặc mở mock preview.
+- Đọc `checkout-backend.md` khi giải thích phần production còn thiếu hoặc khi team backend
+  tiếp tục implementation.
+- V1 chỉ compose tự động trên lab template: dùng `--template lab --capability checkout`.
+  Không tự vá official/unknown existing app và không đổi base template âm thầm.
+- Chọn `--checkout-mode simulator` để kiểm SDK contract ở desktop. `demo-cod` là local/non-Zalo
+  preview lịch sử, phải giữ `processing/unpaid`, có nhãn và không gọi payment network; không dùng
+  nó để mô phỏng native Checkout trong Zalo.
+- Bốn scenario simulator là `--checkout-result success|pending|fail|cancel`; tất cả đều là
+  mock có nhãn, không phải giao dịch hay UAT thật.
+- Trên Zalo: ready → SDK/platform UI thật; thiếu/sai backend/config/quyền → toast + inline error;
+  không mock fallback. V1.0 chưa có router/backend này nên report
+  `CHECKOUT_NATIVE_UAT_NOT_IMPLEMENTED`.
+- Report `CHECKOUT_BACKEND_REQUIRED` cho simulator hoặc `CHECKOUT_DEMO_ONLY` cho demo-cod. Xem
+  `checkout-backend.md` để scaffold Worker/D1 UAT; backend thương mại vẫn cần secret custody,
+  catalog/amount/order ledger, notify/callback/update status và reconciliation đầy đủ.
+
 ## Recipe tiếp theo
 
-Thêm recipe mới vào file này khi user yêu cầu tính năng lặp lại (thanh toán Checkout SDK,
-theo dõi OA, chia sẻ...) — mỗi recipe bắt buộc có: nguồn Portal docs + flow chuẩn + code mẫu
+Thêm recipe mới vào file này khi user yêu cầu tính năng lặp lại (theo dõi OA, chia sẻ...) —
+mỗi recipe bắt buộc có: nguồn Portal docs + flow chuẩn + code mẫu
 + quy tắc + cách verify. Không thêm recipe không có nguồn.

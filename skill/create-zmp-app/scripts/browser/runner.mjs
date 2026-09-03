@@ -336,6 +336,63 @@ try {
         }
       }
 
+      // Checkout demo-cod qualification — feature-detected from the compiled app, default
+      // viewport only. This is a Development UI demo, not the simulator host and not a paid
+      // transaction: confirmation must end at order=processing + payment=unpaid, expose an
+      // order-detail view, carry a visible BẢN DEMO badge, and make no merchant/Checkout call.
+      if (isFull && vp.isDefault && cfg.checkoutV1?.markers?.demoSheet) {
+        const dm = cfg.checkoutV1.markers;
+        const cartBadge = parseInt(await page.locator(markers.cartBadge).first().innerText(), 10);
+        if (!Number.isInteger(cartBadge) || cartBadge < 1) {
+          await page.locator(markers.addToCart).first().click({ timeout: 5000 });
+        }
+        await page.locator('[data-testid="nav-cart"]').first().click({ timeout: 5000 });
+        const hasDemo = await page.locator('[data-testid="checkout-demo-panel"]').count() > 0;
+        if (hasDemo) {
+          const checkoutRequests = [];
+          const captureCheckoutRequest = (request) => {
+            try {
+              const parsed = new URL(request.url());
+              if (parsed.pathname === '/api/merchant-orders' || parsed.hostname === 'payment-mini.zalo.me') {
+                checkoutRequests.push(`${request.method()} ${parsed.hostname}${parsed.pathname}`);
+              }
+            } catch { /* browser-internal URLs */ }
+          };
+          page.on('request', captureCheckoutRequest);
+          try {
+            await page.locator(dm.submit).first().click({ timeout: 5000 });
+            await page.waitForSelector(dm.demoSheet, { state: 'visible', timeout: 5000 });
+            const badgeVisible = await page.locator(dm.demoBadge).first().isVisible().catch(() => false);
+            gate('checkout_demo_badge', badgeVisible ? 'pass' : 'fail',
+              badgeVisible ? 'BẢN DEMO visible on COD confirmation' : 'demo badge missing', vpName);
+            await page.screenshot({ path: path.join(outDir, 'checkout-demo-cod-confirm.png') });
+            await page.locator(dm.demoConfirm).first().click({ timeout: 5000 });
+            await page.waitForSelector(dm.demoSuccess, { state: 'visible', timeout: 5000 });
+            const placed = await page.locator(dm.demoSuccess).first().getAttribute('data-result');
+            await page.locator(dm.demoViewOrder).first().click({ timeout: 5000 });
+            await page.waitForSelector(dm.demoOrderDetail, { state: 'visible', timeout: 5000 });
+            const orderStatus = await page.locator('[data-testid="checkout-demo-order-status"]').first().getAttribute('data-order-status');
+            const paymentStatus = await page.locator('[data-testid="checkout-demo-payment-status"]').first().getAttribute('data-payment-status');
+            const semanticsOk = placed === 'order-placed' && orderStatus === 'processing' && paymentStatus === 'unpaid';
+            gate('checkout_demo_cod_semantics', semanticsOk ? 'pass' : 'fail',
+              `result=${placed} order=${orderStatus} payment=${paymentStatus}`, vpName);
+            const detailOverflow = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
+            gate('checkout_demo_detail_not_clipped', detailOverflow ? 'pass' : 'fail',
+              detailOverflow ? 'order detail fits viewport' : 'order detail caused horizontal overflow', vpName);
+            await page.screenshot({ path: path.join(outDir, 'checkout-demo-order-detail.png') });
+          } catch (err) {
+            gate('checkout_demo_cod_semantics', 'fail', String(err.message).slice(0, 180), vpName);
+          } finally {
+            page.off('request', captureCheckoutRequest);
+          }
+          gate('checkout_demo_no_payment_network', checkoutRequests.length === 0 ? 'pass' : 'fail',
+            checkoutRequests.length === 0
+              ? 'client demo made no merchant/Checkout request'
+              : `unexpected requests: ${checkoutRequests.slice(0, 5).join(', ')}`,
+            vpName);
+        }
+      }
+
       // Simulator demo API checks — default viewport only (config.simulatorDemo contract).
       // Lab profile only: the markers this drives are the lab template's account tab.
       if (runsDemoFlow && vp.isDefault && cfg.simulatorDemo) {
@@ -392,6 +449,104 @@ try {
     // context (and with it the binding) goes away.
     await page.waitForTimeout(150).catch(() => {});
     await context.close();
+  }
+
+  // Checkout capability qualification is a matrix, not a single happy-path click. Each
+  // scenario gets a fresh simulator context so order/localStorage state cannot leak between
+  // outcomes. The host sheet is switched to manual and the runner chooses the result; this
+  // both captures the mandatory SIMULATOR badge and exercises the same PaymentDone →
+  // checkTransaction controller path the user will try in headed preview.
+  const checkoutEnabled = isSim && simManifest?.simConfig?.checkout?.enabled === true;
+  if (checkoutEnabled) {
+    const defaultVp = viewports.find((vp) => vp.isDefault) ?? viewports[0];
+    const resultMap = {
+      success: 'success',
+      pending: 'pending',
+      fail: 'failed',
+      cancel: 'cancelled',
+    };
+    let badgePass = true;
+    let authoritativePass = true;
+    let networkPass = true;
+    let matrixPass = true;
+    let merchantRequests = 0;
+    const unexpectedNetwork = [];
+
+    for (const [scenario, expectedResult] of Object.entries(resultMap)) {
+      const scenarioManifest = {
+        ...simManifest,
+        simConfig: {
+          ...simManifest.simConfig,
+          decision: 'manual',
+          checkout: { ...simManifest.simConfig.checkout, result: scenario },
+        },
+      };
+      const context = await browser.newContext({
+        viewport: { width: defaultVp.width, height: defaultVp.height },
+        userAgent: SIM_UA,
+        ignoreHTTPSErrors: true,
+      });
+      await setupSimContext(context, scenarioManifest);
+      const page = await context.newPage();
+      page.on('request', (request) => {
+        try {
+          const parsed = new URL(request.url());
+          if (parsed.hostname === 'h5.zdn.vn' && parsed.pathname === '/api/merchant-orders') {
+            merchantRequests += 1;
+            const body = JSON.parse(request.postData() || '{}');
+            const serialized = JSON.stringify(body);
+            if (/"(?:amount|price|mac|privateKey|merchantSecret)"\s*:/.test(serialized)) {
+              authoritativePass = false;
+            }
+          } else if (parsed.hostname !== 'h5.zdn.vn') {
+            // payment-mini calls should be answered by the in-page shim. Seeing them here
+            // means the safety-net route blocked a real-network attempt, which is still a
+            // contract failure even though no packet escaped Playwright.
+            networkPass = false;
+            unexpectedNetwork.push(`${request.method()} ${parsed.hostname}${parsed.pathname}`);
+          }
+        } catch { /* malformed browser URL is already handled by page errors */ }
+      });
+
+      try {
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        await page.waitForSelector(markers.appRoot, { state: 'attached', timeout: 15000 });
+        await page.locator(markers.addToCart).first().click({ timeout: 5000 });
+        await page.locator('[data-testid="nav-cart"]').first().click({ timeout: 5000 });
+        await page.locator(cfg.checkoutV1.markers.submit).first().click({ timeout: 5000 });
+        await page.waitForSelector(cfg.checkoutV1.markers.simSheet, { state: 'visible', timeout: 8000 });
+        const badgeVisible = await page.locator(cfg.checkoutV1.markers.simBadge).first().isVisible().catch(() => false);
+        badgePass = badgePass && badgeVisible;
+        await page.screenshot({ path: path.join(outDir, `checkout-sim-sheet-${scenario}.png`) });
+        await page.locator(`[data-testid="checkout-sim-${scenario}"]`).first().click({ timeout: 5000 });
+        await page.waitForFunction(
+          ({ selector, result }) => document.querySelector(selector)?.getAttribute('data-result') === result,
+          { selector: cfg.checkoutV1.markers.status, result: expectedResult },
+          { timeout: 12000 },
+        );
+        const actual = await page.locator(cfg.checkoutV1.markers.status).first().getAttribute('data-result');
+        const ok = actual === expectedResult;
+        matrixPass = matrixPass && ok;
+        gate(`checkout_result_${scenario}`, ok ? 'pass' : 'fail', `expected=${expectedResult} actual=${actual}`, defaultVp.name);
+        await page.screenshot({ path: path.join(outDir, `checkout-result-${scenario}.png`) });
+      } catch (err) {
+        matrixPass = false;
+        gate(`checkout_result_${scenario}`, 'fail', String(err.message).slice(0, 180), defaultVp.name);
+      } finally {
+        await context.close();
+      }
+    }
+
+    gate('checkout_result_matrix', matrixPass ? 'pass' : 'fail',
+      matrixPass ? 'success/pending/fail/cancel mapped deterministically' : 'one or more Checkout scenarios failed');
+    gate('checkout_mock_badge', badgePass ? 'pass' : 'fail',
+      badgePass ? 'SIMULATOR badge visible in all four payment sheets' : 'SIMULATOR badge missing from at least one payment sheet');
+    gate('checkout_mock_backend_authoritative', authoritativePass && merchantRequests === 4 ? 'pass' : 'fail',
+      `merchantRequests=${merchantRequests}; client sent no amount/price/MAC=${authoritativePass}`);
+    gate('checkout_no_real_network_in_sim', networkPass ? 'pass' : 'fail',
+      networkPass ? 'all Checkout traffic handled in simulator boundaries' : `unexpected requests: ${unexpectedNetwork.slice(0, 5).join(', ')}`);
+    gate('checkout_simulator_honesty', badgePass ? 'pass' : 'fail',
+      badgePass ? 'all mock payment surfaces visibly labelled SIMULATOR' : 'mock result could be mistaken for a real payment');
   }
 } finally {
   await browser.close();

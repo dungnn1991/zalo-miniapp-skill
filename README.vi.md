@@ -92,6 +92,7 @@ Cách chọn template nằm ở
 | Tích hợp tính năng Zalo | [Feature recipes](./skill/create-zmp-app/references/feature-recipes.md) |
 | Template chính thức | [Official templates](./skill/create-zmp-app/references/official-templates.md) |
 | Simulator | [Simulator workflow](./skill/create-zmp-app/references/simulator-workflow.md) |
+| Checkout giả lập + COD demo Development | [Checkout client](./skill/create-zmp-app/references/checkout-client.md) · [Simulator](./skill/create-zmp-app/references/checkout-simulator.md) · [Handoff backend](./skill/create-zmp-app/references/checkout-backend.md) |
 | Deploy Development/Testing | [Deploy workflow](./skill/create-zmp-app/references/deploy-workflow.md) |
 | Tra lỗi build, runtime và CORS | [Troubleshooting](./skill/create-zmp-app/references/troubleshooting.md) |
 | Vận hành, quyền và môi trường | [Operations](./skill/create-zmp-app/references/operations.md) |
@@ -100,7 +101,7 @@ Cách chọn template nằm ở
 ## Phát triển skill
 
 Repo này chứa runtime skill và lab kiểm chứng. Release gate chạy metadata validator, routing
-corpus và bộ 37 case bằng:
+corpus và bộ 41 case bằng:
 
 ```bash
 npm test

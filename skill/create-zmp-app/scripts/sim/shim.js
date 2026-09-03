@@ -2,7 +2,7 @@
  *
  * Pure browser JS, zero imports. Injected BEFORE the app bundle (runner/preview handle the
  * injection). Reads window.__SIM_CONFIG__ = { appId, decision: accept|deny|manual, persona,
- * apis: <references/sim-mock-data.json .apis> }.
+ * apis: <references/sim-mock-data.json .apis>, checkout: {result} }.
  *
  * Facts source: config.json `sdkHostContract` (P3.0 spike, zmp-sdk@2.53.0 public npm):
  *  - injection point window.ZaloJavaScriptInterface, typeof-checked by the SDK per call
@@ -27,6 +27,9 @@
   const APIS = CFG.apis || {};
   const APP_ID = String(CFG.appId || '');
   const DECISION = CFG.decision === 'deny' || CFG.decision === 'manual' ? CFG.decision : 'accept';
+  const CHECKOUT_RESULT = ['success', 'pending', 'fail', 'cancel'].includes(CFG.checkout && CFG.checkout.result)
+    ? CFG.checkout.result
+    : 'success';
   const PERM_KEY = 'sim-perm-' + APP_ID;
 
   // Wrapper-equivalent global: ZMPRouter của zmp-ui tính basename `zapps/${window.APP_ID}`
@@ -62,6 +65,42 @@
 
   const rand8 = () => (Math.random().toString(16) + '00000000').slice(2, 10);
   const simToken = (api) => 'SIM_TOKEN_' + String(api).replace(/[^a-z0-9]/gi, '_').toUpperCase() + '_' + rand8();
+
+  // ---- stable Checkout order store -------------------------------------------------------
+  // The merchant boundary is served by intercept.mjs. This browser-side store models only
+  // the Checkout host order created afterwards. Reads are idempotent: checkTransaction can be
+  // called by both the Mini App and zmp-sdk's own WebviewClosed fallback without consuming or
+  // mutating the result.
+  const CHECKOUT_STORE_KEY = 'sim-checkout-orders-' + APP_ID;
+  const checkoutLoad = () => {
+    try { return JSON.parse(localStorage.getItem(CHECKOUT_STORE_KEY)) || {}; } catch (e) { return {}; }
+  };
+  const checkoutSave = (orders) => {
+    try { localStorage.setItem(CHECKOUT_STORE_KEY, JSON.stringify(orders)); } catch (e) { /* memory unavailable */ }
+  };
+  const checkoutPut = (order) => {
+    const orders = checkoutLoad();
+    orders[order.orderId] = order;
+    checkoutSave(orders);
+    return order;
+  };
+  const checkoutGet = (orderId) => checkoutLoad()[orderId] || null;
+  const checkoutHash = (value) => {
+    let hash = 2166136261;
+    const text = String(value || '');
+    for (let i = 0; i < text.length; i += 1) {
+      hash ^= text.charCodeAt(i);
+      hash = Math.imul(hash, 16777619);
+    }
+    return (hash >>> 0).toString(16).padStart(8, '0').toUpperCase();
+  };
+  const resultCodeOf = (result) => ({ success: 1, pending: 0, fail: -1, cancel: -2 })[result] ?? 0;
+  const resultLabelOf = (result) => ({
+    success: 'Thành công',
+    pending: 'Đang xử lý',
+    fail: 'Thất bại',
+    cancel: 'Đã huỷ',
+  })[result] || 'Đang xử lý';
 
   // ---- MPDS: the native storage backend the SDK picks inside a real Zalo host ------------
   // CONFIRMED zmp-sdk@2.53.0 (apis/common/apis/general/storage/index.js): the default backend
@@ -137,6 +176,7 @@
     'action.get.location': 'getLocation',      // GET_LOCATION
     'action.mp.get.number': 'getPhoneNumber',  // MP_GET_NUMBER
     'action.mp.user.authorize': 'authorize',   // MP_USER_AUTHORIZE
+    'action.mp.select.payment.method': 'selectPaymentMethod', // MP_SELECT_PAYMENT_METHOD
     'action.jump.login': '__jumpLogin',        // JUMP_LOGIN — token-flow infra, always mocked
     'action.login': 'login',                   // LOGIN — SDK auto-calls it on module load (isMp)
   };
@@ -205,6 +245,84 @@
     (document.body || document.documentElement).appendChild(wrap);
   };
 
+  // ---- SIMULATOR Checkout payment sheet -------------------------------------------------
+  // Unlike permission sheets, Checkout always has a visible host surface. Automatic runs
+  // keep it briefly on-screen; manual runs let the viewer choose all four canonical results.
+  // This is explicitly a simulator UI, never evidence of a real payment or real consent.
+  const showCheckoutSheet = (order, done) => {
+    const wrap = document.createElement('div');
+    wrap.setAttribute('data-testid', 'checkout-sim-sheet');
+    wrap.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;font-family:-apple-system,Roboto,sans-serif;';
+    wrap.innerHTML =
+      '<div style="background:#fff;width:100%;border-radius:18px 18px 0 0;padding:18px 16px calc(20px + env(safe-area-inset-bottom));box-shadow:0 -4px 24px rgba(0,0,0,.2);">'
+      + '<div data-testid="checkout-sim-badge" style="display:inline-block;background:#ffb300;color:#1a1a1a;font-size:11px;font-weight:800;letter-spacing:.06em;padding:3px 8px;border-radius:4px;margin-bottom:10px;">SIMULATOR</div>'
+      + '<div style="font-size:18px;font-weight:700;margin-bottom:4px;">Thanh toán giả lập</div>'
+      + '<div data-testid="checkout-sim-order" style="font-size:13px;color:#667085;margin-bottom:14px;"></div>'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;background:#f5f7fb;border-radius:10px;padding:12px;margin-bottom:14px;">'
+      + '<span style="font-size:14px;color:#475467;">Tổng thanh toán</span>'
+      + '<strong data-testid="checkout-sim-amount" style="font-size:17px;"></strong>'
+      + '</div>'
+      + '<div data-testid="checkout-sim-result" style="font-size:13px;color:#475467;margin-bottom:12px;"></div>'
+      + '<div data-testid="checkout-sim-actions" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>'
+      + '</div>';
+    wrap.querySelector('[data-testid="checkout-sim-order"]').textContent = 'Mã đơn mock: ' + order.orderId;
+    wrap.querySelector('[data-testid="checkout-sim-amount"]').textContent = Number(order.amount || 0).toLocaleString('vi-VN') + ' đ';
+    const resultText = wrap.querySelector('[data-testid="checkout-sim-result"]');
+    const actions = wrap.querySelector('[data-testid="checkout-sim-actions"]');
+    let settled = false;
+    const close = (result) => {
+      if (settled) return;
+      settled = true;
+      const latest = checkoutGet(order.orderId) || order;
+      checkoutPut(Object.assign({}, latest, {
+        result,
+        resultCode: resultCodeOf(result),
+        transTime: Date.now().toString(),
+      }));
+      try { wrap.remove(); } catch (e) { /* already gone */ }
+      done(result);
+    };
+    if (DECISION === 'manual') {
+      resultText.textContent = 'Chọn kết quả để thử UI của Mini App. Không có tiền thật.';
+      const choices = [
+        ['success', 'Thành công'],
+        ['pending', 'Đang xử lý'],
+        ['fail', 'Thất bại'],
+        ['cancel', 'Huỷ thanh toán'],
+      ];
+      choices.forEach(([value, label]) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.setAttribute('data-testid', 'checkout-sim-' + value);
+        button.textContent = label;
+        button.style.cssText = value === 'success'
+          ? 'padding:11px 8px;border:0;border-radius:8px;background:#0068ff;color:#fff;font-size:14px;font-weight:600;'
+          : 'padding:11px 8px;border:1px solid #d0d5dd;border-radius:8px;background:#fff;color:#344054;font-size:14px;';
+        button.addEventListener('click', () => close(value));
+        actions.appendChild(button);
+      });
+    } else {
+      actions.style.display = 'none';
+      resultText.textContent = 'Kết quả mô phỏng: ' + resultLabelOf(CHECKOUT_RESULT) + '. Không có tiền thật.';
+      // Keep the payment surface observable, then close as a host webview would. The close
+      // drives WebviewClosed; zmp-sdk subsequently emits PaymentDone for the client listener.
+      setTimeout(() => close(CHECKOUT_RESULT), 300);
+    }
+    (document.body || document.documentElement).appendChild(wrap);
+  };
+
+  const emitWebviewClosed = () => {
+    try {
+      const handler = window.zaloJSV2 && window.zaloJSV2.zalo_h5_event_handler;
+      if (typeof handler === 'function') {
+        handler('SIM_CHECKOUT_' + rand8(), 'h5.event.webview.close', JSON.stringify({}));
+        log({ action: 'h5.event.webview.close', api: 'checkout', decision: 'mock-host', error_code: 0 });
+        return;
+      }
+    } catch (e) { /* fail loudly below */ }
+    log({ action: 'h5.event.webview.close', api: 'checkout', decision: 'unmocked', error_code: -1, unmocked: true });
+  };
+
   // Permission-gated resolution shared by jsCall APIs and openapi mocks.
   // done(decision, payload) — decision ∈ accept|deny|already-granted|already-denied|granted
   const resolvePermissioned = (api, entry, done) => {
@@ -223,7 +341,7 @@
   };
 
   // ---- respond over the pinned transport ----
-  const respond = (serialId, action, cb, payload) => {
+  const respond = (serialId, action, cb, payload, afterDeliver) => {
     const deliver = () => {
       try {
         const json = JSON.stringify(payload);
@@ -231,6 +349,11 @@
         const f = window.onNativeMessage && window.onNativeMessage(serialId, action);
         if (typeof f === 'function') f(json);
       } catch (e) { /* SDK not listening — nothing to break */ }
+      finally {
+        // A host event must be later than the native success callback. This macrotask gives
+        // zmp-sdk's resolved Promise time to register WebviewClosed/PaymentDone listeners.
+        if (typeof afterDeliver === 'function') setTimeout(afterDeliver, 0);
+      }
     };
     setTimeout(deliver, 30); // native is async; SDK registers the serialId before jsCall returns
   };
@@ -281,6 +404,42 @@
         log({ action, api: 'nativeStorage', decision: 'unmocked', error_code: -1, unmocked: true });
       }
       return;
+    }
+
+    if (api === 'selectPaymentMethod') {
+      const selected = requestData && requestData.selectedMethod;
+      const channels = requestData && Array.isArray(requestData.channels) ? requestData.channels : [];
+      const picked = (selected && selected.method && selected) || channels[0] || { method: 'COD' };
+      const data = {
+        method: picked.method || 'COD',
+        subMethod: picked.subMethod || undefined,
+        isCustom: false,
+        displayName: picked.method === 'BANK' ? 'Chuyển khoản (Simulator)' : 'COD (Simulator)',
+      };
+      respond(serialId, action, cb, { error_code: 0, error_message: 'Success', data });
+      log({ action: 'checkout.select-payment-method', api: 'checkout', decision: 'mock-selected', error_code: 0 });
+      return;
+    }
+
+    if (action === 'action.open.inapp' && requestData && typeof requestData.url === 'string') {
+      let checkoutOrder = null;
+      try {
+        const opened = new URL(requestData.url, window.location.href);
+        if (opened.hostname === 'payment-mini.zalo.me') {
+          checkoutOrder = checkoutGet(opened.searchParams.get('orderId'));
+        }
+      } catch (e) { checkoutOrder = null; }
+      if (checkoutOrder) {
+        respond(
+          serialId,
+          action,
+          cb,
+          { error_code: 0, error_message: 'Success', data: {} },
+          () => showCheckoutSheet(checkoutOrder, () => emitWebviewClosed()),
+        );
+        log({ action: 'checkout.open-inapp', api: 'checkout', decision: 'mock-sheet', error_code: 0 });
+        return;
+      }
     }
 
     const entry = api ? APIS[api] : null;
@@ -373,11 +532,94 @@
     status: 200,
     headers: { 'Content-Type': 'application/json' },
   }));
+  const decodeCheckoutValue = (value) => {
+    if (value == null || value === '') return null;
+    let text = String(value);
+    try { text = decodeURIComponent(text); } catch (e) { /* already decoded */ }
+    try { return JSON.parse(text); } catch (e) { return text; }
+  };
+  const checkoutBody = (init) => {
+    const body = init && init.body;
+    if (body instanceof URLSearchParams) return body;
+    return new URLSearchParams(typeof body === 'string' ? body : '');
+  };
+  const checkoutTransactionData = (order) => {
+    const result = order.result || 'pending';
+    return {
+      orderId: order.orderId,
+      transId: order.transId,
+      resultCode: resultCodeOf(result),
+      resultMessage: resultLabelOf(result),
+      transTime: order.transTime || '',
+      createdAt: order.createdAt,
+      method: order.method || 'COD',
+      isCustom: false,
+    };
+  };
   const origFetch = window.fetch.bind(window);
   window.fetch = function (input, init) {
     let url = '';
     try { url = typeof input === 'string' ? input : (input && input.url) || ''; } catch (e) { url = ''; }
     if (url.indexOf('h5.zdn.vn/__sim__/') >= 0) return origFetch(input, init);
+
+    if (/payment-mini\.zalo\.me\/api\/order\/create-v2(?:\?|$)/.test(url)) {
+      const params = checkoutBody(init);
+      const amount = Number(params.get('amount'));
+      const mac = String(params.get('mac') || '');
+      const items = decodeCheckoutValue(params.get('item'));
+      const extra = decodeCheckoutValue(params.get('extradata'));
+      if (!Number.isSafeInteger(amount) || amount <= 0 || !Array.isArray(items)
+        || !mac.startsWith('SIMULATOR_MAC_V1_')) {
+        log({ action: 'checkout.create-order', api: 'checkout', decision: 'rejected', error_code: -1400 });
+        return jsonResponse({ err: -1400, msg: 'Invalid simulator order input', data: null });
+      }
+      const merchantOrderId = extra && typeof extra === 'object' ? extra.merchantOrderId : '';
+      const orderId = 'SIM-ZMP-' + checkoutHash(merchantOrderId || (mac + ':' + amount));
+      const existing = checkoutGet(orderId);
+      const createdAt = existing?.createdAt || Date.now().toString();
+      const order = existing || checkoutPut({
+        orderId,
+        merchantOrderId: merchantOrderId || null,
+        mac,
+        amount,
+        method: String(params.get('method') || 'COD'),
+        result: 'pending',
+        resultCode: 0,
+        createdAt,
+        transTime: '',
+        transId: 'SIM-TRANS-' + checkoutHash(orderId),
+      });
+      log({ action: 'checkout.create-order', api: 'checkout', decision: existing ? 'idempotent-replay' : 'mock-created', error_code: 0 });
+      return jsonResponse({
+        err: 0,
+        msg: 'Success (Simulator)',
+        data: {
+          id: order.orderId,
+          jwt: 'SIMULATOR_PAYMENT_JWT',
+          messageToken: 'SIMULATOR_MESSAGE_TOKEN',
+          method: order.method,
+          isCustom: false,
+        },
+      });
+    }
+
+    if (/payment-mini\.zalo\.me\/api\/transaction(?:\?|$)/.test(url)) {
+      let orderId = '';
+      try { orderId = new URL(url).searchParams.get('orderId') || ''; } catch (e) { orderId = ''; }
+      const order = checkoutGet(orderId);
+      if (!order) {
+        log({ action: 'checkout.check-transaction', api: 'checkout', decision: 'not-found', error_code: -12107 });
+        return jsonResponse({ err: -12107, msg: 'Transaction not found in simulator', data: null });
+      }
+      log({
+        action: 'checkout.check-transaction',
+        api: 'checkout',
+        decision: order.result || 'pending',
+        error_code: 0,
+        result_code: resultCodeOf(order.result || 'pending'),
+      });
+      return jsonResponse({ err: 0, msg: 'Success (Simulator)', data: checkoutTransactionData(order) });
+    }
 
     if (/h5\.zalo\.me\/apis\/users\/auth-settings/.test(url)) {
       log({ action: 'openapi.auth-settings', api: 'getSetting', decision: 'infra', error_code: 0 });

@@ -129,6 +129,23 @@ function loginNotScriptedGate(events) {
     : { status: 'pass', detail: 'no scripted zmp login with --token in events' };
 }
 
+function readBuiltTexts(distDir) {
+  if (!fs.existsSync(distDir)) return [];
+  const out = [];
+  const stack = [distDir];
+  while (stack.length) {
+    const dir = stack.pop();
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) stack.push(full);
+      else if (entry.isFile() && /\.(?:html?|m?js|css|json)$/i.test(entry.name)) {
+        out.push({ rel: path.relative(distDir, full), text: fs.readFileSync(full, 'utf8') });
+      }
+    }
+  }
+  return out;
+}
+
 // --------------------------------------------------------------------------------------------
 
 // Which pipeline stage a gate belongs to (drives result.stage = first failing stage).
@@ -138,7 +155,10 @@ function gateStage(id) {
   if (id === 'build_ok' || id === 'build_artifacts' || id === 'app_id_bound'
     || id === 'size_limit' || id === 'asset_path_scan' || id === 'server_side_api_scan') return 'build';
   if (id === 'evidence_complete' || id === 'permission_registry_hint'
-    || id === 'cors_preflight_probe' || id === 'checkout_sdk_policy_hint') return 'verify';
+    || id === 'cors_preflight_probe' || id === 'checkout_sdk_policy_hint'
+    || id === 'checkout_client_contract' || id === 'checkout_no_client_secret'
+    || id === 'checkout_no_mock_in_dist' || id === 'checkout_fixture_nondeployable'
+    || id === 'checkout_backend_warning_preserved') return 'verify';
   if (id === 'login_not_scripted' || id === 'zmp_token_env_override_hint') return 'login';
   if (id === 'deploy_ok' || id === 'deployed_url_recorded' || id === 'no_token_in_evidence') return 'deploy';
   return 'render'; // browser-runner gates
@@ -270,12 +290,13 @@ export function validateResult(r) {
     // mandate 42 §3.5: the four semantics must stay SEPARATE — "preview still works" is not the
     // same claim as "this feature is production-ready", and a warning without a fallback and a
     // guide is just noise.
-    const WKEYS = ['code', 'blockingForPreview', 'blockingForProductionFeature', 'affectedFeature', 'fallback', 'guide', 'message', 'source'];
+    const WKEYS = ['code', 'blockingForPreview', 'blockingForDevelopmentDeploy', 'blockingForProductionFeature', 'affectedFeature', 'fallback', 'guide', 'message', 'source'];
     if (!Array.isArray(r.warnings)) errs.push('warnings must be array');
     else for (const w of r.warnings) {
       if (typeof w.code !== 'string' || typeof w.affectedFeature !== 'string'
         || typeof w.fallback !== 'string' || typeof w.guide !== 'string' || typeof w.message !== 'string'
-        || typeof w.blockingForPreview !== 'boolean' || typeof w.blockingForProductionFeature !== 'boolean') {
+        || typeof w.blockingForPreview !== 'boolean' || typeof w.blockingForProductionFeature !== 'boolean'
+        || (w.blockingForDevelopmentDeploy !== undefined && typeof w.blockingForDevelopmentDeploy !== 'boolean')) {
         errs.push(`bad warning ${JSON.stringify(w).slice(0, 120)}`);
       }
       for (const k of Object.keys(w)) if (!WKEYS.includes(k)) errs.push(`warning ${w.code}: unexpected key ${k}`);
@@ -404,6 +425,77 @@ async function main() {
   // by earlier stages (build/ensure-login/deploy) folded into result.gates. warn ≠ fail.
   const insights = [];
   const srcTexts = readSrcTexts(ws.appDir);
+  const checkoutEnabled = input?.capabilities?.includes('checkout') === true;
+  const checkoutMode = input?.checkoutMode ?? 'simulator';
+  if (checkoutEnabled) {
+    const byRel = new Map(srcTexts.map((entry) => [entry.rel.replaceAll('\\', '/'), entry.text]));
+    const controller = byRel.get('src/checkout/controller.ts') ?? '';
+    const gateway = byRel.get('src/checkout/merchant-order-gateway.ts') ?? '';
+    const required = [
+      'src/checkout/controller.ts',
+      'src/checkout/merchant-order-gateway.ts',
+      'src/checkout/sdk-adapter.ts',
+      'src/checkout/template-cart-adapter.ts',
+      'src/checkout/checkout-panel.tsx',
+      ...(checkoutMode === 'demo-cod' ? ['src/checkout/demo-cod-panel.tsx'] : []),
+    ];
+    const missing = required.filter((rel) => !byRel.has(rel));
+    const listenerAt = controller.indexOf('this.sdk.onPaymentDone');
+    const merchantAt = controller.indexOf('this.gateway.createOrder');
+    const createAt = controller.indexOf('this.sdk.createOrder');
+    const checkAt = controller.indexOf('this.sdk.checkTransaction');
+    const contractOk = missing.length === 0
+      && listenerAt >= 0 && merchantAt > listenerAt && createAt > merchantAt && checkAt > createAt
+      && /items:\s*request\.items/.test(gateway)
+      && /idempotencyKey:\s*request\.idempotencyKey/.test(gateway);
+    gates.push({
+      id: 'checkout_client_contract',
+      status: contractOk ? 'pass' : 'fail',
+      detail: contractOk
+        ? 'gateway + listener-before-createOrder + PaymentDone/checkTransaction contract present'
+        : `missing=${missing.join(',') || 'none'} order=${listenerAt}/${merchantAt}/${createAt}/${checkAt}`,
+    });
+
+    const secretHits = srcTexts.filter(({ text }) =>
+      /-----BEGIN(?: [A-Z]+)? PRIVATE KEY-----|\b(?:privateKey|merchantSecret|appSecret)\s*[:=]/i.test(text));
+    gates.push({
+      id: 'checkout_no_client_secret',
+      status: secretHits.length ? 'fail' : 'pass',
+      detail: secretHits.length
+        ? `secret-like assignment in ${secretHits.map((h) => h.rel).join(', ')}`
+        : 'no private-key/merchant-secret assignment in client source',
+    });
+
+    const outDir = ctx.readJson('evidence/build-info.json')?.outDir ?? 'dist';
+    const mockPatterns = [
+      ['SIMULATOR_MAC_V1_', 'mock MAC'],
+      ['checkout-sim-sheet', 'simulator checkout sheet'],
+      ['__SIM_CONFIG__', 'simulator private config'],
+      ['__ZMP_DX_RUNTIME__', 'simulator runtime marker'],
+    ];
+    const mockHits = [];
+    for (const built of readBuiltTexts(path.join(ws.appDir, outDir))) {
+      for (const [pattern, label] of mockPatterns) {
+        if (built.text.includes(pattern)) mockHits.push(`${built.rel} (${label})`);
+      }
+    }
+    gates.push({
+      id: 'checkout_no_mock_in_dist',
+      status: mockHits.length ? 'fail' : 'pass',
+      detail: mockHits.length ? `simulator artifact leaked: ${mockHits.join(', ')}` : 'no simulator marker/MAC/sheet in build output',
+    });
+    gates.push(checkoutMode === 'demo-cod'
+      ? {
+          id: 'checkout_demo_development_deployable',
+          status: 'pass',
+          detail: 'client-only COD demo is visibly labelled and allowed only for Development UI feedback',
+        }
+      : {
+          id: 'checkout_fixture_nondeployable',
+          status: 'pass',
+          detail: 'run.mjs and deploy.mjs block deploy while checkout capability uses the simulator merchant backend',
+        });
+  }
   appendPreflight(ctx, scanPermissionApis(srcTexts));
   appendPreflight(ctx, scanCheckoutPolicy(srcTexts));
   appendPreflight(ctx, await corsPreflightGate(srcTexts));
@@ -446,6 +538,41 @@ async function main() {
     });
   }
 
+  // Warnings are assembled before findings so the Checkout run can gate the handoff itself:
+  // a green client/simulator without CHECKOUT_BACKEND_REQUIRED would overclaim production
+  // readiness even though no merchant backend exists.
+  const adapterEvidence = ctx.readJson('evidence/adapter.json');
+  const adapterWarnings = (adapterEvidence?.resultWarnings ?? []).map((w) => ({
+    ...w,
+    source: w.source ?? adapterEvidence.adapterId ?? null,
+  }));
+  const capabilityEvidence = ctx.readJson('evidence/capabilities.json');
+  const capabilityWarnings = (capabilityEvidence?.capabilities ?? []).flatMap((capability) =>
+    (capability.resultWarnings ?? []).map((w) => ({
+      ...w,
+      source: w.source ?? `capability:${capability.id}`,
+    })),
+  );
+  const warnings = [...new Map(
+    [...adapterWarnings, ...capabilityWarnings].map((w) => [w.code, w]),
+  ).values()];
+  if (checkoutEnabled) {
+    const expectedCode = checkoutMode === 'demo-cod' ? 'CHECKOUT_DEMO_ONLY' : 'CHECKOUT_BACKEND_REQUIRED';
+    const warning = warnings.find((w) => w.code === expectedCode);
+    const correct = warning
+      && warning.blockingForPreview === false
+      && warning.blockingForDevelopmentDeploy === (checkoutMode !== 'demo-cod')
+      && warning.blockingForProductionFeature === true
+      && warning.guide === 'references/checkout-backend.md';
+    gates.push({
+      id: 'checkout_backend_warning_preserved',
+      status: correct ? 'pass' : 'fail',
+      detail: correct
+        ? `${expectedCode} preserved with preview/Development/production semantics`
+        : `required structured warning ${expectedCode} missing or malformed`,
+    });
+  }
+
   // Every failed gate must have a finding before the run ends. Tier-2: when the stage log
   // matches the curated error-signature map, attach the diagnosis to finding + insights.
   const sigTextFor = (gateId) => {
@@ -485,11 +612,6 @@ async function main() {
   // patched an official template; the warnings ride to result.json so the report can say "the
   // preview works, but THIS feature needs a backend before production" instead of a sentence
   // nobody can act on programmatically.
-  const adapterEvidence = ctx.readJson('evidence/adapter.json');
-  const warnings = (adapterEvidence?.resultWarnings ?? []).map((w) => ({
-    ...w,
-    source: w.source ?? adapterEvidence.adapterId ?? null,
-  }));
   const result = {
     schemaVersion: isPhase2 || templateSelection || warnings.length ? '1.1' : '1.0',
     runId,

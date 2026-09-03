@@ -261,6 +261,10 @@
             "type": "boolean",
             "description": "Preview đầu có bị chặn không"
           },
+          "blockingForDevelopmentDeploy": {
+            "type": "boolean",
+            "description": "Build có bị chặn khi deploy vào slot Development hay không. Optional để tương thích warning cũ; capability mới phải ghi rõ khi semantics deploy khác preview/production."
+          },
           "blockingForProductionFeature": {
             "type": "boolean",
             "description": "Feature có cần thêm việc trước production không"

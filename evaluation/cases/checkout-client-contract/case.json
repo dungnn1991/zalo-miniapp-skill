@@ -1,0 +1,11 @@
+{
+  "caseId": "checkout-client-contract",
+  "title": "Checkout V1 — generated client contract and safe rerun",
+  "expectation": {
+    "exitCode": 0,
+    "resultStatus": "pass",
+    "findingCategory": null,
+    "findingSlugHint": "checkout_client_contract",
+    "description": "Explicit checkout activation generates a buildable client with MerchantOrderGateway, listener-before-createOrder, canonical 1/0/-1/-2 mapping, no client secret/simulator branch, and idempotent composition."
+  }
+}

@@ -55,7 +55,12 @@ if (previewSim) {
   const { chromium } = await import('playwright-core');
   const { setupSimContext, buildSimManifest, simUrl } = await import('./sim/intercept.mjs');
   const decision = getArg(argv, 'sim-decision', 'manual');
-  const manifest = buildSimManifest(ctx, ws, { decision });
+  const checkoutResult = getArg(argv, 'checkout-result', 'success');
+  if (!['success', 'pending', 'fail', 'cancel'].includes(checkoutResult)) {
+    console.error(`preview: unknown --checkout-result "${checkoutResult}" (success|pending|fail|cancel)`);
+    process.exit(3);
+  }
+  const manifest = buildSimManifest(ctx, ws, { decision, checkoutResult });
   const vp = loadLabConfig().defaults?.defaultViewport ?? { width: 390, height: 844 };
   // Same UA contract as the runner (config sdkHostContract.envDetection.platform).
   const SIM_UA = 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36 Zalo android/24112050';
@@ -66,8 +71,8 @@ if (previewSim) {
   await setupSimContext(context, manifest);
   const page = await context.newPage();
   const url = simUrl(appId);
-  ctx.event('preview', { stage: 'cleanup', status: 'sim_start', url, detail: `decision=${decision}` });
-  console.log(JSON.stringify({ runId, stage: 'preview', url, sim: true, decision }));
+  ctx.event('preview', { stage: 'cleanup', status: 'sim_start', url, detail: `decision=${decision} checkoutResult=${checkoutResult}` });
+  console.log(JSON.stringify({ runId, stage: 'preview', url, sim: true, decision, checkoutResult }));
   console.log('preview --sim: headed Chrome window — đóng cửa sổ hoặc Ctrl+C để dừng');
   await page.goto(url).catch((err) => console.error(`preview: ${err.message}`));
   const closed = new Promise((resolve) => browser.on('disconnected', resolve));

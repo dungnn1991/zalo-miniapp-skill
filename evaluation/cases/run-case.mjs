@@ -67,6 +67,11 @@ const CASE_DEPS = {
   'workspace-default-cwd': ['bootstrap', 'template'],
   'installer-hosts': [],
   'version-reporting': [],
+  // Checkout V1 — explicit capability activation on the deterministic lab commerce fixture.
+  'checkout-client-contract': ['bootstrap', 'template'],
+  'checkout-development-demo-cod': ['bootstrap', 'portal-fetch', 'template'],
+  'checkout-dist-clean-warning': ['bootstrap', 'template'],
+  'checkout-simulator-flow': ['bootstrap', 'template'],
 };
 
 // Phase 3 sim dependencies from the parallel owners — code is written against the contract;
@@ -117,6 +122,68 @@ function simBuildPipeline(ws, check) {
     if (r.code !== 0) return null;
   }
   return runId;
+}
+
+// Checkout V1 uses an explicit capability flag: ordinary commerce briefs must not silently
+// acquire payment behavior. Portal content is not needed to exercise the local client/simulator
+// contract, keeping these release controls deterministic and independent of Portal availability.
+function checkoutBuildPipeline(ws, check, { portal = false } = {}) {
+  const boot = runScript(ws, 'bootstrap', [
+    '--brief', 'tạo app bán hàng có Checkout SDK', '--template', 'lab',
+    '--app-id', TEST_APP_ID, '--capability', 'checkout',
+  ]);
+  check('checkout bootstrap exits 0', boot.code === 0,
+    `exit ${boot.code}: ${(boot.stderr || boot.stdout).slice(-400)}`);
+  const runId = boot.lastJson?.runId;
+  if (!runId) return null;
+  const steps = portal ? ['portal-fetch', 'install', 'build'] : ['install', 'build'];
+  for (const step of steps) {
+    const r = runScript(ws, step, ['--run-id', runId]);
+    check(`${step} exits 0`, r.code === 0,
+      `exit ${r.code}: ${(r.stderr || r.stdout).slice(-400)}`);
+    if (r.code !== 0) return null;
+  }
+  return runId;
+}
+
+function checkoutDepsMissing() {
+  const missing = [];
+  const bootstrap = path.join(SKILL_SCRIPTS, 'bootstrap.mjs');
+  const shim = path.join(SKILL_SCRIPTS, 'sim', 'shim.js');
+  const templateSrc = path.join(TEMPLATE_DIR, 'src');
+  try {
+    if (!fs.readFileSync(bootstrap, 'utf8').includes("'checkout'")) {
+      missing.push('bootstrap --capability checkout activation');
+    }
+  } catch { missing.push('scripts/bootstrap.mjs'); }
+  try {
+    if (!/checkout-sim-sheet|checkoutSimSheet/.test(fs.readFileSync(shim, 'utf8'))) {
+      missing.push('Checkout simulator host/sheet');
+    }
+  } catch { missing.push('scripts/sim/shim.js'); }
+  if (!textTree(templateSrc).includes('checkout-submit')) {
+    missing.push('Checkout client adapter in lab template');
+  }
+  return missing;
+}
+
+function textTree(root, { exclude = [] } = {}) {
+  if (!fs.existsSync(root)) return '';
+  const chunks = [];
+  const stack = [root];
+  while (stack.length) {
+    const current = stack.pop();
+    for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
+      const full = path.join(current, entry.name);
+      const rel = path.relative(root, full).split(path.sep).join('/');
+      if (exclude.some((re) => re.test(rel))) continue;
+      if (entry.isDirectory()) stack.push(full);
+      else if (entry.isFile() && /\.(?:[cm]?[jt]sx?|json|html|css|md)$/.test(entry.name)) {
+        chunks.push(`\n/* ${rel} */\n${fs.readFileSync(full, 'utf8')}`);
+      }
+    }
+  }
+  return chunks.join('');
 }
 
 function missingDeps(deps) {
@@ -1297,6 +1364,374 @@ process.exit(9);
     check('second getLocation call decided "already-granted" (store persisted)',
       entries.length >= 2 && entries[1]?.decision === 'already-granted', JSON.stringify(entries));
     note(`bridge decisions for getLocation: ${entries.map((e) => e.decision).join(' → ')}`);
+  },
+
+  // Checkout V1 contract is tested on the generated app, not only on capability source files:
+  // this catches a composer that exists on disk but was not actually activated for the user.
+  'checkout-client-contract'({ ws, check, note }) {
+    const missing = checkoutDepsMissing().filter((item) => !item.includes('simulator'));
+    if (missing.length) return `blocked: ${missing.join('; ')}`;
+    const checkoutArgs = [
+      '--brief', 'tạo app bán hàng có Checkout SDK', '--template', 'lab',
+      '--app-id', TEST_APP_ID, '--capability', 'checkout',
+    ];
+    const boot = runScript(ws, 'bootstrap', checkoutArgs);
+    check('checkout bootstrap exits 0', boot.code === 0,
+      `exit ${boot.code}: ${(boot.stderr || boot.stdout).slice(-400)}`);
+    const runId = boot.lastJson?.runId;
+    if (!runId) return;
+
+    const input = readJsonIfExists(path.join(ws, 'runs', runId, 'input.json'));
+    const capabilities = Array.isArray(input?.capabilities)
+      ? input.capabilities
+      : Object.keys(input?.capabilities ?? {}).filter((key) => input.capabilities[key]);
+    check('input records explicit checkout capability', capabilities.includes('checkout'),
+      JSON.stringify(input?.capabilities));
+
+    const sourceRoot = path.join(ws, 'app', 'src');
+    const source = textTree(sourceRoot);
+    check('generated app exposes MerchantOrderGateway boundary',
+      /MerchantOrderGateway/.test(source) && /createOrder\s*\(/.test(source),
+      source.match(/MerchantOrderGateway.{0,180}/s)?.[0] ?? 'marker absent');
+    check('gateway sends productId + quantity with an idempotency key',
+      /productId/.test(source) && /quantity/.test(source) && /idempotencyKey/.test(source)
+        && /\/api\/merchant-orders/.test(source),
+      'expected productId, quantity, idempotencyKey and /api/merchant-orders');
+
+    // The app may calculate a UI subtotal elsewhere. What is forbidden is amount/price in the
+    // merchant-order request body: server/mock catalog remains authoritative for signed input.
+    const gatewayFile = fs.readFileSync(path.join(sourceRoot, 'checkout', 'merchant-order-gateway.ts'), 'utf8');
+    const requestBody = gatewayFile.match(/body:\s*JSON\.stringify\(\{([\s\S]*?)\}\),/)?.[1] ?? '';
+    check('merchant-order request does not send client amount/price',
+      requestBody.length > 0 && !/\b(?:amount|price|total)\s*[:,]/i.test(requestBody),
+      requestBody.slice(0, 500));
+
+    // The listener and SDK call must live in one controller unit. Concatenated-file comments
+    // make this robust to file naming while still preserving within-file lexical order.
+    const controllerUnit = fs.readFileSync(path.join(sourceRoot, 'checkout', 'controller.ts'), 'utf8');
+    const listenerAt = controllerUnit.search(/PaymentDone/);
+    const sdkCreateAt = controllerUnit.search(/(?:CheckoutSDK\.)?createOrder\s*\(/);
+    check('PaymentDone listener is registered before Checkout createOrder',
+      listenerAt >= 0 && sdkCreateAt > listenerAt,
+      JSON.stringify({ listenerAt, sdkCreateAt, excerpt: controllerUnit.slice(0, 500) }));
+    check('controller verifies PaymentDone.orderId through checkTransaction',
+      /orderId/.test(controllerUnit) && /checkTransaction\s*\(/.test(controllerUnit),
+      controllerUnit.slice(0, 500));
+    check('client maps the canonical result matrix 1/0/-1/-2',
+      [1, 0, -1, -2].every((code) => new RegExp(`(?:case\\s+${code}\\b|resultCode\\s*={2,3}\\s*${code}\\b)`).test(controllerUnit)),
+      controllerUnit.match(/resultCode.{0,500}/s)?.[0] ?? 'resultCode mapping absent');
+    const sdkPanelSource = fs.readFileSync(path.join(sourceRoot, 'checkout', 'checkout-panel.tsx'), 'utf8');
+    const demoPanelSource = fs.readFileSync(path.join(sourceRoot, 'checkout', 'demo-cod-panel.tsx'), 'utf8');
+    check('each checkout mode exposes one stable submit marker + canonical SDK result markers',
+      (sdkPanelSource.match(/checkout-submit/g) ?? []).length === 1
+        && (demoPanelSource.match(/checkout-submit/g) ?? []).length === 1
+        && /checkout-status/.test(source)
+        && ['success', 'pending', 'failed', 'cancelled'].every((state) => source.includes(state)),
+      JSON.stringify({
+        sdkSubmitMarkers: (sdkPanelSource.match(/checkout-submit/g) ?? []).length,
+        demoSubmitMarkers: (demoPanelSource.match(/checkout-submit/g) ?? []).length,
+      }));
+
+    const forbiddenSecret = /-----BEGIN [A-Z ]*PRIVATE KEY-----|\b(?:privateKey|merchantSecret|appSecret)\s*[:=]/i;
+    check('generated client contains no merchant/private secret', !forbiddenSecret.test(source),
+      source.match(forbiddenSecret)?.[0] ?? '');
+    check('generated client has no simulator branch or fake payment result',
+      !/__ZMP_DX_RUNTIME__|__SIM_CONFIG__|SIM_MERCHANT_ORDER|SIM_MAC|checkout-sim-sheet/.test(source),
+      source.match(/__ZMP_DX_RUNTIME__|__SIM_CONFIG__|SIM_MERCHANT_ORDER|SIM_MAC|checkout-sim-sheet/)?.[0] ?? '');
+
+    // Safe rerun: explicit capability composition must be idempotent, just like base scaffold.
+    const again = runScript(ws, 'bootstrap', checkoutArgs);
+    check('checkout capability safe-rerun exits 0', again.code === 0,
+      `exit ${again.code}: ${(again.stderr || again.stdout).slice(-300)}`);
+    const after = textTree(sourceRoot);
+    check('safe-rerun does not duplicate checkout CTA/listener',
+      (after.match(/checkout-submit/g) ?? []).length === (source.match(/checkout-submit/g) ?? []).length
+        && (after.match(/PaymentDone/g) ?? []).length === (source.match(/PaymentDone/g) ?? []).length,
+      JSON.stringify({
+        submitBefore: (source.match(/checkout-submit/g) ?? []).length,
+        submitAfter: (after.match(/checkout-submit/g) ?? []).length,
+        paymentDoneBefore: (source.match(/PaymentDone/g) ?? []).length,
+        paymentDoneAfter: (after.match(/PaymentDone/g) ?? []).length,
+      }));
+    const rerunId = again.lastJson?.runId;
+    if (rerunId) {
+      for (const step of ['install', 'build']) {
+        const result = runScript(ws, step, ['--run-id', rerunId]);
+        check(`safe-rerun ${step} exits 0`, result.code === 0,
+          `exit ${result.code}: ${(result.stderr || result.stdout).slice(-400)}`);
+        if (result.code !== 0) break;
+      }
+    }
+
+    // Known existing-app path: a user may edit the lab cart after Checkout was composed.
+    // --existing must preserve that edit and recover the capability from .env, so a rerun
+    // cannot silently lose its backend-required warning or switch back to browser-only render.
+    const cartFile = path.join(sourceRoot, 'components', 'cart-view.tsx');
+    const sentinel = `// CHECKOUT_USER_CART_EDIT_${crypto.randomBytes(4).toString('hex')}`;
+    fs.appendFileSync(cartFile, `\n${sentinel}\n`);
+    const existing = runScript(ws, 'bootstrap', [
+      '--brief', 'tiếp tục app Checkout hiện tại', '--app-id', TEST_APP_ID, '--existing',
+    ]);
+    check('checkout known existing-app path exits 0', existing.code === 0,
+      `exit ${existing.code}: ${(existing.stderr || existing.stdout).slice(-300)}`);
+    check('existing-app path preserves user-edited cart', fs.readFileSync(cartFile, 'utf8').includes(sentinel), 'sentinel lost');
+    const existingInput = readJsonIfExists(path.join(ws, 'runs', existing.lastJson?.runId ?? 'x', 'input.json'));
+    check('existing-app path preserves checkout capability + simulator provider',
+      existingInput?.capabilities?.includes('checkout') && existingInput?.renderProvider === 'simulator',
+      JSON.stringify({ capabilities: existingInput?.capabilities, provider: existingInput?.renderProvider }));
+    note('contract checked on generated code: gateway boundary, listener order, result matrix, no secret/sim branch, safe rerun + edited known-existing app');
+  },
+
+  // A simulator-verified preview still has a production backend prerequisite. This case keeps
+  // that warning alive through verify and proves serve-time mock code never enters deployable
+  // source/dist artifacts.
+  'checkout-dist-clean-warning'({ ws, check, note }) {
+    const missing = checkoutDepsMissing();
+    if (missing.length) return `blocked: ${missing.join('; ')}`;
+    const runId = checkoutBuildPipeline(ws, check, { portal: true });
+    if (!runId) return;
+    const render = runScript(ws, 'render', [
+      '--run-id', runId, '--provider', 'simulator', '--sim-decision', 'accept',
+      '--checkout-result', 'success',
+    ]);
+    check('checkout simulator render exits 0', render.code === 0,
+      `exit ${render.code}: ${(render.stderr || render.stdout).slice(-500)}`);
+    const verify = runScript(ws, 'verify', ['--run-id', runId]);
+    check('verify exits 0 for preview', verify.code === 0,
+      `exit ${verify.code}: ${(verify.stderr || verify.stdout).slice(-500)}`);
+
+    const buildInfo = readJsonIfExists(path.join(ws, 'runs', runId, 'evidence', 'build-info.json'));
+    const distRoot = path.join(ws, 'app', buildInfo?.outDir ?? 'dist');
+    const dist = textTree(distRoot);
+    const appSource = textTree(path.join(ws, 'app'), {
+      exclude: [/^dist\//, /^node_modules\//, /^\.git\//],
+    });
+    const mockArtifacts = /__SIM_CONFIG__|__ZMP_DX_RUNTIME__|SIM_MERCHANT_ORDER|SIM_MAC|checkout-sim-sheet|checkout-sim-badge/;
+    check('built app contains no simulator marker/mock MAC/mock sheet',
+      fs.existsSync(distRoot) && !mockArtifacts.test(dist), dist.match(mockArtifacts)?.[0] ?? distRoot);
+    check('app source contains no simulator checkout implementation', !mockArtifacts.test(appSource),
+      appSource.match(mockArtifacts)?.[0] ?? '');
+    check('app source/dist contains no private key material',
+      !/-----BEGIN [A-Z ]*PRIVATE KEY-----|\b(?:merchantSecret|appSecret|privateKey)\s*[:=]/i.test(appSource + dist),
+      'secret-like token found');
+
+    const result = readJsonIfExists(path.join(ws, 'runs', runId, 'result.json'));
+    const warning = (result?.warnings ?? []).find((entry) => entry.code === 'CHECKOUT_BACKEND_REQUIRED');
+    check('final result preserves structured CHECKOUT_BACKEND_REQUIRED warning', !!warning,
+      JSON.stringify(result?.warnings));
+    check('warning permits mock preview but blocks production checkout',
+      warning?.blockingForPreview === false && warning?.blockingForProductionFeature === true,
+      JSON.stringify(warning));
+    check('warning points to simulator fallback and backend handoff guide',
+      /simulator/i.test(String(warning?.fallback ?? ''))
+        && typeof warning?.guide === 'string'
+        && /checkout-backend\.md$/.test(warning.guide)
+        && fs.existsSync(path.join(LAB_ROOT, 'skill', 'create-zmp-app', warning.guide)),
+      JSON.stringify(warning));
+    check('result never overclaims real payment/UAT readiness',
+      !['checkout-real-ready', 'checkout-uat-verified'].some((claim) => (result?.claims ?? []).includes(claim)),
+      JSON.stringify(result?.claims));
+    note('preview may pass; production checkout remains explicitly backend-required; dist/source stay mock-free');
+  },
+
+  // Real-host feedback path: a visibly labelled client-only COD demo may enter the replaceable
+  // Development slot. It must stop at order placed / processing / unpaid, expose order detail,
+  // make no payment request, remain blocked for Testing, and preserve the production warning.
+  'checkout-development-demo-cod'({ ws, check, note }) {
+    const missing = checkoutDepsMissing().filter((item) => !item.includes('simulator'));
+    if (missing.length) return `blocked: ${missing.join('; ')}`;
+    const boot = runScript(ws, 'bootstrap', [
+      '--brief', 'tạo app đồ ăn mock xác nhận COD và xem chi tiết đơn',
+      '--template', 'lab', '--app-id', TEST_APP_ID,
+      '--capability', 'checkout', '--checkout-mode', 'demo-cod',
+    ]);
+    check('demo-cod bootstrap exits 0', boot.code === 0,
+      `exit ${boot.code}: ${(boot.stderr || boot.stdout).slice(-400)}`);
+    const runId = boot.lastJson?.runId;
+    if (!runId) return;
+    const input = readJsonIfExists(path.join(ws, 'runs', runId, 'input.json'));
+    check('input records demo-cod + browser provider',
+      input?.checkoutMode === 'demo-cod' && input?.renderProvider === 'browser',
+      JSON.stringify({ checkoutMode: input?.checkoutMode, renderProvider: input?.renderProvider }));
+
+    for (const step of ['portal-fetch', 'install', 'build', 'render', 'verify']) {
+      const result = runScript(ws, step, ['--run-id', runId]);
+      check(`${step} exits 0`, result.code === 0,
+        `exit ${result.code}: ${(result.stderr || result.stdout).slice(-500)}`);
+      if (result.code !== 0) return;
+    }
+
+    const result = readJsonIfExists(path.join(ws, 'runs', runId, 'result.json'));
+    const byId = new Map((result?.gates ?? []).map((gate) => [gate.id, gate]));
+    for (const id of [
+      'checkout_demo_badge',
+      'checkout_demo_cod_semantics',
+      'checkout_demo_detail_not_clipped',
+      'checkout_demo_no_payment_network',
+      'checkout_demo_development_deployable',
+    ]) {
+      check(`${id} passes`, byId.get(id)?.status === 'pass', JSON.stringify(byId.get(id)));
+    }
+    const warning = (result?.warnings ?? []).find((entry) => entry.code === 'CHECKOUT_DEMO_ONLY');
+    check('warning separates Development demo from production payment',
+      warning?.blockingForPreview === false
+        && warning?.blockingForDevelopmentDeploy === false
+        && warning?.blockingForProductionFeature === true,
+      JSON.stringify(warning));
+    check('order detail evidence exists',
+      fs.existsSync(path.join(ws, 'runs', runId, 'evidence', 'checkout-demo-order-detail.png')),
+      'checkout-demo-order-detail.png missing');
+
+    const dev = runScript(ws, 'deploy', ['--run-id', runId]);
+    check('Development reaches login gate instead of fixture blocker',
+      dev.code === 2 && !/CHECKOUT_FIXTURE_NONDEPLOYABLE/.test(dev.stderr + dev.stdout),
+      `exit ${dev.code}: ${(dev.stderr || dev.stdout).slice(-400)}`);
+    const testing = runScript(ws, 'deploy', ['--run-id', runId, '--testing']);
+    check('Testing remains blocked for client-only demo',
+      testing.code === 3 && /CHECKOUT_DEMO_DEVELOPMENT_ONLY/.test(testing.stderr + testing.stdout),
+      `exit ${testing.code}: ${(testing.stderr || testing.stdout).slice(-400)}`);
+    note('demo-cod is deployable only to Development and remains processing/unpaid with local order detail');
+  },
+
+  // End-to-end against the real zmp-sdk transport in the built app. Manual checkout sheets
+  // keep each result choice observable; the mock merchant route and SDK host remain harness-
+  // owned and are injected/served only by setupSimContext.
+  async 'checkout-simulator-flow'({ ws, check, note }) {
+    const missing = checkoutDepsMissing();
+    if (missing.length) return `blocked: ${missing.join('; ')}`;
+    const runId = checkoutBuildPipeline(ws, check);
+    if (!runId) return;
+
+    const { chromium } = await import('playwright-core');
+    const { setupSimContext, buildSimManifest, simUrl } = await import(
+      pathToFileURL(path.join(SKILL_SCRIPTS, 'sim', 'intercept.mjs')).href
+    );
+    const { openRun } = await libRunContext();
+    const ctx = openRun(path.join(ws, 'runs'), runId);
+    const browser = await chromium.launch({ channel: 'chrome', headless: true });
+    const externalRequests = [];
+    const observed = {};
+    const matrix = [
+      { sim: 'success', app: 'success', code: 1 },
+      { sim: 'pending', app: 'pending', code: 0 },
+      { sim: 'fail', app: 'failed', code: -1 },
+      { sim: 'cancel', app: 'cancelled', code: -2 },
+    ];
+
+    try {
+      for (const [index, scenario] of matrix.entries()) {
+        const manifest = buildSimManifest(ctx, { appDir: path.join(ws, 'app') }, {
+          decision: 'manual', checkoutResult: scenario.sim,
+        });
+        check(`${scenario.sim}: manifest pins requested checkout result`,
+          manifest.simConfig?.checkout?.result === scenario.sim,
+          JSON.stringify(manifest.simConfig?.checkout));
+        const context = await browser.newContext({
+          viewport: { width: 390, height: 844 }, userAgent: SIM_CASE_UA,
+          isMobile: true, hasTouch: true, ignoreHTTPSErrors: true,
+        });
+        await setupSimContext(context, manifest);
+        const page = await context.newPage();
+        page.on('request', (request) => {
+          try {
+            const url = new URL(request.url());
+            if (url.protocol.startsWith('http') && url.hostname !== 'h5.zdn.vn') {
+              externalRequests.push({ scenario: scenario.sim, url: request.url() });
+            }
+          } catch { /* data/blob URLs are not network */ }
+        });
+        await page.goto(simUrl(TEST_APP_ID), { waitUntil: 'load', timeout: 30000 });
+        await page.waitForSelector('[data-testid="app-root"]', { timeout: 15000 });
+
+        // Directly adversarially probe the harness merchant boundary once. A malicious client
+        // amount must be ignored; replay with the same key/cart must return the stable order.
+        if (index === 0) {
+          const authority = await page.evaluate(async () => {
+            const body = {
+              items: [{ productId: 'ceramic-mug', quantity: 2, amount: 999999999 }],
+              amount: 999999999,
+              idempotencyKey: 'checkout-eval-authority-key',
+            };
+            const request = () => fetch('/api/merchant-orders', {
+              method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
+            }).then(async (response) => ({ status: response.status, json: await response.json() }));
+            return { first: await request(), replay: await request() };
+          });
+          const firstOrderId = authority.first.json?.merchantOrderId ?? authority.first.json?.orderId
+            ?? authority.first.json?.createOrderInput?.orderId;
+          const replayOrderId = authority.replay.json?.merchantOrderId ?? authority.replay.json?.orderId
+            ?? authority.replay.json?.createOrderInput?.orderId;
+          check('mock merchant ignores attacker amount and resolves catalog price',
+            authority.first.status === 200
+              && authority.first.json?.amount === 170000
+              && authority.first.json?.createOrderInput?.amount === 170000
+              && !JSON.stringify(authority.first.json).includes('999999999'),
+            JSON.stringify(authority.first));
+          check('mock merchant idempotency replay returns the same stable order',
+            authority.replay.status === 200 && !!firstOrderId && replayOrderId === firstOrderId
+              && authority.replay.json?.createOrderInput?.mac === authority.first.json?.createOrderInput?.mac,
+            JSON.stringify({ firstOrderId, replayOrderId }));
+        }
+
+        await page.locator('[data-testid="add-to-cart"]').first().click({ timeout: 10000 });
+        await page.locator('[data-testid="nav-cart"]').click({ timeout: 10000 });
+        await page.locator('[data-testid="checkout-submit"]').click({ timeout: 10000 });
+        const sheet = page.locator('[data-testid="checkout-sim-sheet"]');
+        await sheet.waitFor({ state: 'visible', timeout: 15000 });
+        const badge = await page.locator('[data-testid="checkout-sim-badge"]').innerText();
+        check(`${scenario.sim}: payment sheet is explicitly labelled SIMULATOR`,
+          /SIMULATOR/.test(badge), badge);
+        await page.locator(`[data-testid="checkout-sim-${scenario.sim}"]`).click({ timeout: 5000 });
+        const status = page.locator('[data-testid="checkout-status"]');
+        await page.waitForFunction(
+          ({ selector, expected }) => document.querySelector(selector)?.getAttribute('data-result') === expected,
+          { selector: '[data-testid="checkout-status"]', expected: scenario.app },
+          { timeout: 15000 },
+        );
+        observed[scenario.sim] = {
+          result: await status.getAttribute('data-result'),
+          text: await status.innerText(),
+        };
+        check(`${scenario.sim}: app renders canonical result ${scenario.code}`,
+          observed[scenario.sim].result === scenario.app,
+          JSON.stringify(observed[scenario.sim]));
+        if (scenario.sim === 'pending') {
+          check('pending never claims payment success',
+            !/thành công/i.test(observed.pending.text) && /chưa ghi nhận/i.test(observed.pending.text),
+            observed.pending.text);
+        }
+        await page.waitForTimeout(800); // flush SDK fallback + app checkTransaction logs
+        await context.close();
+      }
+    } finally {
+      await browser.close();
+    }
+
+    const log = readBridgeLog(ws, runId);
+    const checkoutLog = log.filter((entry) => entry.api === 'checkout');
+    const checkReads = checkoutLog.filter((entry) => entry.action === 'checkout.check-transaction');
+    const closeIndices = checkoutLog.flatMap((entry, index) =>
+      entry.action === 'h5.event.webview.close' && entry.decision === 'mock-host' ? [index] : []);
+    check('PaymentDone path follows WebviewClosed and reaches checkTransaction',
+      closeIndices.length === matrix.length && closeIndices.every((closeAt, index) => {
+        const nextCloseAt = closeIndices[index + 1] ?? checkoutLog.length;
+        return checkoutLog.slice(closeAt + 1, nextCloseAt)
+          .some((entry) => entry.action === 'checkout.check-transaction');
+      }),
+      JSON.stringify(checkoutLog.map((entry) => [entry.action, entry.decision])));
+    check('checkTransaction tolerates SDK + app repeated reads without result drift',
+      checkReads.length >= matrix.length * 2
+        && matrix.every(({ sim, code }) => checkReads.filter((entry) => entry.decision === sim && entry.result_code === code).length >= 2),
+      JSON.stringify(checkReads));
+    check('checkout simulator has no silent/unmocked transport success',
+      !checkoutLog.some((entry) => entry.unmocked || entry.error_code !== 0),
+      JSON.stringify(checkoutLog.filter((entry) => entry.unmocked || entry.error_code !== 0)));
+    check('simulator reached no real merchant/payment/provider network',
+      externalRequests.length === 0, JSON.stringify(externalRequests));
+    check('redacted checkout evidence logs no MAC/order payload',
+      !/\bmac\b|merchantOrderId|createOrderInput|\bamount\b/i.test(JSON.stringify(checkoutLog)),
+      JSON.stringify(checkoutLog).slice(0, 500));
+    note(`result matrix: ${JSON.stringify(observed)}; checkTransaction reads=${checkReads.length}`);
   },
 
   // v0.3.1 P0 regression — safe rerun must never clobber user-edited app code.

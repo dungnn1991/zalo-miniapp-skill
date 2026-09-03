@@ -1,0 +1,11 @@
+{
+  "caseId": "checkout-dist-clean-warning",
+  "title": "Checkout V1 — clean deploy artifact and backend-required warning",
+  "expectation": {
+    "exitCode": 0,
+    "resultStatus": "pass",
+    "findingCategory": null,
+    "findingSlugHint": "CHECKOUT_BACKEND_REQUIRED",
+    "description": "Simulator preview may pass, but mock data/MAC/runtime markers never enter app source or dist and final output still blocks production checkout until a merchant backend exists."
+  }
+}

@@ -4,7 +4,32 @@ Mọi thay đổi đáng kể của skill. Version = `package.json` + git tag `v
 Thay đổi phát sinh từ finding formal phải gắn id; expected/actual/lifecycle nằm trong
 `feedback/findings.jsonl`, decision và regression nằm trong `feedback/improvements.jsonl`.
 
-## [0.3.2] — 2026-08-22
+## [Unreleased] — 2026-08-24
+
+### Changed — Checkout V1.1 planning/guardrail
+
+- Thêm contract environment tri-state: non-Zalo/simulator dùng mock có nhãn; Zalo-ready dùng
+  native Checkout; Zalo-blocked/unknown hiển thị toast + inline error và không fallback mock.
+- Deprecate việc dùng custom `demo-cod` Development như bằng chứng native Checkout. Runtime V1.0
+  chưa có router/backend V1.1 phải report `CHECKOUT_NATIVE_UAT_NOT_IMPLEMENTED`.
+- Bổ sung hướng backend UAT tối thiểu và tách rõ backend demo với backend thương mại.
+
+## [0.3.2] — 2026-08-23
+
+### Added
+- Checkout V1 là capability nội bộ của cùng một skill: `--capability checkout` compose client
+  controller/gateway/UI trên commerce fixture, pin `zmp-sdk@2.53.0`, chạy mock merchant +
+  Checkout host có badge `SIMULATOR`, và verify đủ success/pending/fail/cancel.
+- Mock merchant tự resolve catalog/amount, giữ idempotency và không để MAC/mock runtime lọt vào
+  source/dist. Mode simulator giữ `CHECKOUT_BACKEND_REQUIRED` và bị chặn deploy tới khi thay
+  fixture bằng backend thật theo `references/checkout-backend.md`.
+- Mode `--checkout-mode demo-cod` bổ sung UI xác nhận COD có nhãn `BẢN DEMO`, lưu đơn local,
+  trạng thái `processing/unpaid` và trang chi tiết đơn. Mode này được deploy vào slot
+  Development để lấy feedback nhưng không gọi Checkout/payment network, không vào Testing và
+  luôn giữ warning `CHECKOUT_DEMO_ONLY` trước production.
+- Bốn regression case Checkout nâng behavioral suite lên 41 case: client contract/safe-rerun,
+  dist + warning hygiene, Development demo-cod, và full simulator flow qua transport thật của
+  zmp-sdk.
 
 ### Fixed
 - QR login trên chat/Remote giờ ưu tiên chụp/crop đúng QR và gửi một ảnh duy nhất; cấm stream

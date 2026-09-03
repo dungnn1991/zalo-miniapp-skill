@@ -121,6 +121,25 @@
       ],
       "description": "Host adapter surface that produced this invocation. Contract is identical across adapters."
     },
+    "capabilities": {
+      "type": "array",
+      "description": "Explicit capabilities composed after base-template selection. V1 supports checkout on the lab template.",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "checkout"
+        ]
+      }
+    },
+    "checkoutMode": {
+      "type": "string",
+      "enum": [
+        "simulator",
+        "demo-cod"
+      ],
+      "description": "Checkout execution mode. simulator keeps all mock behavior in the desktop harness; demo-cod compiles a visibly labelled, client-only COD order demo that may be deployed to Development for UI feedback but never represents a paid transaction."
+    },
     "templateSelection": {
       "$ref": "./template-selection.schema.json",
       "description": "Kết quả ranker. Vắng mặt = run legacy trước plan 34."

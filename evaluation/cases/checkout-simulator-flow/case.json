@@ -1,0 +1,11 @@
+{
+  "caseId": "checkout-simulator-flow",
+  "title": "Checkout V1 — authoritative mock merchant and four result states",
+  "expectation": {
+    "exitCode": 0,
+    "resultStatus": "pass",
+    "findingCategory": null,
+    "findingSlugHint": "checkout_result_matrix",
+    "description": "The labelled simulator resolves prices server-side, preserves idempotency, emits PaymentDone before stable repeated checkTransaction results, renders success/pending/failed/cancelled, and reaches no real merchant/payment network."
+  }
+}

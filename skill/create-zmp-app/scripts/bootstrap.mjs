@@ -6,6 +6,7 @@
 // CLI:
 //   node bootstrap.mjs --brief <text> [--app-id <id>] [--app-name <name>]
 //                      [--confirm-app-id <id>] [--template official:<id>]
+//                      [--capability checkout]
 //                      [--existing | --force-scaffold]
 //                      [--invoked-via slash-command|codex-skill|natural-language|harness]
 //                      [--workspace <dir>]
@@ -49,6 +50,8 @@ import { rankTemplates, supportedIds as rankerSupportedIds, loadRegistry as load
 import { loadAdapter, applyAdapter } from './qualify-template.mjs';
 
 const INVOKED_VIA = ['slash-command', 'codex-skill', 'natural-language', 'harness'];
+const SUPPORTED_CAPABILITIES = ['checkout'];
+const SUPPORTED_CHECKOUT_MODES = ['simulator', 'demo-cod'];
 
 function die(message, code = 3) {
   process.stderr.write(`bootstrap: ${message}\n`);
@@ -656,12 +659,34 @@ async function main() {
     die(`cannot load lab.config.json: ${e.message}`);
   }
   const workspace = resolveWorkspace(argv);
+  const envFile = path.join(workspace.appDir, '.env');
 
   const brief = getArg(argv, 'brief', null);
   const appName = getArg(argv, 'app-name', null) || config.defaults.appName;
   const invokedVia = getArg(argv, 'invoked-via', null) || 'harness';
   if (!INVOKED_VIA.includes(invokedVia)) {
     die(`invalid --invoked-via "${invokedVia}" (allowed: ${INVOKED_VIA.join(', ')})`);
+  }
+  const capabilityRaw = getArg(argv, 'capability', null);
+  const persistedEnv = fs.existsSync(envFile) ? fs.readFileSync(envFile, 'utf8') : '';
+  const persistedCheckoutEnabled = parseEnvValue(persistedEnv, 'VITE_CHECKOUT_ENABLED') === 'true';
+  const capabilities = capabilityRaw === null
+    ? (persistedCheckoutEnabled ? ['checkout'] : [])
+    : [...new Set(String(capabilityRaw).split(',').map((v) => v.trim()).filter(Boolean))];
+  const unsupportedCapabilities = capabilities.filter((id) => !SUPPORTED_CAPABILITIES.includes(id));
+  if (unsupportedCapabilities.length) {
+    die(`unsupported --capability: ${unsupportedCapabilities.join(', ')} (supported: ${SUPPORTED_CAPABILITIES.join(', ')})`);
+  }
+  const checkoutModeArg = getArg(argv, 'checkout-mode', null);
+  if (checkoutModeArg !== null && !capabilities.includes('checkout')) {
+    die('--checkout-mode requires --capability checkout (or an existing checkout-enabled app)');
+  }
+  const persistedCheckoutMode = parseEnvValue(persistedEnv, 'VITE_CHECKOUT_MODE');
+  const checkoutMode = capabilities.includes('checkout')
+    ? (checkoutModeArg ?? persistedCheckoutMode ?? 'simulator')
+    : null;
+  if (checkoutMode !== null && !SUPPORTED_CHECKOUT_MODES.includes(checkoutMode)) {
+    die(`unsupported --checkout-mode "${checkoutMode}" (supported: ${SUPPORTED_CHECKOUT_MODES.join(', ')})`);
   }
 
   // Safe-rerun modes (header contract). --existing never scaffolds, so a template request
@@ -730,11 +755,15 @@ async function main() {
     );
     process.exit(2);
   }
+  // Checkout V1 intentionally composes only onto the deterministic lab shell. Capability
+  // selection is explicit and does not silently change/rerank the user's base template.
+  if (capabilities.includes('checkout') && templateSel.mode === 'official') {
+    die('checkout V1 currently supports the lab template only; rerun with --template lab (no files were changed)');
+  }
 
   // §5.2 step 1: prompt value (explicit flag, else embedded in the brief text).
   const promptAppId = normalizeAppId(getArg(argv, 'app-id', null)) ?? extractAppIdFromBrief(brief);
   // §5.2 step 2: APP_ID from canonical <workspace>/app/.env, if the file exists.
-  const envFile = path.join(workspace.appDir, '.env');
   const projectAppId = fs.existsSync(envFile)
     ? parseEnvValue(fs.readFileSync(envFile, 'utf8'), 'APP_ID')
     : null;
@@ -880,6 +909,19 @@ async function main() {
     const recorded = priorManifest?.template;
     return recorded?.source && recorded?.id ? recorded : { source: 'existing', id: 'existing-app' };
   })();
+  if (capabilities.includes('checkout') && templateInfo.source !== 'lab') {
+    die('checkout V1 supports a newly scaffolded or known-existing lab app only; official/unknown existing adapters are not qualified yet');
+  }
+  if (capabilities.includes('checkout')) {
+    provider = checkoutMode === 'demo-cod' ? 'browser' : 'simulator';
+    ctx.event('bootstrap', {
+      stage: 'scaffold',
+      status: 'ok',
+      detail: checkoutMode === 'demo-cod'
+        ? 'capability=checkout mode=demo-cod: browser render + visibly labelled client demo, Development deploy allowed'
+        : 'capability=checkout mode=simulator: mock merchant + Checkout host contract checks',
+    });
+  }
 
   // Shared existing_app stop (exit 2, nothing mutated) — used by the pre-scaffold guard and
   // by the pre-copy collision check inside the scaffold fns.
@@ -918,7 +960,12 @@ async function main() {
   // scaffold manifest — no manifest, edited files, or a DIFFERENT resolved template — must
   // never be overwritten silently. Stop BEFORE any mutation and ask; --force-scaffold is
   // the explicit user authorization.
-  const variant = classifyVariant(brief, config.template.variants);
+  // Checkout V1 is qualified against the bundled VND commerce fixture. Keeping that fixture
+  // deterministic avoids a misleading USD cart total followed by a VND Checkout order. Theme
+  // adaptation (Hot Toy, etc.) is a later capability; it must not alter the payment contract.
+  const variant = capabilities.includes('checkout')
+    ? 'clothing-store'
+    : classifyVariant(brief, config.template.variants);
   if (!useExisting && !forceScaffold) {
     const conflict = scaffoldConflict(workspace.appDir, templateInfo);
     if (conflict) {
@@ -1018,6 +1065,10 @@ async function main() {
 
   // Bind APP_ID: key-level upsert, then read back and exact-compare (binding invariant §5.2).
   upsertEnvKey(envFile, 'APP_ID', expectedAppId);
+  if (capabilities.includes('checkout')) {
+    upsertEnvKey(envFile, 'VITE_CHECKOUT_ENABLED', 'true');
+    upsertEnvKey(envFile, 'VITE_CHECKOUT_MODE', checkoutMode);
+  }
   const persistedAppId = parseEnvValue(fs.readFileSync(envFile, 'utf8'), 'APP_ID');
   const exactMatch = persistedAppId === expectedAppId;
 
@@ -1069,6 +1120,31 @@ async function main() {
   }
   ctx.event('bootstrap', { stage: 'scaffold', status: 'ok', detail: 'APP_ID bound, read-back exact match' });
 
+  if (capabilities.includes('checkout')) {
+    const isDemoCod = checkoutMode === 'demo-cod';
+    ctx.writeJson('evidence/capabilities.json', {
+      schemaVersion: '1.0',
+      capabilities: [{
+        id: 'checkout',
+        status: isDemoCod ? 'client-demo-cod-development-ready' : 'client-ready-simulator-ready',
+        resultWarnings: [{
+          code: isDemoCod ? 'CHECKOUT_DEMO_ONLY' : 'CHECKOUT_BACKEND_REQUIRED',
+          blockingForPreview: false,
+          blockingForDevelopmentDeploy: !isDemoCod,
+          blockingForProductionFeature: true,
+          affectedFeature: 'checkout-payment',
+          fallback: isDemoCod
+            ? 'Development uses a visibly labelled client-only COD demo. The order is stored on this device, remains unpaid, and is not an accounting record.'
+            : 'Simulator uses a labelled mock merchant backend; outside the simulator the client fails closed and never fabricates payment success.',
+          guide: 'references/checkout-backend.md',
+          message: isDemoCod
+            ? 'COD UI demo is ready for Development feedback. It does not call Checkout SDK or collect money; production payment still requires the merchant backend and real Checkout configuration.'
+            : 'Checkout client and simulator are ready, but production payment requires a merchant backend to validate products/prices, sign createOrder input, store orders, and reconcile final status.',
+        }],
+      }],
+    });
+  }
+
   // Normalized input for the rest of the pipeline (input.schema.json, additionalProperties:false).
   ctx.writeJson('input.json', {
     // 1.1 khi run mang templateSelection (plan 34); run legacy giữ 1.0.
@@ -1084,6 +1160,8 @@ async function main() {
     defaultViewport: config.defaults.defaultViewport,
     packageManager: config.defaults.packageManager,
     invokedVia,
+    ...(capabilities.length ? { capabilities } : {}),
+    ...(checkoutMode ? { checkoutMode } : {}),
   });
 
   ctx.event('bootstrap', { stage: 'scaffold', status: 'done' });

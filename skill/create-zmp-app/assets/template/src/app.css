@@ -271,6 +271,301 @@ body {
   font-size: 15px;
 }
 
+.checkout-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.checkout-status {
+  margin: 0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #eef4ff;
+  color: #175cd3;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.checkout-status-success {
+  background: #ecfdf3;
+  color: #027a48;
+}
+
+.checkout-status-pending {
+  background: #fffaeb;
+  color: #b54708;
+}
+
+.checkout-status-failed,
+.checkout-status-error {
+  background: #fef3f2;
+  color: #b42318;
+}
+
+.checkout-status-cancelled {
+  background: #f2f4f7;
+  color: #475467;
+}
+
+.checkout-backend-note {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+/* Checkout Development demo. This UI is intentionally part of the app bundle, unlike the
+   simulator host sheet, and every surface carries a BẢN DEMO label. */
+.checkout-demo-success {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-radius: 10px;
+  padding: 12px;
+  background: #ecfdf3;
+  color: #027a48;
+  font-size: 13px;
+}
+
+.checkout-demo-panel > .zaui-btn {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+}
+
+.checkout-demo-link {
+  align-self: flex-start;
+  border: 0;
+  padding: 4px 0 0;
+  background: transparent;
+  color: var(--color-primary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.checkout-demo-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.checkout-demo-sheet {
+  width: min(100%, 560px);
+  max-height: 92vh;
+  overflow-y: auto;
+  border-radius: 20px 20px 0 0;
+  background: #ffffff;
+  padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -8px 32px rgba(15, 23, 42, 0.18);
+}
+
+.checkout-demo-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 14px;
+}
+
+.checkout-demo-sheet-header h2 {
+  margin: 0;
+  font-size: 19px;
+}
+
+.checkout-demo-sheet-header button {
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+}
+
+.checkout-demo-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  border-radius: 14px;
+  padding: 18px;
+  background: #f6f7fa;
+  text-align: center;
+}
+
+.checkout-demo-badge {
+  display: inline-flex;
+  align-self: flex-start;
+  border-radius: 5px;
+  padding: 3px 8px;
+  background: #ffb300;
+  color: #1a1a1a;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.checkout-demo-summary .checkout-demo-badge {
+  align-self: center;
+}
+
+.checkout-demo-amount {
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.checkout-demo-summary > span:last-child {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.checkout-demo-method {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 120px;
+  padding: 12px 2px;
+}
+
+.checkout-demo-method > span:nth-child(2) {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.checkout-demo-method small {
+  color: var(--color-text-muted);
+}
+
+.checkout-demo-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr;
+  gap: 10px;
+}
+
+.checkout-demo-actions button {
+  min-height: 46px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: #f2f4f7;
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+}
+
+.checkout-demo-actions .checkout-demo-primary {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #ffffff;
+}
+
+.checkout-demo-detail {
+  max-height: 96vh;
+}
+
+.checkout-demo-statuses {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 12px 0 18px;
+}
+
+.checkout-demo-statuses span {
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.checkout-demo-meta {
+  margin: 0;
+}
+
+.checkout-demo-meta div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0;
+}
+
+.checkout-demo-meta dt {
+  color: var(--color-text-muted);
+}
+
+.checkout-demo-meta dd {
+  margin: 0;
+  max-width: 62%;
+  text-align: right;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.checkout-demo-products {
+  margin-top: 16px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 14px;
+}
+
+.checkout-demo-products h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.checkout-demo-product {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+}
+
+.checkout-demo-product > span:first-child {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  font-size: 22px;
+}
+
+.checkout-demo-product > span:nth-child(2) {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.checkout-demo-product small {
+  color: var(--color-text-muted);
+}
+
+.checkout-demo-total {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid var(--color-border);
+  padding-top: 14px;
+  font-size: 16px;
+}
+
+.checkout-demo-disclaimer {
+  margin: 14px 0 0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fffaeb;
+  color: #b54708;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 /* Bottom navigation: own markup (not zmp-ui's BottomNavigation, which drops
    data-* props) styled to match the zaui bottom nav look. */
 .bottom-nav {

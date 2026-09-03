@@ -1,0 +1,8 @@
+{
+  "caseId": "checkout-development-demo-cod",
+  "title": "Checkout demo-cod — Development UI feedback without backend or paid overclaim",
+  "expectation": {
+    "exitCode": 0,
+    "description": "A labelled client-only COD confirmation may deploy to Development, creates a local processing/unpaid order with a detail view, makes no payment request, and remains blocked for Testing/production claims."
+  }
+}

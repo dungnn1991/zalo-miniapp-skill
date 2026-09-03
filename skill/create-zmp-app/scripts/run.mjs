@@ -2,7 +2,9 @@
 // run.mjs — SINGLE ENTRY for the whole create-zmp-app pipeline (Subagent C, plan 29 §3.2).
 //
 //   node scripts/run.mjs --brief "..." [--app-id X] [--confirm-app-id X] [--app-name N]
-//        [--template official:<id>] [--existing | --force-scaffold] [--invoked-via S]
+//        [--template official:<id>] [--capability checkout]
+//        [--checkout-mode simulator|demo-cod]
+//        [--existing | --force-scaffold] [--invoked-via S]
 //        [--deploy] [--deploy-testing] [--desc "..."] [--preview] [--preview-timeout <ms>]
 //        [--workspace W]
 //
@@ -15,6 +17,7 @@
 // forwarded verbatim so the host agent can ask the user). Full pass prints
 // {runId, status: "pass", deployedUrl?, insights, resultPath}.
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -28,7 +31,7 @@ const workspaceArg = getArg(argv, 'workspace') ? ['--workspace', ws.root] : [];
 
 // Pass-through of bootstrap's own flags.
 const bootstrapArgs = [];
-for (const flag of ['brief', 'app-id', 'confirm-app-id', 'app-name', 'template', 'invoked-via']) {
+for (const flag of ['brief', 'app-id', 'confirm-app-id', 'app-name', 'template', 'capability', 'checkout-mode', 'invoked-via']) {
   const v = getArg(argv, flag);
   if (v !== null) bootstrapArgs.push(`--${flag}`, v);
 }
@@ -43,6 +46,11 @@ const wantPreview = argv.includes('--preview');
 const wantPreviewSim = argv.includes('--preview-sim');
 const verifySim = argv.includes('--verify-sim');
 const simDecision = getArg(argv, 'sim-decision', 'accept');
+const checkoutResult = getArg(argv, 'checkout-result', 'success');
+if (!['success', 'pending', 'fail', 'cancel'].includes(checkoutResult)) {
+  console.error(`run: unknown --checkout-result "${checkoutResult}" (success|pending|fail|cancel)`);
+  process.exit(3);
+}
 const desc = getArg(argv, 'desc');
 
 // ---- doctor: prerequisites, before any stage in any mode (user's machine may be fresh) ----
@@ -75,7 +83,15 @@ function doctor({ needZmp }) {
     process.exit(3);
   }
   if (needZmp) {
-    const z = spawnSync('zmp', ['--version'], { encoding: 'utf8' });
+    // Some zmp-cli versions touch an empty .env in their cwd even for --version. Probe in a
+    // private temp directory so a deploy preflight can never pollute the skill or user repo.
+    const probeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zmp-doctor-'));
+    let z;
+    try {
+      z = spawnSync('zmp', ['--version'], { cwd: probeDir, encoding: 'utf8' });
+    } finally {
+      fs.rmSync(probeDir, { recursive: true, force: true });
+    }
     if (z.error) {
       console.error('doctor: deploy cần zmp-cli — cài bằng `npm i -g zmp-cli` rồi chạy lại');
       process.exit(3);
@@ -123,13 +139,34 @@ if (boot.code !== 0 || boot.lastJson?.status !== 'ok') stopAt('bootstrap', boot.
 // 2..6 fixed chain. --verify-sim switches render to the simulator provider (plan 28).
 for (const stage of ['portal-fetch', 'install', 'build', 'render', 'verify']) {
   const args = ['--run-id', runId];
-  if (stage === 'render' && verifySim) args.push('--provider', 'simulator', '--sim-decision', simDecision);
+  if (stage === 'render') {
+    if (verifySim) args.push('--provider', 'simulator');
+    if (getArg(argv, 'sim-decision') !== null) args.push('--sim-decision', simDecision);
+    if (getArg(argv, 'checkout-result') !== null) args.push('--checkout-result', checkoutResult);
+  }
   const r = runStage(stage, args);
   if (r.code !== 0) stopAt(stage, r.code, r.lastJson, runId);
 }
 
 // 7. opt-in deploy path (explicit user request only) + re-verify with deploy gates.
 if (wantDeploy) {
+  let runInput = null;
+  let verifiedResult = null;
+  try { runInput = JSON.parse(fs.readFileSync(path.join(ws.runsDir, runId, 'input.json'), 'utf8')); } catch { /* deploy.mjs will report malformed runs */ }
+  try { verifiedResult = JSON.parse(fs.readFileSync(path.join(ws.runsDir, runId, 'result.json'), 'utf8')); } catch { /* deploy.mjs will report malformed runs */ }
+  const checkoutMode = runInput?.checkoutMode ?? 'simulator';
+  if (runInput?.capabilities?.includes('checkout') && (checkoutMode !== 'demo-cod' || deployTesting)) {
+    stopAt('deploy', 3, {
+      status: 'blocked',
+      code: deployTesting && checkoutMode === 'demo-cod'
+        ? 'CHECKOUT_DEMO_DEVELOPMENT_ONLY'
+        : 'CHECKOUT_FIXTURE_NONDEPLOYABLE',
+      message: deployTesting && checkoutMode === 'demo-cod'
+        ? 'The client-only COD demo is qualified for the replaceable Development slot only, not Testing or production-like claims.'
+        : 'Checkout simulator mode has no deployable merchant boundary. Use --checkout-mode demo-cod for a visibly labelled Development UI demo, or add the real backend from references/checkout-backend.md.',
+      ...(verifiedResult?.warnings?.length ? { warnings: verifiedResult.warnings } : {}),
+    }, runId);
+  }
   const login = runStage('ensure-login', ['--run-id', runId]);
   if (login.code !== 0) stopAt('ensure-login', login.code, login.lastJson, runId);
   const deployArgs = ['--run-id', runId];
@@ -175,6 +212,7 @@ if (wantPreview || wantPreviewSim) {
     previewArgs.push('--sim');
     if (getArg(argv, 'sim-decision') !== null) previewArgs.push('--sim-decision', simDecision);
   }
+  if (getArg(argv, 'checkout-result') !== null) previewArgs.push('--checkout-result', checkoutResult);
   const res = spawnSync(process.execPath, [path.join(SCRIPTS_DIR, 'preview.mjs'), ...previewArgs], {
     stdio: 'inherit',
   });

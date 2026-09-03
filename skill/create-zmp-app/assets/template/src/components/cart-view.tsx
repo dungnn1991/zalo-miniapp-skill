@@ -1,4 +1,9 @@
 import { catalog } from "../data/catalog";
+import CheckoutPanel from "../checkout/checkout-panel";
+import {
+  cartToDemoCodItems,
+  cartToMerchantOrderItems,
+} from "../checkout/template-cart-adapter";
 import { formatPrice } from "../utils/format";
 
 interface CartViewProps {
@@ -6,6 +11,7 @@ interface CartViewProps {
 }
 
 export default function CartView({ cart }: CartViewProps) {
+  const checkoutEnabled = import.meta.env.VITE_CHECKOUT_ENABLED === "true";
   const lines = catalog.products
     .filter((product) => (cart[product.id] ?? 0) > 0)
     .map((product) => ({ product, quantity: cart[product.id] ?? 0 }));
@@ -45,6 +51,12 @@ export default function CartView({ cart }: CartViewProps) {
             <span>{catalog.cartTotalLabel}</span>
             <strong>{formatPrice(total)}</strong>
           </p>
+          {checkoutEnabled && (
+            <CheckoutPanel
+              items={cartToMerchantOrderItems(cart)}
+              demoItems={cartToDemoCodItems(cart)}
+            />
+          )}
         </>
       )}
     </section>

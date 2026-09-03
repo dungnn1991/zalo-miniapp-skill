@@ -96,6 +96,7 @@ the scaffold mechanics.
 | Zalo feature integration | [Feature recipes](./skill/create-zmp-app/references/feature-recipes.md) |
 | Official templates | [Official templates](./skill/create-zmp-app/references/official-templates.md) |
 | Simulator | [Simulator workflow](./skill/create-zmp-app/references/simulator-workflow.md) |
+| Checkout simulator + Development COD demo | [Checkout client](./skill/create-zmp-app/references/checkout-client.md) · [Simulator](./skill/create-zmp-app/references/checkout-simulator.md) · [Backend handoff](./skill/create-zmp-app/references/checkout-backend.md) |
 | Development/Testing deployment | [Deploy workflow](./skill/create-zmp-app/references/deploy-workflow.md) |
 | Build, runtime, and CORS troubleshooting | [Troubleshooting](./skill/create-zmp-app/references/troubleshooting.md) |
 | Permissions and environment operations | [Operations](./skill/create-zmp-app/references/operations.md) |
@@ -104,7 +105,7 @@ the scaffold mechanics.
 ## Skill development
 
 This repository contains the skill runtime and its verification lab. The release gate runs
-metadata validation, the routing corpus, and a 37-case suite:
+metadata validation, the routing corpus, and a 41-case suite:
 
 ```bash
 npm test

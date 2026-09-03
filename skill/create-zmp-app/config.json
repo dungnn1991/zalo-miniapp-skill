@@ -286,6 +286,40 @@
     ],
     "note": "Contract shared B (template demo tab) ↔ C (shim) ↔ runner. navItems keys của catalog: home/cart/account."
   },
+  "checkoutV1": {
+    "activation": "explicit --capability checkout",
+    "modes": [
+      "simulator",
+      "demo-cod"
+    ],
+    "supportedBaseTemplates": [
+      "lab-template"
+    ],
+    "supportedVariant": "clothing-store",
+    "sdkVersion": "2.53.0",
+    "merchantOrderRoute": "/api/merchant-orders",
+    "resultModes": [
+      "success",
+      "pending",
+      "fail",
+      "cancel"
+    ],
+    "markers": {
+      "submit": "[data-testid=\"checkout-submit\"]",
+      "status": "[data-testid=\"checkout-status\"]",
+      "simSheet": "[data-testid=\"checkout-sim-sheet\"]",
+      "simBadge": "[data-testid=\"checkout-sim-badge\"]",
+      "demoSheet": "[data-testid=\"checkout-demo-sheet\"]",
+      "demoBadge": "[data-testid=\"checkout-demo-badge\"]",
+      "demoConfirm": "[data-testid=\"checkout-demo-confirm\"]",
+      "demoSuccess": "[data-testid=\"checkout-demo-order-success\"]",
+      "demoViewOrder": "[data-testid=\"checkout-demo-view-order\"]",
+      "demoOrderDetail": "[data-testid=\"checkout-demo-order-detail\"]"
+    },
+    "productionWarning": "CHECKOUT_BACKEND_REQUIRED",
+    "developmentDemoWarning": "CHECKOUT_DEMO_ONLY",
+    "note": "simulator stays nondeployable. demo-cod is a visibly labelled, client-only order UX allowed in Development; it never claims a paid transaction or production readiness."
+  },
   "oracleProfiles": {
     "full": {
       "note": "default cho lab template — đủ 8 marker + interaction + cta"

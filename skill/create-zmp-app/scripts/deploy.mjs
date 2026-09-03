@@ -173,6 +173,20 @@ function main() {
     process.exit(3);
   }
   const ctx = openRun(ws.runsDir, runId);
+  const input = ctx.readJson('input.json');
+  const checkoutMode = input?.checkoutMode ?? 'simulator';
+  if (input?.capabilities?.includes('checkout') && (checkoutMode !== 'demo-cod' || testing)) {
+    const code = testing && checkoutMode === 'demo-cod'
+      ? 'CHECKOUT_DEMO_DEVELOPMENT_ONLY'
+      : 'CHECKOUT_FIXTURE_NONDEPLOYABLE';
+    ctx.event('deploy', {
+      stage: 'deploy',
+      status: 'precondition_fail',
+      detail: `${code}: checkoutMode=${checkoutMode} target=${testing ? 'Testing' : 'Development'}`,
+    });
+    console.error(`deploy: ${code} — demo-cod is Development-only; real Checkout still follows references/checkout-backend.md`);
+    process.exit(3);
+  }
 
   // Phase 2.6 (FAQ 16): ZMP_TOKEN in the process env overrides app/.env — warn before deploy.
   const envHint = scanZmpTokenEnvOverride();

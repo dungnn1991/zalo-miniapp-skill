@@ -78,8 +78,11 @@ Run the whole pipeline through the **single entry** (from the skill directory):
 ```bash
 node scripts/run.mjs --brief "tạo app bán quần áo" [--app-id <id>] \
   [--existing | --force-scaffold] [--invoked-via <surface>] \
-  [--template auto|lab|official:<id>] [--deploy | --deploy-testing] [--preview] [--preview-timeout <ms>] \
-  [--verify-sim] [--preview-sim] [--sim-decision accept|deny|manual] [--workspace <dir>]
+  [--template auto|lab|official:<id>] [--capability checkout] \
+  [--checkout-mode simulator|demo-cod] \
+  [--deploy | --deploy-testing] [--preview] [--preview-timeout <ms>] \
+  [--verify-sim] [--preview-sim] [--sim-decision accept|deny|manual] \
+  [--checkout-result success|pending|fail|cancel] [--workspace <dir>]
 ```
 
 `run.mjs` chains bootstrap → portal-fetch → install → build (+preflight gates) → render →
@@ -243,6 +246,45 @@ sheets:
 - The **four user-surfacing points do not change**; sim needs no extra questions.
 - Details + limits: `references/simulator-workflow.md`.
 
+### Checkout — contract theo môi trường và giới hạn V1.0
+
+Khi user **yêu cầu rõ** Checkout/thanh toán trong app đang tạo, đọc theo thứ tự:
+`references/checkout-environments.md` → `references/checkout-client.md` →
+`references/checkout-simulator.md` → `references/checkout-backend.md`. Chưa mở semantic
+expansion; không tự bật Checkout chỉ vì app có catalog/cart.
+
+Trước khi chạy, nói rõ cho user: browser/simulator dùng mock có nhãn và không thu tiền; trong
+Zalo chỉ native Checkout khi backend UAT + Mini App Center đã ready; thiếu config/quyền/backend
+thì app phải hiện lỗi rõ và **không fallback mock**.
+
+- Chạy một skill/package duy nhất với `--template lab --capability checkout`. Chọn mode theo
+  khả năng runtime hiện tại:
+  - `--checkout-mode simulator --preview-sim`: mock merchant + host Checkout ở desktop, không
+    deploy.
+  - `--checkout-mode demo-cod`: custom mock COD có nhãn, local order và chi tiết đơn. Chỉ dùng
+    để preview non-Zalo/local; **không deploy vào Zalo như native Checkout evidence**.
+  V1 dùng fixture commerce `clothing-store` có giá VND để cart và mock nhất quán.
+  Checkout V1 không âm thầm đổi/rerank base template và chưa tự compose vào official hoặc app
+  existing không có contract đã biết.
+- `--checkout-result success|pending|fail|cancel` chọn mock outcome. Muốn verify đủ contract,
+  chạy đủ bốn outcome; mock sheet/result luôn phải có nhãn `SIMULATOR`.
+- Mode simulator dùng cùng `MerchantOrderGateway` cho simulator và backend thật. App chỉ gửi product ID,
+  quantity và idempotency key; không gửi amount để ký, không giữ Private Key/MAC secret, không có
+  nhánh simulator/fake-success.
+- Mode `demo-cod` không gọi Checkout SDK hoặc Merchant API. Sau xác nhận chỉ được ghi
+  `order=processing`, `payment=unpaid`, lưu đơn demo trên thiết bị và mở chi tiết đơn. Không được
+  ghi `paid`/“thanh toán thành công”; thành công ở đây là **đặt đơn thành công**.
+- Yêu cầu native Checkout trên Zalo hiện phải report `CHECKOUT_NATIVE_UAT_NOT_IMPLEMENTED` cho
+  tới khi environment router + backend UAT trong plan V1.1 được implement. Không dùng
+  `demo-cod` làm silent fallback. Runtime V1.1 phải route: non-Zalo → labelled mock; Zalo-ready
+  → SDK thật; Zalo-blocked/unknown → toast + inline error component.
+- Passing simulator chỉ được báo `checkout-client-integrated` và
+  `checkout-simulator-verified`, **không** được báo giao dịch thật, real-ready hay real-host UAT.
+- Mode simulator lặp warning `CHECKOUT_BACKEND_REQUIRED` và block deploy. Mode demo-cod lặp
+  `CHECKOUT_DEMO_ONLY`: preview dùng được, dữ liệu local không phải sổ đơn/kế toán; Development
+  native bị block cho tới khi có backend/config đúng. Backend UAT nhanh và backend thương mại
+  tiếp tục theo `checkout-backend.md`.
+
 ## Feature integration (khi user yêu cầu tính năng cụ thể)
 
 Khi user yêu cầu rõ ("tích hợp đăng nhập user Zalo vào nút X", "thêm chức năng Y"), bạn ĐƯỢC
@@ -259,6 +301,11 @@ sửa code app đã sinh — đây là ngoại lệ hợp lệ của rule "khôn
    giới: form quyền thật chỉ có khi app LIVE.
 3. Báo cáo: đã đổi file nào, theo recipe/nguồn nào, kết quả verify, bước tiếp theo.
 
+Checkout là capability dựng sẵn, không phải feature agent vá tay: dùng flow Checkout V1 ở trên.
+Khi chạy lại app Checkout đã scaffold, giữ `--capability checkout` để capability/warning tiếp tục
+được ghi vào input/result; `.env` đã bật từ run trước cũng được nhận diện để safe-rerun không làm
+mất trạng thái.
+
 ## Deploy (Phase 2, opt-in)
 
 Deploy runs **only** when the user explicitly asks for it ("deploy", "đưa lên
@@ -270,6 +317,11 @@ facts (version, commands, error codes) live in `config.json` `zmpCli`; details i
 Preferred: pass `--deploy` (Development) or `--deploy-testing` (Testing — explicit user
 request only) to `run.mjs`; it chains ensure-login → deploy → verify and stops on the same
 contract. Per-stage equivalents are in the Advanced section above.
+
+Không deploy Checkout `demo-cod` vào Zalo để mô phỏng native UI. Runtime V1.0 còn cho phép lệnh
+này ở tầng script vì là baseline lịch sử; agent phải fail/report
+`CHECKOUT_NATIVE_UAT_NOT_IMPLEMENTED` cho tới khi V1.1 có native router + backend UAT. Simulator
+vẫn không deploy; `--deploy-testing` không được dùng cho mock.
 
 The exit-code table above applies unchanged (`2` = needs_input / `login_required` → stop and
 ask the user before doing anything else).
@@ -378,6 +430,14 @@ slash-command|codex-skill|natural-language|harness`.
   oracle profiles).
 - `references/simulator-workflow.md` — Phase 3 simulator: verify/preview behavior, headed
   Chrome deviation, simDecision modes, honest limits (mock vs real Zalo).
+- `references/checkout-environments.md` — ma trận non-Zalo/Zalo-ready/Zalo-blocked/unknown,
+  feedback bắt buộc, error UX và Mini App Center checklist.
+- `references/checkout-client.md` — client controller/gateway lifecycle, baseline hai mode và
+  target native routing.
+- `references/checkout-simulator.md` — mock merchant + Checkout host, bốn result modes, badge
+  và giới hạn evidence.
+- `references/checkout-backend.md` — response schema giữ ổn định cho backend phase sau, secret
+  custody/order ledger/reconciliation và ranh giới production.
 - `references/sim-mock-data.json` — mock persona + per-API success/deny data for the sim
   shim, curated from live Portal docs (docSource per API).
 - `references/phone-number-backend.md` — why a Mini App can never turn a phone-number token

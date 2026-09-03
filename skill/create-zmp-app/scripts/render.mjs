@@ -154,7 +154,12 @@ async function main() {
     const simProfile = isOfficial ? 'simulator-official' : 'simulator';
     const { buildSimManifest } = await import('./sim/intercept.mjs');
     const decision = getArg(argv, 'sim-decision', 'accept');
-    const manifest = buildSimManifest(ctx, ws, { decision });
+    const checkoutResult = getArg(argv, 'checkout-result', 'success');
+    if (!['success', 'pending', 'fail', 'cancel'].includes(checkoutResult)) {
+      console.error(`render: unknown --checkout-result "${checkoutResult}" (success|pending|fail|cancel)`);
+      process.exit(3);
+    }
+    const manifest = buildSimManifest(ctx, ws, { decision, checkoutResult });
     const manifestPath = ctx.writeJson('sim-serve-manifest.json', manifest);
     if (!Object.keys(manifest.simConfig.apis).length) {
       console.error('render: warning — references/sim-mock-data.json absent/empty; every API will answer unmocked');
@@ -164,7 +169,7 @@ async function main() {
       stage: 'render',
       status: 'runner_start',
       command: `node ${RUNNER_PATH} --out <evidence> --profile ${simProfile} --sim-manifest ${manifestPath}`,
-      detail: `simDecision=${decision} profile=${simProfile}`,
+      detail: `simDecision=${decision} checkoutResult=${checkoutResult} profile=${simProfile}`,
     });
     const child2 = spawn(process.execPath, [
       RUNNER_PATH,
