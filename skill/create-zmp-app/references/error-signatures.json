@@ -48,7 +48,7 @@
       "pattern": "reached your 30-day deployment limit",
       "flags": "i",
       "stage": "deploy",
-      "diagnosis": "Hết quota deploy trượt 30 ngày của Mini App: 300 lần/tháng cho Development, 60 lần/tháng cho Testing.",
+      "diagnosis": "Hết quota deploy của Mini App — cửa sổ TRƯỢT 30 ngày (không phải tháng lịch): 300 lần cho Development, 60 lần cho Testing (nhà của số: config.json zmpCli.deployQuota).",
       "fix": "Đợi quota reset theo chu kỳ 30 ngày; giảm tần suất deploy (verify local bằng browser harness trước, chỉ deploy khi cần), deploy Testing có chọn lọc.",
       "source": "https://miniapp.zaloplatforms.com/community/8602851583980566991/you-have-reached-your-30-day-deployment-limit-please-try-again-later",
       "sourceTitle": "You have reached your 30-day deployment limit. Please try again later."
@@ -88,7 +88,7 @@
       "pattern": "The file size is too large",
       "flags": "i",
       "stage": "deploy",
-      "diagnosis": "Vượt giới hạn kích thước mỗi phiên bản Mini App: 10MB tổng cả app, 3MB mỗi file.",
+      "diagnosis": "Vượt giới hạn kích thước mỗi phiên bản Mini App: 10MB tổng cả app, 3MB mỗi file (nhà của số: config.json platformLimits, enforce theo MiB).",
       "fix": "Static resource (ảnh, video) → chuyển lên server riêng/CDN. Script quá nặng → code splitting (xem blog giảm kích thước Mini App của mini.zalo.me).",
       "source": "https://miniapp.zaloplatforms.com/community/8098440729049792207/the-file-size-is-too-large",
       "sourceTitle": "The file size is too large."

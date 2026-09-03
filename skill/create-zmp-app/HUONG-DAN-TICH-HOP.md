@@ -39,10 +39,6 @@ curl -fsSL https://raw.githubusercontent.com/dungnn1991/zalo-miniapp-skill/stagi
 Claude Plugin dùng version do marketplace quản lý và in `(claude-plugin vX.Y.Z)`; đối chiếu
 thêm bằng `/plugin details`. Bản copy tay không stamp in `(dev copy)`.
 
-Yêu cầu máy: Node ≥ 20, Google Chrome (dùng Chrome hệ thống); `zmp-cli` chỉ cần khi deploy;
-pnpm khuyên dùng (không có sẽ fallback npm). KHÔNG cần cài dependency tay — doctor tự lo
-lần chạy đầu.
-
 Kiểm tra CORS mặc định là passive source scan, không gửi request ra endpoint của app.
 Chỉ khi đã được phép probe live mới chạy agent với `MB_ENABLE_CORS_PROBE=1`.
 

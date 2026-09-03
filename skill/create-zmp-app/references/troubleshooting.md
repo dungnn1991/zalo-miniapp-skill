@@ -112,7 +112,7 @@
 ## 8. "The file size is too large." khi deploy
 
 - **Triệu chứng:** deploy fail với message trên.
-- **Nguyên nhân:** vượt giới hạn mỗi phiên bản: **10MB tổng cả app, 3MB mỗi file**.
+- **Nguyên nhân:** vượt giới hạn mỗi phiên bản: **10MB tổng cả app, 3MB mỗi file** (nhà của số: `config.json` `platformLimits`; enforce theo MiB).
 - **Fix:** static resource (ảnh/video) → upload server riêng/CDN; script quá nặng → **code
   splitting** (blog "Giảm kích thước Zalo Mini App và tối ưu hoá thời gian tải" trên
   mini.zalo.me, link trong FAQ nguồn). Preflight gate `size_limit` của pipeline chặn sớm case

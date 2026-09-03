@@ -86,155 +86,7 @@
       "mẫu platform",
       "mẫu làm sẵn"
     ],
-    "catalog": [
-      {
-        "id": "zaui-fashion",
-        "branch": "main",
-        "revision": "d59cfad4d79b2ba57e6dfdf6be82d967cf9e7f5c",
-        "keywords": [
-          "quần áo",
-          "thời trang",
-          "fashion",
-          "clothing",
-          "váy",
-          "đầm",
-          "shop đồ",
-          "clothes"
-        ],
-        "verified": true,
-        "releaseSupported": true,
-        "releaseCaseId": "official-template-golden"
-      },
-      {
-        "id": "zaui-coffee",
-        "branch": "main",
-        "keywords": [
-          "cà phê",
-          "coffee",
-          "cafe",
-          "đồ uống",
-          "trà sữa",
-          "coffee shop"
-        ],
-        "verified": false,
-        "releaseSupported": false
-      },
-      {
-        "id": "zaui-bistro",
-        "branch": "main",
-        "keywords": [
-          "bistro",
-          "đặt món",
-          "quán ăn",
-          "food ordering",
-          "đồ ăn"
-        ],
-        "verified": false,
-        "releaseSupported": false
-      },
-      {
-        "id": "zaui-menu",
-        "branch": "main",
-        "keywords": [
-          "menu",
-          "thực đơn",
-          "gọi món",
-          "order food"
-        ],
-        "verified": false,
-        "releaseSupported": false
-      },
-      {
-        "id": "zaui-restaurant",
-        "branch": "main",
-        "keywords": [
-          "nhà hàng",
-          "restaurant"
-        ],
-        "verified": false,
-        "releaseSupported": false
-      },
-      {
-        "id": "zaui-market",
-        "branch": "main",
-        "keywords": [
-          "chợ",
-          "siêu thị",
-          "tạp hoá",
-          "tạp hóa",
-          "market",
-          "grocery"
-        ],
-        "verified": false,
-        "releaseSupported": false
-      },
-      {
-        "id": "zaui-doctor",
-        "branch": "main",
-        "keywords": [
-          "bác sĩ",
-          "phòng khám",
-          "y tế",
-          "doctor",
-          "clinic",
-          "đặt lịch khám",
-          "booking khám"
-        ],
-        "verified": false,
-        "releaseSupported": false
-      },
-      {
-        "id": "zaui-uni",
-        "branch": "main",
-        "keywords": [
-          "giáo dục",
-          "trường học",
-          "education",
-          "khóa học"
-        ],
-        "verified": false,
-        "releaseSupported": false
-      },
-      {
-        "id": "zaui-egovernment",
-        "branch": "master",
-        "keywords": [
-          "hành chính công",
-          "dịch vụ công",
-          "government"
-        ],
-        "verified": false,
-        "releaseSupported": false
-      },
-      {
-        "id": "zaui-lucky-wheel",
-        "branch": "main",
-        "keywords": [
-          "vòng quay",
-          "lucky wheel",
-          "minigame",
-          "trúng thưởng"
-        ],
-        "verified": false,
-        "releaseSupported": false
-      },
-      {
-        "id": "zaui-shop",
-        "branch": "main",
-        "keywords": [
-          "shop",
-          "cửa hàng",
-          "bán hàng",
-          "e-commerce",
-          "thương mại"
-        ],
-        "verified": false,
-        "releaseSupported": false
-      }
-    ],
-    "matchOrder": "KHÔNG CÒN DÙNG. Thứ tự khai báo + first-keyword đã được thay bằng ranker có điểm số (hard-filter trước, domain → jobs → capabilities → alias). Xem references/template-routing.md.",
-    "noMatchBehavior": "KHÔNG CÒN DÙNG. Hành vi hiện tại: không match domain → lab; ambiguous và có ít nhất một lựa chọn scaffold được → exit 2 needsInput.reason=template_choice.",
-    "matchNormalization": "match sau khi normalize CẢ brief lẫn keyword: lowercase + NFD bỏ dấu + đ→d — 'quần áo'/'quan ao'/'Quần Áo' đều khớp (bổ sung 2026-08-21 theo yêu cầu đa ngôn ngữ)",
+"matchNormalization": "match sau khi normalize CẢ brief lẫn keyword: lowercase + NFD bỏ dấu + đ→d — 'quần áo'/'quan ao'/'Quần Áo' đều khớp (bổ sung 2026-08-21 theo yêu cầu đa ngôn ngữ)",
     "deprecatedSince": "plan 34 (2026-08-23) — routing chuyển sang catalog/templates.json + scripts/recommend-template.mjs. Khối này giữ lại cho tương thích: chỉ còn tarballUrlPattern và optInPhrases được dùng.",
     "optInPhrasesRole": "Không còn là cổng chặn (D34-1). Chỉ còn là tín hiệu ý định: user nói rõ muốn dùng mẫu mà chưa có template nào qualify thì hỏi, không im lặng dựng lab."
   },
@@ -332,6 +184,14 @@
       "@types/react-dom": "^18.2.0"
     }
   },
+  "platformLimits": {
+    "bundleTotalBytes": 10485760,
+    "perFileBytes": 3145728,
+    "note": "Nhà duy nhất của giới hạn kích thước bản deploy (slice C2, DX 55). Portal ghi '10MB tổng / 3MB mỗi file'; enforce theo MiB (1 MiB = 1048576 bytes). insight.mjs scanSizeLimit đọc từ đây; troubleshooting.md / error-signatures chỉ trỏ về. Boundary test: evaluation/unit-size-limit.mjs.",
+    "sourceUrl": "https://miniapp.zaloplatforms.com/community/8098440729049792207/the-file-size-is-too-large",
+    "officialRef": "docs.zaloplatforms.com/docs/MA/intro/getting-started/frequently-solved-issues.md #14",
+    "observedAt": "2026-08-21"
+  },
   "exitCodes": {
     "0": "pass",
     "1": "gate_fail (finding recorded)",
@@ -350,6 +210,15 @@
     "tokenPolicy": "ZMP_TOKEN do zmp-cli sở hữu: lab không đọc giá trị, không ghi, không log; chỉ được key-existence scan",
     "apiDomain": "https://zmp-api.developers.zalo.me/",
     "deployedUrlScheme": "zalo.me/s/",
+    "deployQuota": {
+      "rollingWindowDays": 30,
+      "developmentLimit": 300,
+      "testingLimit": 60,
+      "note": "Nhà duy nhất của số quota deploy (slice C1, DX 55): operations.md / error-signatures chỉ trỏ về đây. Quota là cửa sổ TRƯỢT 30 ngày, không phải tháng lịch — message thật: 'You have reached your 30-day deployment limit'.",
+      "sourceUrl": "https://miniapp.zaloplatforms.com/community/8602851583980566991/you-have-reached-your-30-day-deployment-limit-please-try-again-later",
+      "officialRef": "docs.zaloplatforms.com/docs/MA/intro/getting-started/frequently-solved-issues.md #13",
+      "observedAt": "2026-08-21"
+    },
     "deployedUrlObserved": "https://zalo.me/s/<appId>/?env=DEVELOPMENT&version=zdev-... (real deploy 2026-08-20; h5.zdn.vn/zapps/ chỉ là CDN asset base, không phải app link)",
     "deployOutputIsQrOnly": "CLI 4.0.3 in URL chỉ dưới dạng QR sau 'View app at:' — cần decode (jsqr); dòng '- undefined' là bug hiển thị của CLI",
     "syncConfigRequired": "zmp sync-config dist/index.html BẮT BUỘC sau build, trước deploy -e (populate listSyncJS/listCSS trong app-config.json; sinh dist/inline.js)",

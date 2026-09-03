@@ -99,10 +99,10 @@ Nguồn: [API Server-Server](https://miniapp.zaloplatforms.com/community/9107262
 ## 7. Vai trò Development / Testing / Live + version semantics
 
 - **Development**: chỉ **một slot** — deploy sau đè bản trước; URL dev (kể cả kèm `zdev-*`)
-  luôn trỏ bản mới nhất, **không** phải tham chiếu ổn định. Quota **300 lần/tháng**.
+  luôn trỏ bản mới nhất, **không** phải tham chiếu ổn định. Quota **300 lần / cửa sổ trượt 30 ngày**.
 - **Testing**: mỗi lần deploy lưu build lên CDN gắn **version bền** (tham chiếu được — dùng
-  cho UAT/regression). Quota **60 lần/tháng**. (Fact pin: `config.json`
-  `zmpCli.deploy.versionSemantics`.)
+  cho UAT/regression). Quota **60 lần / cửa sổ trượt 30 ngày**. (Fact pin: quota tại `config.json`
+  `zmpCli.deployQuota`; version semantics tại `zmpCli.deploy.versionSemantics`.)
 - **Live**: bản cho user thường, qua xét duyệt.
 - Ai mở được bản nào: Development/Testing chỉ mở được bằng account **Developer/Admin** — account
   thường gặp *"Trang này không tìm thấy hoặc không hợp lệ"*; mở bản Live khi app **chưa có bản

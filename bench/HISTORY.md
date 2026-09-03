@@ -18,4 +18,4 @@ mở từng file). Kết quả bench động (tốn tiền, chạy tay) dán và
 | 2026-08-24 | 0.4.1 | 146 | 7563 | 39637 | — | — | backfill từ tag v0.4.1 |
 | 2026-08-27 | 0.5.0 | 146 | 8072 | 48752 | +509 (+6.7%) | +9115 (+23.0%) | plan51 Portal docs + App ID guidance + guardrail subpath (PR #10, #12) |
 | 2026-08-27 | 0.5.1 | 146 | 8072 | 48841 | +0 (+0.0%) | +89 (+0.2%) | v0.5.1 fix harness (BUG-1 subpath lab, BUG-2 result.json) từ test độc lập Codex — số theo tag v0.5.1 (khôi phục 2026-08-27 sau khi bị --record đè) |
-| 2026-08-31 | 0.5.2 | 146 | 8126 | 48901 | +54 (+0.7%) | +60 (+0.1%) | train hygiene round 2 — slice A (A2 hardened theo review file 56: tracked-abort, retention, quarantine) |
+| 2026-09-03 | 0.5.2 | 146 | 8126 | 48457 | +54 (+0.7%) | -384 (-0.8%) | train hygiene round 2 — slice C: nhà cho quota/size-limit trong config, unit boundary, gộp khối cài đặt |
