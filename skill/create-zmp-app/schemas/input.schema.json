@@ -72,7 +72,7 @@
         },
         "id": {
           "type": "string",
-          "description": "lab: 'lab-template'; official: id trong config.json officialTemplates.catalog; existing: 'existing-app' (--existing, không scaffold)"
+          "description": "lab: 'lab-template'; official: id trong catalog/templates.json (registry); existing: 'existing-app' (--existing, không scaffold)"
         },
         "revision": {
           "type": "string",

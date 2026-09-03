@@ -7,7 +7,8 @@ source of truth, reference này chỉ giải thích.
 ## 1. Nguồn gốc base URL
 
 - Base URL: `https://docs.zaloplatforms.com` — index `/MA/llms.txt`, per-doc `/docs/MA/<slug>.md`.
-- Provenance: DX file 06 (`06-independent-verification-brief.md`) và DX file 10
+- Provenance (DX workspace, không ship cùng skill): file 06
+  (`06-independent-verification-brief.md`) và file 10
   (`10-independent-principal-review-2026-07-29.md`).
 - Verified live 2026-08-20: HTTP 200, ETag `"6a857e93-9f51"` (ghi trong `config.json`
   `portal.note`).

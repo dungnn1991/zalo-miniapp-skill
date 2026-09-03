@@ -5,7 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import dns from 'node:dns/promises';
-import { SKILL_DIR } from './lib/paths.mjs';
+import { SKILL_DIR, CONFIG_PATH } from './lib/paths.mjs';
 
 // ---------------------------------------------------------------------------------------
 // evidence/preflight.json — {gates:[{id, status: pass|warn|fail, detail, insight?}]}
@@ -49,8 +49,14 @@ export function readSrcTexts(appDir) {
 // Tier-1 scanners. Each returns a preflight entry {id, status, detail, insight?}.
 
 // FAQ 24: deployed bundle limits — total ≤10MB, single file ≤3MB. Hard fail.
-export const SIZE_TOTAL_LIMIT = 10 * 1024 * 1024;
-export const SIZE_FILE_LIMIT = 3 * 1024 * 1024;
+// Nhà của giới hạn kích thước = config.json platformLimits (slice C2, DX 55) — không hardcode
+// ở đây nữa; fallback đúng số Portal nếu config thiếu key để scan không chết vì thiếu cấu hình.
+const PLATFORM_LIMITS = (() => {
+  try { return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')).platformLimits ?? {}; } catch { return {}; }
+})();
+export const SIZE_TOTAL_LIMIT = PLATFORM_LIMITS.bundleTotalBytes ?? 10 * 1024 * 1024;
+export const SIZE_FILE_LIMIT = PLATFORM_LIMITS.perFileBytes ?? 3 * 1024 * 1024;
+const MB = (n) => `${(n / 1048576).toFixed(0)}MB`;
 export const EXPECTED_SIZE_LIMIT = 'build output within platform size limits (total <= 10MB, each file <= 3MB)';
 export function scanSizeLimit(outDirPath) {
   let total = 0;
@@ -70,10 +76,10 @@ export function scanSizeLimit(outDirPath) {
   }
   const overTotal = total > SIZE_TOTAL_LIMIT;
   if (!overTotal && oversized.length === 0) {
-    return { id: 'size_limit', status: 'pass', detail: `total ${(total / 1048576).toFixed(1)}MB, no file over 3MB` };
+    return { id: 'size_limit', status: 'pass', detail: `total ${(total / 1048576).toFixed(1)}MB, no file over ${MB(SIZE_FILE_LIMIT)}` };
   }
   const problems = [];
-  if (overTotal) problems.push(`total ${(total / 1048576).toFixed(1)}MB > 10MB`);
+  if (overTotal) problems.push(`total ${(total / 1048576).toFixed(1)}MB > ${MB(SIZE_TOTAL_LIMIT)}`);
   if (oversized.length) problems.push(`files over 3MB: ${oversized.join(', ')}`);
   return {
     id: 'size_limit',

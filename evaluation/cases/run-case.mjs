@@ -1651,14 +1651,17 @@ process.exit(9);
   // Release-readiness: only an explicitly release-supported, immutable official template
   // may be exposed. Known-but-unverified entries must stop before fetch/app mutation.
   'official-template-support'({ ws, check, note }) {
-    const cfg = readJsonIfExists(path.join(LAB_ROOT, 'skill', 'create-zmp-app', 'config.json'));
-    const supported = cfg?.officialTemplates?.catalog?.filter((e) => e.releaseSupported === true) ?? [];
-    check('release-supported catalog is non-empty', supported.length > 0, JSON.stringify(supported));
-    check('every supported entry is verified and pinned to a commit SHA',
-      supported.every((e) => e.verified === true && /^[0-9a-f]{40}$/.test(e.revision ?? '')),
-      JSON.stringify(supported));
-    check('zaui-fashion is the only v0.3.1 release-supported template',
-      supported.length === 1 && supported[0].id === 'zaui-fashion', JSON.stringify(supported.map((e) => e.id)));
+    // Slice B1 (hygiene round 2): support set đọc từ REGISTRY catalog/templates.json — trước
+    // đây đọc config.officialTemplates.catalog (deprecated, chỉ biết zaui-fashion) nên check
+    // "only zaui-fashion" xanh giả suốt khi registry đã có 6 template release-supported.
+    const registryDoc = readJsonIfExists(path.join(LAB_ROOT, 'skill', 'create-zmp-app', 'catalog', 'templates.json'));
+    const supported = (registryDoc?.templates ?? []).filter((t) => t.qualification?.state === 'release-supported');
+    check('release-supported registry set is non-empty', supported.length > 0, JSON.stringify(supported.map((t) => t.id)));
+    check('every release-supported entry is pinned to the same 40-hex revision in source and qualification',
+      supported.every((t) => /^[0-9a-f]{40}$/.test(t.source?.revision ?? '') && t.qualification?.testedRevision === t.source.revision),
+      JSON.stringify(supported.map((t) => [t.id, t.source?.revision, t.qualification?.testedRevision])));
+    check('zaui-fashion stays release-supported (official-template-golden depends on it)',
+      supported.some((t) => t.id === 'zaui-fashion'), JSON.stringify(supported.map((t) => t.id)));
 
     // The case is about the SUPPORT GATE, not about any one template: it must keep working as
     // templates get qualified. Pick the probe id from the registry at run time — the first

@@ -1,8 +1,9 @@
 # Troubleshooting — lỗi dev/build/deploy thường gặp
 
 > **Attribution:** Chưng cất từ chuyên mục FAQ công khai của **Hồng Phát (Supporter)** —
-> https://miniapp.zaloplatforms.com/community (crawl **2026-08-21**, bản lưu:
-> `DX/community-faq-best-practice/`), cộng kinh nghiệm thật của lab. Mỗi mục ghi link nguồn.
+> https://miniapp.zaloplatforms.com/community (crawl **2026-08-21**; bản lưu:
+> `DX/community-faq-best-practice/` — DX workspace, không ship cùng skill), cộng kinh nghiệm
+> thật của lab. Mỗi mục ghi link nguồn.
 > Đối chiếu official: [Các lỗi kỹ thuật thường gặp](https://docs.zaloplatforms.com/docs/MA/intro/getting-started/frequently-solved-issues.md)
 > (fetch **2026-08-26**) — ký hiệu **FSI #N** dưới đây trỏ mục N của trang đó.
 > Match log tự động: dùng `references/error-signatures.json` trước; file này để đọc sâu.
@@ -111,7 +112,7 @@
 ## 8. "The file size is too large." khi deploy
 
 - **Triệu chứng:** deploy fail với message trên.
-- **Nguyên nhân:** vượt giới hạn mỗi phiên bản: **10MB tổng cả app, 3MB mỗi file**.
+- **Nguyên nhân:** vượt giới hạn mỗi phiên bản: **10MB tổng cả app, 3MB mỗi file** (nhà của số: `config.json` `platformLimits`; enforce theo MiB).
 - **Fix:** static resource (ảnh/video) → upload server riêng/CDN; script quá nặng → **code
   splitting** (blog "Giảm kích thước Zalo Mini App và tối ưu hoá thời gian tải" trên
   mini.zalo.me, link trong FAQ nguồn). Preflight gate `size_limit` của pipeline chặn sớm case

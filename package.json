@@ -9,7 +9,7 @@
   },
   "scripts": {
     "validate:release": "node evaluation/validate-release.mjs",
-    "test": "npm run validate:release && npm run test:corpus && node evaluation/run-all.mjs",
+    "test": "npm run validate:release && npm run test:corpus && node evaluation/unit-size-limit.mjs && node evaluation/run-all.mjs",
     "test:corpus": "node evaluation/cases/run-corpus.mjs"
   },
   "devDependencies": {

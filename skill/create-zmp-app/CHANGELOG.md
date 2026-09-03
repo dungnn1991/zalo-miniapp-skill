@@ -4,6 +4,34 @@ Mọi thay đổi đáng kể của skill. Version = `package.json` + git tag `v
 Thay đổi phát sinh từ finding formal phải gắn id; expected/actual/lifecycle nằm trong
 `feedback/findings.jsonl`, decision và regression nằm trong `feedback/improvements.jsonl`.
 
+## [0.5.2] — 2026-09-03 (release train hygiene round 2 — DX file 55/56, đã qua 2 vòng review độc lập)
+
+Bump ở ĐẦU train theo review file 55 để sổ token 0.5.2 hấp thụ các slice mà không đè row
+0.5.1 đã phát hành (bench/token-budget.mjs thêm guard từ chối đè version đã tag).
+
+### Changed
+- Slice A hygiene: `app/` root (generated) hết tracked + gate `app/ not tracked`;
+  `evaluation/clean-workspaces.sh` dọn disk workspace — HARDENED theo review độc lập
+  2026-08-28 ("ignored ≠ disposable"): abort khi target chứa file tracked, chỉ nhận
+  workspace có harness marker, retention (N mới nhất + run fail + run được findings tham
+  chiếu + `.keep`), quarantine 2 pha `.trash/` + `--purge-trash`, lock chống chạy chồng;
+  chuẩn hoá provenance các mention DX-workspace + gate cấm path thoát package.
+- Slice B hygiene (nguồn thật cho template): validator + case `official-template-support` đọc
+  registry `catalog/templates.json` thay block `config.officialTemplates.catalog` deprecated
+  (trước đây gate xanh giả — chỉ biết zaui-fashion); mỗi entry release-supported phải chứng
+  minh revision pin 2 nơi, evidence file trong `catalog/qualification` khớp
+  templateId/revision/runId + mọi blocking gate pass, adapter khớp id; drift detector
+  registry↔`template-profile.schema.json` (schema thêm `qualification.runtime`); xoá
+  `catalog`/`matchOrder`/`noMatchBehavior` khỏi config (-843 est token ondemand).
+- Slice C hygiene ("mỗi fact một nhà"): quota deploy về `config.json zmpCli.deployQuota`
+  (rolling 30 ngày — sửa semantics "per tháng" sai), giới hạn kích thước về
+  `config.json platformLimits` (bytes, insight.mjs đọc từ đó) + `evaluation/unit-size-limit.mjs`
+  boundary test trong `npm test`; operations/troubleshooting/error-signatures chỉ trỏ về nhà;
+  HUONG-DAN gộp khối yêu cầu máy lặp (giữ "Bước 2").
+- Release-gate: 71 checks (thêm 8 gate hygiene, gỡ 1 check trùng); `.gitignore` thêm
+  `/app/`, `.trash/`. Ngoài scope train (chờ owner): C4 policy deploy official; B-10 license
+  gate (PR riêng — policy, không phải hygiene).
+
 ## [0.5.1] — 2026-08-27
 
 Fix slice từ đợt test độc lập trên Codex (DX file 52/53) — hai bug harness được tái hiện
